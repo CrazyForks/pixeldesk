@@ -4,6 +4,11 @@ export class Start extends Phaser.Scene {
     constructor() {
         super('Start');
         this.workstationManager = null;
+        this.player = null;
+        this.cursors = null;
+        this.wasdKeys = null;
+        this.deskColliders = null;
+        
     }
 
     preload() {
@@ -20,6 +25,13 @@ export class Start extends Phaser.Scene {
         const map = this.createTilemap();
         this.createTilesetLayers(map);
         this.renderObjectLayer(map, 'desk_objs');
+        
+        // 创建玩家
+        this.createPlayer(map);
+        
+        // 设置输入
+        this.setupInput();
+        
         this.setupCamera(map);
         
         // 创建完成后的初始化
@@ -30,7 +42,79 @@ export class Start extends Phaser.Scene {
     }
 
     update() {
-        // No update logic needed for static map display
+        this.handlePlayerMovement();
+    }
+
+    // ===== 玩家相关方法 =====
+    createPlayer(map) {
+        // 从对象层获取玩家位置
+        const userLayer = map.getObjectLayer('user_objs');
+        if (!userLayer) {
+            console.warn('User objects layer not found');
+            return;
+        }
+
+        // 找到玩家身体和头部对象
+        const userBody = userLayer.objects.find(obj => obj.name === 'user_body');
+        const userHead = userLayer.objects.find(obj => obj.name === 'user_head');
+
+        if (!userBody || !userHead) {
+            console.warn('Player objects not found');
+            return;
+        }
+
+        // 创建玩家容器
+        this.player = this.add.container(userBody.x, userBody.y - userBody.height);
+        
+        // 添加身体和头部精灵
+        const bodySprite = this.add.image(0, 48, 'characters_list_image');
+        const headSprite = this.add.image(0, 0, 'characters_list_image');
+        
+        // 设置纹理区域（从tileset中提取正确的帧）
+        bodySprite.setFrame(4); // user_body对应的帧
+        headSprite.setFrame(0);  // user_head对应的帧
+        
+        this.player.add([headSprite, bodySprite]);
+        
+        // 设置玩家物理属性
+        this.physics.world.enable(this.player);
+        this.player.body.setSize(32, 80); // 设置碰撞盒大小
+        this.player.body.setOffset(-16, -8); // 调整碰撞盒位置
+        
+        console.log('Player created at:', this.player.x, this.player.y);
+    }
+
+    setupInput() {
+        // 创建方向键
+        this.cursors = this.input.keyboard.createCursorKeys();
+        
+        // 创建WASD键
+        this.wasdKeys = this.input.keyboard.addKeys('W,S,A,D');
+    }
+
+    handlePlayerMovement() {
+        if (!this.player || !this.player.body) return;
+
+        const speed = 200;
+        let velocityX = 0;
+        let velocityY = 0;
+
+        // 检查水平移动
+        if (this.cursors.left.isDown || this.wasdKeys.A.isDown) {
+            velocityX = -speed;
+        } else if (this.cursors.right.isDown || this.wasdKeys.D.isDown) {
+            velocityX = speed;
+        }
+
+        // 检查垂直移动
+        if (this.cursors.up.isDown || this.wasdKeys.W.isDown) {
+            velocityY = -speed;
+        } else if (this.cursors.down.isDown || this.wasdKeys.S.isDown) {
+            velocityY = speed;
+        }
+
+        // 设置速度
+        this.player.body.setVelocity(velocityX, velocityY);
     }
 
     // ===== 工位事件处理 =====
@@ -93,7 +177,7 @@ export class Start extends Phaser.Scene {
         const tilesets = this.addTilesets(map);
         
         // 创建图层
-        const layerNames = ['office_1', 'office_1_desk'];
+        const layerNames = ['bg', 'office_1', 'office_1_desk'];
         layerNames.forEach(layerName => {
             map.createLayer(layerName, tilesets);
         });
@@ -125,6 +209,10 @@ export class Start extends Phaser.Scene {
         }
 
         console.log(`Found ${layerName} with ${objectLayer.objects.length} objects`);
+        
+        // 创建桌子碰撞组
+        this.deskColliders = this.physics.add.staticGroup();
+        
         objectLayer.objects.forEach((obj, index) => this.renderObject(obj, index));
     }
 
@@ -144,10 +232,34 @@ export class Start extends Phaser.Scene {
         // 如果是工位对象，使用工位管理器创建工位
         if (sprite && this.isDeskObject(obj)) {
             this.workstationManager.createWorkstation(obj, sprite);
+            
+            // 为桌子添加物理碰撞
+            this.addDeskCollision(sprite, obj);
         }
         
         // 添加调试边界
         this.addDebugBounds(obj, adjustedY);
+    }
+
+    addDeskCollision(sprite, obj) {
+        // 启用sprite的物理特性
+        this.physics.world.enable(sprite);
+        sprite.body.setImmovable(true);
+        
+        // 添加到碰撞组
+        this.deskColliders.add(sprite);
+        
+        // 设置玩家与桌子的碰撞
+        if (this.player) {
+            this.physics.add.collider(this.player, sprite);
+        } else {
+            // 如果玩家还未创建，稍后再设置碰撞
+            this.time.delayedCall(200, () => {
+                if (this.player) {
+                    this.physics.add.collider(this.player, sprite);
+                }
+            });
+        }
     }
 
     renderTilesetObject(obj, adjustedY) {
@@ -204,8 +316,30 @@ export class Start extends Phaser.Scene {
     }
 
     setupCamera(map) {
-        this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-        console.log(`Map size: ${map.widthInPixels}x${map.heightInPixels}`);
+        // For infinite maps, we need to calculate the bounds based on the layer data
+        const officeLayerData = map.getLayer('office_1');
+        if (officeLayerData) {
+            const mapWidth = officeLayerData.width * map.tileWidth;
+            const mapHeight = officeLayerData.height * map.tileHeight;
+            // Tiled JSON for infinite maps provides startx/starty in tiles, not pixels
+            const mapX = officeLayerData.startx * map.tileWidth;
+            const mapY = officeLayerData.starty * map.tileHeight;
+
+            this.cameras.main.setBounds(mapX, mapY, mapWidth, mapHeight);
+            this.physics.world.setBounds(mapX, mapY, mapWidth, mapHeight);
+            console.log(`Map bounds set to: x:${mapX}, y:${mapY}, w:${mapWidth}, h:${mapHeight}`);
+        } else {
+            // Fallback for non-infinite maps or if layer name changes
+            this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+            this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+            console.log(`Map size (fallback): ${map.widthInPixels}x${map.heightInPixels}`);
+        }
+        
+        // 让摄像机跟随玩家
+        if (this.player) {
+            this.cameras.main.startFollow(this.player);
+            this.cameras.main.setLerp(0.1, 0.1); // 平滑跟随
+        }
     }
 
     // ===== 工位管理便捷方法 =====

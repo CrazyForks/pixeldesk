@@ -8,19 +8,19 @@ const config = {
     width: 2280,
     height: 2920,
     backgroundColor: '#000000',
-    pixelArt: false,
+    pixelArt: true,
     scene: [
         Start
     ],
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.ENVELOP,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
     physics: {
         default: "arcade",
         arcade: {
-            gravity: { y: 500 },
-            debugger:true
+            gravity: { y: 0 }, // 顶视角游戏不需要重力
+            debug: false // 设为 true 可以看到碰撞盒
         }
     }
 }
