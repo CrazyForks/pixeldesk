@@ -15,13 +15,65 @@
         "#tileset": {
             "dynamicWrapping": false
         },
+        "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx": {
+            "scale": 0.4358516483516483,
+            "selectedLayer": 5,
+            "viewCenter": {
+                "x": 680.2773400567288,
+                "y": 234.0245824141192
+            }
+        },
+        "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx#actors": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx#items": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx#props": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx#tileset": {
+            "scaleInDock": 1
+        },
+        "officemap.tmx": {
+            "expandedObjectLayers": [
+                4,
+                6
+            ],
+            "scale": 0.33,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 956.060606060606,
+                "y": 339.39393939393926
+            }
+        },
+        "officemap.tmx#characters_list": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "officemap.tmx#hospital": {
+            "scaleInDock": 1
+        },
         "officemap.tmx#ice_creem": {
-            "dynamicWrapping": false
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "officemap.tmx#ice_creem_floor": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
         },
         "officemap.tmx#library_tileset": {
-            "dynamicWrapping": true
+            "dynamicWrapping": true,
+            "scaleInDock": 1
         },
         "officemap.tmx#office_tileset_blue": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1.5,
             "scaleInEditor": 1
         },
         "officemap.tmx#player": {
@@ -29,7 +81,11 @@
             "scaleInEditor": 1
         },
         "officemap.tmx#room_floor_tileset": {
+            "scaleInDock": 0.33,
             "scaleInEditor": 1
+        },
+        "officemap.tmx#room_wall_tileset": {
+            "scaleInDock": 0.33
         }
     },
     "last.exportedFilePath": "/Users/jiangyilong/project/PixelDesk/PixelDesk/assets",
@@ -41,6 +97,7 @@
     ],
     "project": "pixelDeskMap.tiled-project",
     "recentFiles": [
+        "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx"
     ],
     "tileset.embedInMap": true,
     "tileset.tileSize": {
