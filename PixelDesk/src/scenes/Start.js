@@ -147,7 +147,6 @@ export class Start extends Phaser.Scene {
             'pixel_office_assets': 'assets/PixelOffice/PixelOfficeAssets.png',
             'ice_creem_image': 'assets/moderninteriors-win/6_Home_Designs/Ice-Cream_Shop_Designs/48x48/Ice_Cream_Shop_Design_layer_2_48x48.png',
             'ice_creem_floor_image': 'assets/moderninteriors-win/6_Home_Designs/Ice-Cream_Shop_Designs/48x48/Ice_Cream_Shop_Design_layer_1_48x48.png',
-            'hospital_image': 'assets/moderninteriors-win/1_Interiors/48x48/Theme_Sorter_48x48/19_Hospital_48x48.png',
             'characters_list_image': 'assets/moderninteriors-win/2_Characters/Old/Single_Characters_Legacy/48x48/Adam_idle_48x48.png'
         };
 
@@ -158,11 +157,11 @@ export class Start extends Phaser.Scene {
 
     loadLibraryImages() {
         // 默认桌子图像
-        this.load.image("desk_image", "assets/moderninteriors-win/1_Interiors/48x48/Theme_Sorter_Singles_48x48/5_Classroom_and_Library_Singles_48x48/Classroom_and_Library_Singles_48x48_10.png");
+        this.load.image("desk_image", "assets/desk/Classroom_and_Library_Singles_48x48_10.png");
         
         // 加载完整的图像集
-        for (let i = 1; i <= 75; i++) {
-            const path = `assets/moderninteriors-win/1_Interiors/48x48/Theme_Sorter_Singles_48x48/5_Classroom_and_Library_Singles_48x48/Classroom_and_Library_Singles_48x48_${i}.png`;
+        for (let i = 1; i <= 100; i++) {
+            const path = `assets/desk/Classroom_and_Library_Singles_48x48_${i}.png`;
             this.load.image(`desk_${i}`, path);
         }
     }
@@ -186,11 +185,7 @@ export class Start extends Phaser.Scene {
     addTilesets(map) {
         const tilesetConfigs = [
             ['room_floor_tileset', 'room_builder_walls_image'],
-            ['room_wall_tileset', 'room_builder_walls_image'],
-            ['office_tileset_blue', 'pixel_office_assets'],
-            ['ice_creem', 'ice_creem_image'],
             ['ice_creem_floor', 'ice_creem_floor_image'],
-            ['hospital', 'hospital_image'],
             ['characters_list', 'characters_list_image']
         ];
 
@@ -294,12 +289,13 @@ export class Start extends Phaser.Scene {
     }
 
     getImageKeyFromGid(gid) {
-        const LIBRARY_FIRST_GID = 2601;
-        const LIBRARY_LAST_GID = 2676;
+        console.log(`Getting image key for GID: ${gid}`);
+        const LIBRARY_FIRST_GID = 0;
+        const LIBRARY_LAST_GID = 100;
         
         if (gid >= LIBRARY_FIRST_GID && gid < LIBRARY_LAST_GID) {
             const tileIndex = gid - LIBRARY_FIRST_GID + 1;
-            return `desk_${tileIndex}`;
+            return `desk_1`;
         }
         
         return null;
