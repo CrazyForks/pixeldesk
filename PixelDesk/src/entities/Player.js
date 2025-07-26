@@ -4,6 +4,7 @@ export class Player extends Phaser.GameObjects.Container {
         
         this.spriteKey = spriteKey;
         this.currentDirection = 'down';
+        this.speed = 200;
         
         // 创建身体和头部精灵
         this.bodySprite = scene.add.image(0, 48, this.spriteKey);
@@ -59,6 +60,34 @@ export class Player extends Phaser.GameObjects.Container {
         if (velocityX !== 0 || velocityY !== 0) {
             this.setDirectionFrame(direction);
         }
+    }
+    
+    // 新增：处理玩家移动逻辑
+    handleMovement(cursors, wasdKeys) {
+        let velocityX = 0;
+        let velocityY = 0;
+        let direction = this.currentDirection; // 保持当前方向
+
+        // 检查水平移动
+        if (cursors.left.isDown || wasdKeys.A.isDown) {
+            velocityX = -this.speed;
+            direction = 'left';
+        } else if (cursors.right.isDown || wasdKeys.D.isDown) {
+            velocityX = this.speed;
+            direction = 'right';
+        }
+
+        // 检查垂直移动
+        if (cursors.up.isDown || wasdKeys.W.isDown) {
+            velocityY = -this.speed;
+            direction = 'up';
+        } else if (cursors.down.isDown || wasdKeys.S.isDown) {
+            velocityY = this.speed;
+            direction = 'down';
+        }
+
+        // 设置速度和方向
+        this.move(velocityX, velocityY, direction);
     }
     
     destroy() {

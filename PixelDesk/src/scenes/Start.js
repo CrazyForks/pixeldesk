@@ -71,34 +71,12 @@ export class Start extends Phaser.Scene {
         console.log('Player created at:', this.player.x, this.player.y);
     }
 
+    // 简化玩家移动处理逻辑
     handlePlayerMovement() {
         if (!this.player || !this.player.body) return;
-
-        const speed = 200;
-        let velocityX = 0;
-        let velocityY = 0;
-        let direction = this.player.currentDirection; // 保持当前方向
-
-        // 检查水平移动
-        if (this.cursors.left.isDown || this.wasdKeys.A.isDown) {
-            velocityX = -speed;
-            direction = 'left';
-        } else if (this.cursors.right.isDown || this.wasdKeys.D.isDown) {
-            velocityX = speed;
-            direction = 'right';
-        }
-
-        // 检查垂直移动
-        if (this.cursors.up.isDown || this.wasdKeys.W.isDown) {
-            velocityY = -speed;
-            direction = 'up';
-        } else if (this.cursors.down.isDown || this.wasdKeys.S.isDown) {
-            velocityY = speed;
-            direction = 'down';
-        }
-
-        // 设置速度和方向
-        this.player.move(velocityX, velocityY, direction);
+        
+        // 将移动处理委托给Player类
+        this.player.handleMovement(this.cursors, this.wasdKeys);
     }
 
     // ===== 工位事件处理 =====
