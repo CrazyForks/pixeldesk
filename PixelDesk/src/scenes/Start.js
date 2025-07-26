@@ -143,11 +143,9 @@ export class Start extends Phaser.Scene {
 
     loadTilesetImages() {
         const tilesetAssets = {
-            'room_builder_walls_image': 'assets/moderninteriors-win/1_Interiors/48x48/Room_Builder_subfiles_48x48/Room_Builder_Walls_48x48.png',
-            'pixel_office_assets': 'assets/PixelOffice/PixelOfficeAssets.png',
-            'ice_creem_image': 'assets/moderninteriors-win/6_Home_Designs/Ice-Cream_Shop_Designs/48x48/Ice_Cream_Shop_Design_layer_2_48x48.png',
-            'ice_creem_floor_image': 'assets/moderninteriors-win/6_Home_Designs/Ice-Cream_Shop_Designs/48x48/Ice_Cream_Shop_Design_layer_1_48x48.png',
-            'characters_list_image': 'assets/moderninteriors-win/2_Characters/Old/Single_Characters_Legacy/48x48/Adam_idle_48x48.png'
+            'room_builder_walls_image': 'assets/floor/Room_Builder_Walls_48x48.png',
+            'ice_creem_floor_image': 'assets/floor/Ice_Cream_Shop_Design_layer_1_48x48.png',
+            'characters_list_image': 'assets/player/me.png'
         };
 
         Object.entries(tilesetAssets).forEach(([key, path]) => {
@@ -157,13 +155,11 @@ export class Start extends Phaser.Scene {
 
     loadLibraryImages() {
         // 默认桌子图像
-        this.load.image("desk_image", "assets/desk/Classroom_and_Library_Singles_48x48_10.png");
-        
-        // 加载完整的图像集
-        for (let i = 1; i <= 100; i++) {
-            const path = `assets/desk/Classroom_and_Library_Singles_48x48_${i}.png`;
-            this.load.image(`desk_${i}`, path);
-        }
+        this.load.image("desk_image", "assets/desk/desk_long_right.png");
+        this.load.image("desk_long_right", "assets/desk/desk_long_right.png");
+        this.load.image("desk_long_left", "assets/desk/desk_long_left.png");
+        this.load.image("desk_short_right", "assets/desk/desk_short_right.png");
+        this.load.image("desk_short_left", "assets/desk/desk_short_left.png");
     }
 
     // ===== 地图创建方法 =====
@@ -186,7 +182,8 @@ export class Start extends Phaser.Scene {
         const tilesetConfigs = [
             ['room_floor_tileset', 'room_builder_walls_image'],
             ['ice_creem_floor', 'ice_creem_floor_image'],
-            ['characters_list', 'characters_list_image']
+            ['characters_list', 'characters_list_image'],
+            ['library_tileset', 'library_tileset_image'],
         ];
 
         return tilesetConfigs.map(([tilesetName, imageKey]) => 
@@ -203,7 +200,7 @@ export class Start extends Phaser.Scene {
             return;
         }
 
-        console.log(`Found ${layerName} with ${objectLayer.objects.length} objects`);
+        console.log(`Found ${layerName} with ${objectLayer.objects.length} objects`, objectLayer);
         
         // 创建桌子碰撞组
         this.deskColliders = this.physics.add.staticGroup();
@@ -212,7 +209,7 @@ export class Start extends Phaser.Scene {
     }
 
     renderObject(obj, index) {
-        console.log(`Object ${index}:`, obj);
+        console.log(`Object ${index}:`, obj.properties);
         
         const adjustedY = obj.y - obj.height;
         let sprite = null;
@@ -258,10 +255,10 @@ export class Start extends Phaser.Scene {
     }
 
     renderTilesetObject(obj, adjustedY) {
-        const imageKey = this.getImageKeyFromGid(obj.gid);
+        const imageKey = obj.name || 'desk_image';
         if (!imageKey) return null;
 
-        console.log(`Rendering tileset object: ${imageKey} at (${obj.x}, ${adjustedY})`);
+        console.log(`Rendering tileset object: `, obj);
         
         const sprite = this.add.image(obj.x, adjustedY, imageKey);
         this.configureSprite(sprite, obj);
@@ -286,19 +283,6 @@ export class Start extends Phaser.Scene {
     // ===== 辅助方法 =====
     isDeskObject(obj) {
         return obj.name === 'desk' || obj.type === 'desk';
-    }
-
-    getImageKeyFromGid(gid) {
-        console.log(`Getting image key for GID: ${gid}`);
-        const LIBRARY_FIRST_GID = 0;
-        const LIBRARY_LAST_GID = 100;
-        
-        if (gid >= LIBRARY_FIRST_GID && gid < LIBRARY_LAST_GID) {
-            const tileIndex = gid - LIBRARY_FIRST_GID + 1;
-            return `desk_1`;
-        }
-        
-        return null;
     }
 
     addDebugBounds(obj, adjustedY) {
@@ -384,4 +368,5 @@ export class Start extends Phaser.Scene {
         }
         super.shutdown();
     }
+
 }

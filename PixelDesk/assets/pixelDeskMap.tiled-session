@@ -102,6 +102,7 @@
     "openFiles": [
     ],
     "project": "pixelDeskMap.tiled-project",
+    "property.type": "string",
     "recentFiles": [
         "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx"
     ],
