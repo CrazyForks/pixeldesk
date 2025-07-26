@@ -71,7 +71,7 @@ export class Start extends Phaser.Scene {
         const headSprite = this.add.image(0, 0, 'characters_list_image');
         
         // 设置纹理区域（从tileset中提取正确的帧）
-        bodySprite.setFrame(4); // user_body对应的帧
+        bodySprite.setFrame(56); // user_body对应的帧
         headSprite.setFrame(0);  // user_head对应的帧
         
         this.player.add([headSprite, bodySprite]);
@@ -79,7 +79,7 @@ export class Start extends Phaser.Scene {
         // 设置玩家物理属性
         this.physics.world.enable(this.player);
         this.player.body.setSize(32, 80); // 设置碰撞盒大小
-        this.player.body.setOffset(-16, -8); // 调整碰撞盒位置
+        this.player.body.setOffset(-16, -32); // 调整碰撞盒位置
         
         // 保存引用以便后续更新帧
         this.player.bodySprite = bodySprite;
@@ -99,20 +99,20 @@ export class Start extends Phaser.Scene {
         switch (direction) {
             case 'up':
                 this.player.headSprite.setFrame(1);
-                this.player.bodySprite.setFrame(5);
+                this.player.bodySprite.setFrame(57);
                 break;
             case 'left':
                 this.player.headSprite.setFrame(2);
-                this.player.bodySprite.setFrame(6);
+                this.player.bodySprite.setFrame(58);
                 break;
             case 'down': 
                 this.player.headSprite.setFrame(3);
-                this.player.bodySprite.setFrame(7);
+                this.player.bodySprite.setFrame(59);
                 
                 break;
             case 'right':
                 this.player.headSprite.setFrame(0);
-                this.player.bodySprite.setFrame(4);
+                this.player.bodySprite.setFrame(56);
                 break;
         }
     }
