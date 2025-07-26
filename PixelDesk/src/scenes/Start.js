@@ -24,7 +24,7 @@ export class Start extends Phaser.Scene {
         this.setupWorkstationEvents();
 
         const map = this.createTilemap();
-        this.createTilesetLayers(map);
+        this.mapLayers = this.createTilesetLayers(map);
         this.renderObjectLayer(map, 'desk_objs');
         
         // 创建玩家
@@ -67,6 +67,33 @@ export class Start extends Phaser.Scene {
         // 创建玩家实例
         this.player = new Player(this, userBody.x, userBody.y - userBody.height);
         this.add.existing(this.player);
+        
+        // 确保在玩家创建后设置与地图图层的碰撞
+        this.time.delayedCall(100, () => {
+            const officeLayer = this.mapLayers?.office_1;
+            if (officeLayer) {
+                this.physics.add.collider(this.player, officeLayer);
+                officeLayer?.setCollisionByProperty({ solid: true });
+            }
+            
+            // 添加玩家碰撞边界调试显示
+            if (this.player.body) {
+                const debugGraphics = this.add.graphics();
+                debugGraphics.lineStyle(2, 0x00ff00, 1);
+                debugGraphics.strokeRect(
+                    this.player.body.x, 
+                    this.player.body.y, 
+                    this.player.body.width, 
+                    this.player.body.height
+                );
+                console.log('Player collision bounds:', {
+                    x: this.player.body.x,
+                    y: this.player.body.y,
+                    width: this.player.body.width,
+                    height: this.player.body.height
+                });
+            }
+        });
         
         console.log('Player created at:', this.player.x, this.player.y);
     }
@@ -129,6 +156,9 @@ export class Start extends Phaser.Scene {
         this.load.image("desk_long_left", "assets/desk/desk_long_left.png");
         this.load.image("desk_short_right", "assets/desk/desk_short_right.png");
         this.load.image("desk_short_left", "assets/desk/desk_short_left.png");
+        this.load.image("single_desk", "assets/desk/single_desk.png");
+        this.load.image("library_bookcase_normal", "assets/desk/library_bookcase_normal.png");
+        this.load.image("library_bookcase_tall", "assets/desk/library_bookcase_tall.png");
     }
 
     // ===== 地图创建方法 =====
@@ -142,9 +172,21 @@ export class Start extends Phaser.Scene {
         
         // 创建图层
         const layerNames = ['bg', 'office_1', 'office_1_desk'];
+        const layers = {};
+        
         layerNames.forEach(layerName => {
-            map.createLayer(layerName, tilesets);
+            layers[layerName] = map.createLayer(layerName, tilesets);
         });
+        
+        // 为office_1图层添加碰撞效果
+        if (layers.office_1) {
+            // 如果玩家已创建，设置玩家与该图层的碰撞
+            if (this.player) {
+                this.physics.add.collider(this.player, layers.office_1);
+            }
+        }
+        
+        return layers;
     }
 
     addTilesets(map) {
@@ -198,7 +240,7 @@ export class Start extends Phaser.Scene {
         }
         
         // 添加调试边界
-        this.addDebugBounds(obj, adjustedY);
+        // this.addDebugBounds(obj, adjustedY);
     }
 
     addDeskCollision(sprite, obj) {
@@ -282,6 +324,9 @@ export class Start extends Phaser.Scene {
             this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
             console.log(`Map size (fallback): ${map.widthInPixels}x${map.heightInPixels}`);
         }
+        
+        // 设置相机缩放，让地图看起来更小
+        this.cameras.main.setZoom(0.5); // 50% 缩放，你可以根据需要调整这个值
         
         // 让摄像机跟随玩家
         if (this.player) {

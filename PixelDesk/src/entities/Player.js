@@ -18,8 +18,9 @@ export class Player extends Phaser.GameObjects.Container {
 
         // 启用物理特性
         scene.physics.world.enable(this);
-        this.body.setSize(32, 80);
-        this.body.setOffset(-16, -32);
+        // 修改碰撞体大小和偏移量，使其与玩家精灵重叠
+        this.body.setSize(40, 80);
+        this.body.setOffset(0, 0);
         
         // 设置默认帧
         // this.setDirectionFrame('down');

@@ -95,14 +95,14 @@
         }
     },
     "last.exportedFilePath": "/Users/jiangyilong/project/PixelDesk/PixelDesk/assets",
-    "last.imagePath": "/Users/jiangyilong/project/PixelDesk/PixelDesk/assets/player",
+    "last.imagePath": "/Users/jiangyilong/project/PixelDesk/PixelDesk/assets/desk",
     "map.fixedSize": false,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
     "openFiles": [
     ],
     "project": "pixelDeskMap.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
         "/Users/jiangyilong/project/Game/PixelTest/PixelTest/assets/foxyLayer.tmx"
     ],
