@@ -187,6 +187,14 @@ export class Start extends Phaser.Scene {
             layers[layerName] = map.createLayer(layerName, tilesets);
         });
         
+        // 启用渲染优化 - 只渲染屏幕附近的瓦片
+        if (layers.bg) {
+            layers.bg.setCullPadding(2, 2);
+        }
+        if (layers.office_1) {
+            layers.office_1.setCullPadding(2, 2);
+        }
+        
         // 为office_1图层添加碰撞效果
         if (layers.office_1) {
             // 如果玩家已创建，设置玩家与该图层的碰撞
@@ -355,6 +363,9 @@ export class Start extends Phaser.Scene {
             this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
             console.log(`Map size (fallback): ${map.widthInPixels}x${map.heightInPixels}`);
         }
+        
+        // 启用相机渲染优化 - 限制渲染范围
+        this.cameras.main.useBounds = true;
         
         // 从本地存储获取缩放值，如果没有则使用默认值0.5
         const savedZoom = localStorage.getItem('cameraZoom');
