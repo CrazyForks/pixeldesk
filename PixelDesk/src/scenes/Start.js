@@ -411,6 +411,17 @@ export class Start extends Phaser.Scene {
             'S': Phaser.Input.Keyboard.KeyCodes.S,
             'D': Phaser.Input.Keyboard.KeyCodes.D
         });
+        
+        // 添加鼠标滚轮事件监听，用于缩放控制
+        this.input.on('wheel', (pointer, currentlyOver, deltaX, deltaY, deltaZ) => {
+            // 检查是否按下了Ctrl键
+            if (pointer.event.ctrlKey) {
+                // 根据滚轮方向调整缩放值
+                // 向上滚动缩小，向下滚动放大
+                const zoomDelta = deltaY > 0 ? -0.1 : 0.1;
+                this.adjustZoom(zoomDelta);
+            }
+        });
     }
 
     // ===== 工位管理便捷方法 =====
