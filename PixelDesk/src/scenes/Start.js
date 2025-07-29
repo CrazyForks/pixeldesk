@@ -22,6 +22,7 @@ export class Start extends Phaser.Scene {
 
     create() {
         this.scene.launch('TextUIScene');
+        this.scene.bringToTop('TextUIScene');
 
 
         // 游戏逻辑

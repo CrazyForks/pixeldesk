@@ -2,12 +2,12 @@ import { Start } from './scenes/Start.js';
 import { TextUIScene } from './scenes/TextUIScene.js';
 
 const config = {
-    type: Phaser.AUTO,
+    type: Phaser.CANVAS,
     title: 'Overlord Rising',
     description: '',
     parent: 'game-container',
-    width: 2280,
-    height: 2920,
+    width: 1280,
+    height: 720,
     backgroundColor: '#000000',
     pixelArt: true,
     scene: [
