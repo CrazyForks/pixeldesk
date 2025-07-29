@@ -12,7 +12,6 @@ export class Start extends Phaser.Scene {
         this.cursors = null;
         this.wasdKeys = null;
         this.deskColliders = null;
-        
     }
 
     preload() {
@@ -22,6 +21,22 @@ export class Start extends Phaser.Scene {
     }
 
     create() {
+        this.scene.launch('TextUIScene');
+
+
+        // 游戏逻辑
+        this.userData = {
+            username: 'Player',
+            level: 1,
+            hp: 80,
+            maxHp: 100,
+            gold: 150
+        };
+        
+        // 发送初始数据到UI
+        this.events.emit('updateUserData', this.userData);
+
+        
         // 初始化工位管理器
         this.workstationManager = new WorkstationManager(this);
         // 初始化洗手间管理器
@@ -90,16 +105,16 @@ export class Start extends Phaser.Scene {
                     this.player.body.width, 
                     this.player.body.height
                 );
-                console.log('Player collision bounds:', {
-                    x: this.player.body.x,
-                    y: this.player.body.y,
-                    width: this.player.body.width,
-                    height: this.player.body.height
-                });
+                // console.log('Player collision bounds:', {
+                //     x: this.player.body.x,
+                //     y: this.player.body.y,
+                //     width: this.player.body.width,
+                //     height: this.player.body.height
+                // });
             }
         });
         
-        console.log('Player created at:', this.player.x, this.player.y);
+        // console.log('Player created at:', this.player.x, this.player.y);
     }
 
     // 简化玩家移动处理逻辑
@@ -114,17 +129,17 @@ export class Start extends Phaser.Scene {
     setupWorkstationEvents() {
         // 监听工位相关事件
         this.events.on('workstation-clicked', (data) => {
-            console.log('Workstation clicked event:', data);
+            // console.log('Workstation clicked event:', data);
             // 在这里添加自定义的点击处理逻辑
         });
 
         this.events.on('user-bound', (data) => {
-            console.log('User bound event:', data);
+            // console.log('User bound event:', data);
             // 在这里添加用户绑定后的处理逻辑
         });
 
         this.events.on('user-unbound', (data) => {
-            console.log('User unbound event:', data);
+            // console.log('User unbound event:', data);
             // 在这里添加用户解绑后的处理逻辑
         });
     }
@@ -166,7 +181,7 @@ export class Start extends Phaser.Scene {
 
         this.load.image("Shadowless_washhand", "assets/bathroom/Shadowless_washhand.png");
         this.load.image("Bathroom_matong", "assets/bathroom/Bathroom_matong.png");
-        this.load.image("Shadowless_glass_2", "assets/bathroom/Shadowless_glass_2.png");
+        this.load.image("Shadowless_glass_2", "assets/bathroom/Shadowless_glass_2.webp");
         this.load.image("Shadowless_glass", "assets/bathroom/Shadowless_glass.png");
     }
 
@@ -180,7 +195,8 @@ export class Start extends Phaser.Scene {
         const tilesets = this.addTilesets(map);
         
         // 创建图层
-        const layerNames = ['bg', 'office_1'];
+        const layerNames = ['office_1'];
+        // const layerNames = ['bg', 'office_1'];
         const layers = {};
         
         layerNames.forEach(layerName => {
@@ -235,9 +251,7 @@ export class Start extends Phaser.Scene {
         objectLayer.objects.forEach((obj, index) => this.renderObject(obj, index));
     }
 
-    renderObject(obj, index) {
-        console.log(`Object ${index}:`, obj.properties);
-        
+    renderObject(obj, index) {  
         const adjustedY = obj.y - obj.height;
         let sprite = null;
         
@@ -284,17 +298,13 @@ export class Start extends Phaser.Scene {
     renderTilesetObject(obj, adjustedY) {
         const imageKey = obj.name || 'desk_image';
         if (!imageKey) return null;
-
-        console.log(`Rendering tileset object: `, obj);
-        
+ 
         const sprite = this.add.image(obj.x, adjustedY, imageKey);
         this.configureSprite(sprite, obj);
         return sprite;
     }
 
     renderGeometricObject(obj, adjustedY) {
-        console.log(`Rendering geometric object at (${obj.x}, ${adjustedY})`);
-        
         const sprite = this.add.image(obj.x, adjustedY, 'desk_image');
         this.configureSprite(sprite, obj);
         return sprite;

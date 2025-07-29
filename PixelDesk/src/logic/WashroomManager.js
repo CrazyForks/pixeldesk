@@ -53,8 +53,6 @@ export class WashroomManager {
     }
     
     renderWashroomObject(obj, index) {
-        console.log(`Washroom object ${index}:`, obj.properties);
-        
         const adjustedY = obj.y - obj.height;
         let sprite = null;
         
@@ -75,16 +73,12 @@ export class WashroomManager {
         const imageKey = obj.name || 'Shadowless';
         if (!imageKey) return null;
 
-        console.log(`Rendering washroom tileset object: `, obj);
-        
         const sprite = this.scene.add.image(obj.x, adjustedY, imageKey);
         this.configureSprite(sprite, obj);
         return sprite;
     }
 
     renderGeometricObject(obj, adjustedY) {
-        console.log(`Rendering washroom geometric object at (${obj.x}, ${adjustedY})`);
-        
         const sprite = this.scene.add.image(obj.x, adjustedY, 'Shadowless');
         this.configureSprite(sprite, obj);
         return sprite;

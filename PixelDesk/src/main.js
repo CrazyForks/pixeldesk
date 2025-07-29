@@ -1,4 +1,5 @@
 import { Start } from './scenes/Start.js';
+import { TextUIScene } from './scenes/TextUIScene.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -10,7 +11,8 @@ const config = {
     backgroundColor: '#000000',
     pixelArt: true,
     scene: [
-        Start
+        Start,
+        TextUIScene
     ],
     scale: {
         mode: Phaser.Scale.ENVELOP,

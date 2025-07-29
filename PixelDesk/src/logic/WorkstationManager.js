@@ -29,7 +29,7 @@ export class WorkstationManager {
         this.workstations.set(tiledObject.id, workstation);
         this.setupInteraction(workstation);
         
-        console.log(`Created workstation with ID: ${tiledObject.id}`, workstation);
+        // console.log(`Created workstation with ID: ${tiledObject.id}`, workstation);
         return workstation;
     }
 
@@ -134,7 +134,7 @@ export class WorkstationManager {
             workstation.sprite.setTint(this.config.occupiedTint);
         }
 
-        console.log(`Successfully bound user ${userId} to workstation ${workstationId}`);
+        // console.log(`Successfully bound user ${userId} to workstation ${workstationId}`);
         
         // 触发事件
         this.scene.events.emit('user-bound', {
