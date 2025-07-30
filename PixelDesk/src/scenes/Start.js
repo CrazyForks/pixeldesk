@@ -24,7 +24,6 @@ export class Start extends Phaser.Scene {
         this.scene.launch('TextUIScene');
         this.scene.bringToTop('TextUIScene');
 
-
         // 游戏逻辑
         this.userData = {
             username: 'Player',
@@ -37,7 +36,6 @@ export class Start extends Phaser.Scene {
         // 发送初始数据到UI
         this.events.emit('updateUserData', this.userData);
 
-        
         // 初始化工位管理器
         this.workstationManager = new WorkstationManager(this);
         // 初始化洗手间管理器
@@ -378,12 +376,12 @@ export class Start extends Phaser.Scene {
         // 启用相机渲染优化 - 限制渲染范围
         this.cameras.main.useBounds = true;
         
-        // 从本地存储获取缩放值，如果没有则使用默认值0.5
+        // 从本地存储获取缩放值，如果没有则使用默认值1（而不是0.5）
         const savedZoom = localStorage.getItem('cameraZoom');
-        const zoomValue = savedZoom ? parseFloat(savedZoom) : 0.5;
+        const zoomValue = savedZoom ? parseFloat(savedZoom) : 1;
         
         // 设置相机缩放
-        this.cameras.main.setZoom(zoomValue);
+        this.cameras.main.setZoom(0.15);
         
         // 让摄像机跟随玩家
         if (this.player) {
@@ -406,8 +404,8 @@ export class Start extends Phaser.Scene {
         // 计算新缩放值
         let newZoom = currentZoom + delta;
         
-        // 限制缩放范围在0.2到2之间
-        newZoom = Phaser.Math.Clamp(newZoom, 0.2, 2);
+        // 限制缩放范围在0.1到2之间
+        newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
         
         // 使用动画效果调整缩放
         this.tweens.add({

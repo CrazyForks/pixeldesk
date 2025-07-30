@@ -6,8 +6,8 @@ const config = {
     title: 'Overlord Rising',
     description: '',
     parent: 'game-container',
-    width: 1280,
-    height: 720,
+    width: 780,
+    height: 520,
     backgroundColor: '#000000',
     pixelArt: true,
     scene: [
@@ -15,7 +15,7 @@ const config = {
         TextUIScene
     ],
     scale: {
-        mode: Phaser.Scale.ENVELOP,
+        mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
     physics: {
@@ -28,4 +28,3 @@ const config = {
 }
 
 new Phaser.Game(config);
-            

@@ -4,14 +4,7 @@ export class TextUIScene extends Phaser.Scene {
     }
     
     create() {
-        // 1. 分数文本 (scoreText)
-        this.scoreText = this.add.text(20, 20, 'Score: 10000', { 
-            fontSize: '24px', // 在1280x720画布上，这是清晰的字体大小
-            color:'#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 4,
-        });
-        this.scoreText.setScrollFactor(0).setDepth(1000);
+      
 
         // 2. 用户信息栏 (userInfo)
         const infoBarHeight = 40;
