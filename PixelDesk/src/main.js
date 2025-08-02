@@ -6,8 +6,8 @@ const config = {
     title: 'Overlord Rising',
     description: '',
     parent: 'game-container',
-    width: 780,
-    height: 520,
+    width: 1280,
+    height: 720,
     backgroundColor: '#000000',
     pixelArt: true,
     scene: [
@@ -22,7 +22,7 @@ const config = {
         default: "arcade",
         arcade: {
             gravity: { y: 0 }, // 顶视角游戏不需要重力
-            debug: false // 设为 true 可以看到碰撞盒
+            debug: true // 设为 true 可以看到碰撞盒
         }
     }
 }

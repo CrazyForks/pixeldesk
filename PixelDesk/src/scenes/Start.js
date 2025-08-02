@@ -56,6 +56,8 @@ export class Start extends Phaser.Scene {
         // 设置输入
         this.setupInput();
         
+        // 设置相机
+       
         this.setupCamera(map);
         
         // 创建完成后的初始化
@@ -203,20 +205,16 @@ export class Start extends Phaser.Scene {
         });
         
         // 启用渲染优化 - 只渲染屏幕附近的瓦片
-        if (layers.bg) {
-            layers.bg.setCullPadding(2, 2);
-        }
         if (layers.office_1) {
-            layers.office_1.setCullPadding(2, 2);
-        }
-        
-        // 为office_1图层添加碰撞效果
-        if (layers.office_1) {
+            // 修改渲染填充为1，减少不必要的渲染
+            layers.office_1.setCullPadding(1, 1);
+
             // 如果玩家已创建，设置玩家与该图层的碰撞
             if (this.player) {
                 this.physics.add.collider(this.player, layers.office_1);
             }
         }
+        
         
         return layers;
     }
@@ -381,16 +379,84 @@ export class Start extends Phaser.Scene {
         const zoomValue = savedZoom ? parseFloat(savedZoom) : 1;
         
         // 设置相机缩放
-        this.cameras.main.setZoom(0.15);
+        this.cameras.main.setZoom(zoomValue);
         
-        // 让摄像机跟随玩家
+        // 让摄像机跟随玩家，但设置死区，使玩家可以在一定范围内自由移动
         if (this.player) {
             this.cameras.main.startFollow(this.player);
-            this.cameras.main.setLerp(0.1, 0.1); // 平滑跟随
+            // 设置较小的lerp值，使相机跟随更平滑
+            this.cameras.main.setLerp(0.05, 0.05);
+            // 设置死区，允许玩家在屏幕内移动
+            
+            const zoom = this.cameras.main.zoom;
+            const deadzoneWidth = this.game.config.width  ;
+            const deadzoneHeight = this.game.config.height ;
+            const adjustedWidth = ( deadzoneWidth - 200 ) / zoom ;
+            const adjustedHeight = ( deadzoneHeight - 200 ) / zoom;
+            this.cameras.main.setDeadzone(adjustedWidth, adjustedHeight);
+          
+            console.log('deadzoneWidth', adjustedWidth,adjustedHeight)
+            // 添加死区调试可视化
+            // this.createDeadzoneDebug(deadzoneWidth, deadzoneHeight);
+        } else {
+            // 如果玩家尚未创建，延迟设置相机跟随
+            this.time.delayedCall(100, () => {
+                if (this.player) {
+                    this.cameras.main.startFollow(this.player);
+                    // 设置较小的lerp值，使相机跟随更平滑
+                    this.cameras.main.setLerp(0.05, 0.05);
+                     // 设置死区，允许玩家在屏幕内移动
+                    // 死区大小设置为屏幕宽度的1/3和高度的1/3
+                    const deadzoneWidth = this.game.config.width  ;
+                    const deadzoneHeight = this.game.config.height  ;
+                    this.cameras.main.setDeadzone(deadzoneWidth, deadzoneHeight);
+                    
+                    // 添加死区调试可视化
+                    this.createDeadzoneDebug(deadzoneWidth, deadzoneHeight);
+                }
+            });
         }
         
         // 创建缩放控制按钮
         this.createZoomControls();
+    }
+
+    createDeadzoneDebug(deadzoneWidth, deadzoneHeight) {
+        // 创建一个图形对象来可视化死区
+        if (this.deadzoneDebug) {
+            this.deadzoneDebug.destroy();
+        }
+        
+        this.deadzoneDebug = this.add.graphics();
+        this.deadzoneDebug.setScrollFactor(0); // 固定在屏幕上，不随相机滚动
+        this.deadzoneDebug.setDepth(999); // 确保在最上层
+        
+        // 考虑当前相机zoom值来正确绘制死区
+        const zoom = this.cameras.main.zoom;
+        const adjustedWidth = deadzoneWidth / zoom;
+        const adjustedHeight = deadzoneHeight / zoom;
+        const offsetX = (this.game.config.width - adjustedWidth) / 2;
+        const offsetY = (this.game.config.height - adjustedHeight) / 2;
+        
+        // 绘制死区边界框（红色半透明）
+        this.deadzoneDebug.fillStyle(0xff0000, 0.3);
+        this.deadzoneDebug.fillRect(
+            offsetX,
+            offsetY,
+            adjustedWidth,
+            adjustedHeight
+        );
+        
+        // 添加边框
+        this.deadzoneDebug.lineStyle(2, 0xff0000, 0.8);
+        this.deadzoneDebug.strokeRect(
+            offsetX,
+            offsetY,
+            adjustedWidth,
+            adjustedHeight
+        );
+        
+        console.log(`Deadzone debug created: ${adjustedWidth}x${adjustedHeight} at zoom ${zoom}`);
     }
 
     createZoomControls() {

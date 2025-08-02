@@ -6,6 +6,7 @@ export class ZoomControl extends Phaser.GameObjects.Container {
         this.setScrollFactor(0); // 固定在屏幕上，不随摄像机移动
         this.setDepth(1000); // 确保在最上层显示
         
+        // 注释掉按钮创建代码以减少不必要的DOM元素
         // // 创建按钮背景(圆形)
         // this.bg = scene.add.circle(0, 0, 25, 0x000000, 0.7);
         // this.bg.setOrigin(1, 0);
