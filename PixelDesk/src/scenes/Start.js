@@ -88,9 +88,15 @@ export class Start extends Phaser.Scene {
             this.checkExpiredWorkstations(); // 检查过期工位
             
             // 确保玩家移动是启用的
+            console.log('Start.js: 游戏初始化 - 检查玩家移动状态，player对象:', !!this.player);
+            console.log('Start.js: 游戏初始化 - enableMovement属性值:', this.player?.enableMovement);
+            console.log('Start.js: 游戏初始化 - enableMovement方法类型:', typeof this.player?.enableMovement);
             if (this.player && !this.player.enableMovement) {
                 this.player.enableMovement = true;
-                console.log('游戏初始化完成，确保玩家移动已启用');
+                console.log('Start.js: 游戏初始化完成，设置enableMovement属性为true');
+            } else if (this.player && typeof this.player.enableMovement === 'function') {
+                this.player.enableMovement();
+                console.log('Start.js: 游戏初始化完成，调用enableMovement()方法');
             }
         });
 
@@ -128,9 +134,13 @@ export class Start extends Phaser.Scene {
         
         // 确保玩家移动是启用的
         this.time.delayedCall(50, () => {
+            console.log('Start.js: 玩家创建后 - 尝试恢复玩家移动，player对象:', !!this.player);
+            console.log('Start.js: 玩家创建后 - enableMovement方法类型:', typeof this.player?.enableMovement);
             if (this.player && typeof this.player.enableMovement === 'function') {
                 this.player.enableMovement();
-                console.log('玩家创建完成，移动已启用');
+                console.log('Start.js: 玩家创建完成，移动已启用');
+            } else {
+                console.error('Start.js: 玩家创建后 - 无法恢复玩家移动 - player对象或enableMovement方法不存在');
             }
         });
         
@@ -869,9 +879,13 @@ export class Start extends Phaser.Scene {
             if (this.nearbyWorkstation !== null) {
                 this.nearbyWorkstation = null;
                 // 重新启用玩家移动
+                console.log('Start.js: 玩家离开工位区域 - 尝试恢复玩家移动，player对象:', !!this.player);
+                console.log('Start.js: 玩家离开工位区域 - enableMovement方法类型:', typeof this.player?.enableMovement);
                 if (this.player && typeof this.player.enableMovement === 'function') {
                     this.player.enableMovement();
-                    console.log('玩家离开工位区域，重新启用移动');
+                    console.log('Start.js: 玩家离开工位区域，重新启用移动');
+                } else {
+                    console.error('Start.js: 玩家离开工位区域 - 无法恢复玩家移动 - player对象或enableMovement方法不存在');
                 }
             }
         }

@@ -147,7 +147,9 @@ export class Player extends Phaser.GameObjects.Container {
     
     // 禁用玩家移动
     disableMovement() {
+        console.log('Player.disableMovement() 被调用，当前enableMovement值:', this.enableMovement);
         this.enableMovement = false;
+        console.log('Player.disableMovement() 执行完成，新的enableMovement值:', this.enableMovement);
         // 停止当前移动
         if (this.body) {
             this.body.setVelocity(0, 0);
@@ -156,7 +158,9 @@ export class Player extends Phaser.GameObjects.Container {
     
     // 启用玩家移动
     enableMovement() {
+        console.log('Player.enableMovement() 被调用，当前enableMovement值:', this.enableMovement);
         this.enableMovement = true;
+        console.log('Player.enableMovement() 执行完成，新的enableMovement值:', this.enableMovement);
     }
     
     destroy() {

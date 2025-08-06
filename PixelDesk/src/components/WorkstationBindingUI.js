@@ -1,3 +1,5 @@
+import { Player } from '../entities/Player.js';
+
 export class WorkstationBindingUI {
     constructor(scene) {
         this.scene = scene;
@@ -227,13 +229,73 @@ export class WorkstationBindingUI {
                 
                 // 延迟关闭窗口
                 setTimeout(() => {
-                    this.hide();
-                    // 重新启用玩家移动
-                    this.scene.time.delayedCall(50, () => {
-                        if (this.scene.player && typeof this.scene.player.enableMovement === 'function') {
-                            this.scene.player.enableMovement();
+                    // 保存scene引用，防止hide()方法影响
+                    const sceneRef = this.scene;
+                    const playerRef = this.scene?.player;
+                    
+                    // 先尝试立即恢复玩家移动
+                    if (playerRef) {
+                        console.log('WorkstationBindingUI: 确认成功 - 找到player对象，尝试恢复移动');
+                        // 如果enableMovement是属性，直接设置
+                        if (typeof playerRef.enableMovement !== 'function') {
+                            playerRef.enableMovement = true;
+                            console.log('WorkstationBindingUI: 确认成功 - 已设置enableMovement属性为true');
                         }
-                    });
+                        // 如果enableMovement是方法，调用它
+                        else if (typeof playerRef.enableMovement === 'function') {
+                            playerRef.enableMovement();
+                            console.log('WorkstationBindingUI: 确认成功 - 已调用enableMovement方法');
+                        }
+                    }
+                    
+                    this.hide();
+                    
+                    // 使用延迟调用作为确保恢复的备选方案
+                    if (sceneRef) {
+                        sceneRef.time.delayedCall(50, () => {
+                            console.log('WorkstationBindingUI: 确认成功 - 延迟调用尝试恢复玩家移动');
+                            
+                            // 方法1：尝试直接访问scene.player
+                            if (sceneRef.player) {
+                                console.log('WorkstationBindingUI: 确认成功 - 延迟调用找到scene.player');
+                                // 如果enableMovement是属性，直接设置
+                                if (typeof sceneRef.player.enableMovement !== 'function') {
+                                    sceneRef.player.enableMovement = true;
+                                    console.log('WorkstationBindingUI: 确认成功 - 延迟调用已设置enableMovement属性为true');
+                                }
+                                // 如果enableMovement是方法，调用它
+                                else if (typeof sceneRef.player.enableMovement === 'function') {
+                                    sceneRef.player.enableMovement();
+                                    console.log('WorkstationBindingUI: 确认成功 - 延迟调用已调用enableMovement方法');
+                                }
+                            }
+                            // 方法2：尝试通过scene.children.list查找player对象
+                            else if (sceneRef.children && sceneRef.children.list) {
+                                console.log('WorkstationBindingUI: 确认成功 - 延迟调用尝试在children中查找Player对象');
+                                const playerInChildren = sceneRef.children.list.find(child => child instanceof Player);
+                                if (playerInChildren) {
+                                    console.log('WorkstationBindingUI: 确认成功 - 延迟调用在children中找到Player实例');
+                                    // 如果enableMovement是属性，直接设置
+                                    if (typeof playerInChildren.enableMovement !== 'function') {
+                                        playerInChildren.enableMovement = true;
+                                        console.log('WorkstationBindingUI: 确认成功 - 延迟调用已设置children中player的enableMovement属性为true');
+                                    }
+                                    // 如果enableMovement是方法，调用它
+                                    else if (typeof playerInChildren.enableMovement === 'function') {
+                                        playerInChildren.enableMovement();
+                                        console.log('WorkstationBindingUI: 确认成功 - 延迟调用已调用children中player的enableMovement方法');
+                                    }
+                                }
+                            }
+                            
+                            if (!sceneRef.player && (!sceneRef.children || !sceneRef.children.list || !sceneRef.children.list.find(child => child instanceof Player))) {
+                                console.error('WorkstationBindingUI: 确认成功 - 延迟调用无法恢复玩家移动 - player对象不存在');
+                                console.error('WorkstationBindingUI: 确认成功 - 调试信息 - sceneRef:', sceneRef, 'player:', sceneRef?.player);
+                            }
+                        });
+                    } else {
+                        console.error('WorkstationBindingUI: 确认成功 - sceneRef为null，无法恢复玩家移动');
+                    }
                 }, 1500);
             } else {
                 this.showMessage(result.error, 0xff4444);
@@ -245,13 +307,93 @@ export class WorkstationBindingUI {
     }
 
     handleCancel() {
-        this.hide();
-        // 重新启用玩家移动
-        this.scene.time.delayedCall(50, () => {
-            if (this.scene.player && typeof this.scene.player.enableMovement === 'function') {
-                this.scene.player.enableMovement();
+        console.log('WorkstationBindingUI: handleCancel 被调用');
+        console.log('WorkstationBindingUI: 当前scene对象:', !!this.scene);
+        console.log('WorkstationBindingUI: 当前player对象:', !!this.scene?.player);
+        
+        // 保存scene引用，防止hide()方法影响
+        const sceneRef = this.scene;
+        const playerRef = this.scene?.player;
+        
+        // 尝试一个更简单的方法：直接设置enableMovement属性为true
+        if (playerRef) {
+            console.log('WorkstationBindingUI: 找到player对象，尝试直接设置enableMovement属性');
+            // 如果enableMovement是属性，直接设置
+            if (typeof playerRef.enableMovement !== 'function') {
+                playerRef.enableMovement = true;
+                console.log('WorkstationBindingUI: 已设置enableMovement属性为true');
             }
-        });
+            // 如果enableMovement是方法，调用它
+            else if (typeof playerRef.enableMovement === 'function') {
+                playerRef.enableMovement();
+                console.log('WorkstationBindingUI: 已调用enableMovement方法');
+            }
+        }
+        
+        this.hide();
+        
+        // 使用延迟调用作为确保恢复的备选方案
+        if (sceneRef) {
+            // 尝试多个延迟时间来找到合适的时机
+            const delays = [50, 100, 200, 500];
+            
+            delays.forEach(delay => {
+                sceneRef.time.delayedCall(delay, () => {
+                    console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 尝试恢复玩家移动`);
+                    
+                    // 方法1：尝试直接访问scene.player
+                    if (sceneRef.player) {
+                        console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 找到scene.player`);
+                        // 如果enableMovement是属性，直接设置
+                        if (typeof sceneRef.player.enableMovement !== 'function') {
+                            sceneRef.player.enableMovement = true;
+                            console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 已设置enableMovement属性为true`);
+                        }
+                        // 如果enableMovement是方法，调用它
+                        else if (typeof sceneRef.player.enableMovement === 'function') {
+                            sceneRef.player.enableMovement();
+                            console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 已调用enableMovement方法`);
+                        }
+                    }
+                    
+                    // 方法2：尝试通过scene.children.list查找player对象
+                    else if (sceneRef.children && sceneRef.children.list) {
+                        console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 尝试在children中查找Player对象`);
+                        const playerInChildren = sceneRef.children.list.find(child => {
+                            // 检查是否是Player实例
+                            if (child instanceof Player) {
+                                console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 找到Player实例`);
+                                return true;
+                            }
+                            // 检查是否有enableMovement属性或方法
+                            if ('enableMovement' in child) {
+                                console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 找到enableMovement属性的对象`);
+                                return true;
+                            }
+                            return false;
+                        });
+                        
+                        if (playerInChildren) {
+                            console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 在children中找到player对象`);
+                            // 如果enableMovement是属性，直接设置
+                            if (typeof playerInChildren.enableMovement !== 'function') {
+                                playerInChildren.enableMovement = true;
+                                console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 已设置children中player的enableMovement属性为true`);
+                            }
+                            // 如果enableMovement是方法，调用它
+                            else if (typeof playerInChildren.enableMovement === 'function') {
+                                playerInChildren.enableMovement();
+                                console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 已调用children中player的enableMovement方法`);
+                            }
+                        }
+                    }
+                    
+                    console.log(`WorkstationBindingUI: ${delay}ms延迟调用 - 恢复尝试完成`);
+                });
+            });
+        } else {
+            console.error('WorkstationBindingUI: sceneRef为null，无法执行延迟调用');
+        }
     }
 
     showMessage(message, color = 0x4a9eff) {
