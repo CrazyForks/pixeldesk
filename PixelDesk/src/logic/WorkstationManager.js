@@ -27,7 +27,8 @@ export class WorkstationManager {
             isOccupied: false,
             userId: null,
             createdAt: Date.now(),
-            metadata: this.extractMetadata(tiledObject)
+            metadata: this.extractMetadata(tiledObject),
+            starMarker: null // 星星标记
         };
 
         this.workstations.set(tiledObject.id, workstation);
@@ -127,7 +128,7 @@ export class WorkstationManager {
     }
 
     // ===== 用户绑定管理 =====
-    bindUserToWorkstation(workstationId, userId, userInfo = {}) {
+    async bindUserToWorkstation(workstationId, userId, userInfo = {}) {
         const workstation = this.workstations.get(workstationId);
         if (!workstation) {
             console.warn(`Workstation ${workstationId} not found`);
@@ -146,18 +147,37 @@ export class WorkstationManager {
             return { success: false, error: 'User already bound to another workstation' };
         }
 
+        // 计算过期时间（30天后）
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
         // 绑定用户
         workstation.isOccupied = true;
         workstation.userId = userId;
         workstation.userInfo = userInfo;
-        workstation.boundAt = Date.now();
+        workstation.boundAt = now.toISOString();
+        workstation.expiresAt = expiresAt.toISOString();
+        workstation.remainingDays = 30;
+        
         this.userBindings.set(workstationId, userId);
 
         // 更新视觉效果
         if (workstation.sprite) {
             workstation.sprite.setTint(this.config.occupiedTint);
         }
+        
+        // 添加星星标记
+        this.addStarMarker(workstation);
 
+        // 预留后端接口 - 保存绑定信息
+        await this.saveWorkstationBinding(workstationId, {
+            userId,
+            userInfo,
+            boundAt: workstation.boundAt,
+            expiresAt: workstation.expiresAt,
+            pointsCost: 5
+        });
+        
         // console.log(`Successfully bound user ${userId} to workstation ${workstationId}`);
         
         // 触发事件
@@ -196,6 +216,9 @@ export class WorkstationManager {
         if (workstation.sprite) {
             workstation.sprite.clearTint();
         }
+        
+        // 移除星星标记
+        this.removeStarMarker(workstation);
 
         console.log(`Successfully unbound user ${userId} from workstation ${workstationId}`);
         
@@ -358,13 +381,150 @@ export class WorkstationManager {
         });
     }
 
+    // ===== 后端接口预留 =====
+    async saveWorkstationBinding(workstationId, bindingData) {
+        // 预留后端接口 - 保存工位绑定信息
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log('保存工位绑定信息到后端:', bindingData);
+                resolve({ success: true });
+            }, 500);
+        });
+    }
+
+    async updateUserPoints(userId, pointsChange) {
+        // 预留后端接口 - 更新用户积分
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log(`更新用户 ${userId} 积分: ${pointsChange > 0 ? '+' : ''}${pointsChange}`);
+                resolve({ success: true, newPoints: pointsChange });
+            }, 500);
+        });
+    }
+
+    // ===== 日期管理功能 =====
+    checkExpiredWorkstations() {
+        const now = new Date();
+        let expiredCount = 0;
+
+        this.workstations.forEach((workstation, workstationId) => {
+            if (workstation.isOccupied && workstation.expiresAt) {
+                const expiresAt = new Date(workstation.expiresAt);
+                if (now > expiresAt) {
+                    // 工位已过期，自动解绑
+                    this.unbindUserFromWorkstation(workstationId);
+                    expiredCount++;
+                    console.log(`工位 ${workstationId} 已过期，自动解绑用户 ${workstation.userId}`);
+                } else {
+                    // 更新剩余天数
+                    const remainingTime = expiresAt - now;
+                    workstation.remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
+                }
+            }
+        });
+
+        if (expiredCount > 0) {
+            console.log(`清理了 ${expiredCount} 个过期工位`);
+        }
+    }
+
+    getRemainingDays(workstationId) {
+        const workstation = this.workstations.get(workstationId);
+        if (!workstation || !workstation.expiresAt) {
+            return 0;
+        }
+
+        const now = new Date();
+        const expiresAt = new Date(workstation.expiresAt);
+        const remainingTime = expiresAt - now;
+        
+        return Math.max(0, Math.ceil(remainingTime / (24 * 60 * 60 * 1000)));
+    }
+
+    // ===== 工位购买功能 =====
+    async purchaseWorkstation(workstationId, userId, userInfo) {
+        // 检查用户积分是否足够
+        const userPoints = userInfo.points || 0;
+        if (userPoints < 5) {
+            return { success: false, error: '积分不足，需要5积分' };
+        }
+
+        // 扣除积分
+        const pointsResult = await this.updateUserPoints(userId, -5);
+        if (!pointsResult.success) {
+            return { success: false, error: '积分扣除失败' };
+        }
+
+        // 绑定工位
+        const bindResult = await this.bindUserToWorkstation(workstationId, userId, userInfo);
+        if (!bindResult.success) {
+            // 绑定失败，退还积分
+            await this.updateUserPoints(userId, 5);
+            return bindResult;
+        }
+
+        return { 
+            success: true, 
+            workstation: bindResult.workstation,
+            remainingPoints: pointsResult.newPoints - 5
+        };
+    }
+
+    // ===== 星星标记管理 =====
+    addStarMarker(workstation) {
+        if (workstation.starMarker) {
+            return; // 已有星星标记
+        }
+        
+        const starX = workstation.position.x + workstation.size.width / 2;
+        const starY = workstation.position.y - 20;
+        
+        // 创建星星标记
+        const star = this.scene.add.text(
+            starX,
+            starY,
+            '⭐',
+            {
+                fontSize: '24px',
+                fill: '#ffff00'
+            }
+        );
+        star.setOrigin(0.5, 0.5);
+        star.setScrollFactor(0);
+        star.setDepth(1000); // 确保在最上层
+        
+        workstation.starMarker = star;
+    }
+    
+    removeStarMarker(workstation) {
+        if (workstation.starMarker) {
+            workstation.starMarker.destroy();
+            workstation.starMarker = null;
+        }
+    }
+    
     // ===== 清理方法 =====
+    clearAllBindings() {
+        // 清理所有工位绑定
+        console.log('清理所有工位绑定...');
+        const results = this.unbindAllUsers();
+        console.log(`已清理 ${results.length} 个工位绑定`);
+        
+        // 移除所有星星标记
+        this.workstations.forEach(workstation => {
+            this.removeStarMarker(workstation);
+        });
+        
+        console.log('所有工位绑定和星星标记已清理');
+    }
+    
     destroy() {
-        // 清理所有事件监听器
+        // 清理所有事件监听器和星星标记
         this.workstations.forEach(workstation => {
             if (workstation.sprite) {
                 workstation.sprite.removeAllListeners();
             }
+            this.removeStarMarker(workstation);
         });
         
         this.workstations.clear();

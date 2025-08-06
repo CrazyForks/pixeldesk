@@ -1,5 +1,6 @@
 import { Start } from './scenes/Start.js';
 import { TextUIScene } from './scenes/TextUIScene.js';
+import { RegisterScene } from './scenes/RegisterScene.js';
 
 const config = {
     type: Phaser.CANVAS,
@@ -11,6 +12,7 @@ const config = {
     backgroundColor: '#000000',
     pixelArt: true,
     scene: [
+        RegisterScene,
         Start,
         TextUIScene
     ],

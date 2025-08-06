@@ -145,6 +145,20 @@ export class Player extends Phaser.GameObjects.Container {
         localStorage.removeItem('playerState');
     }
     
+    // 禁用玩家移动
+    disableMovement() {
+        this.enableMovement = false;
+        // 停止当前移动
+        if (this.body) {
+            this.body.setVelocity(0, 0);
+        }
+    }
+    
+    // 启用玩家移动
+    enableMovement() {
+        this.enableMovement = true;
+    }
+    
     destroy() {
         if (this.bodySprite) this.bodySprite.destroy();
         if (this.headSprite) this.headSprite.destroy();

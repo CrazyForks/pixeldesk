@@ -2,6 +2,7 @@ import { WorkstationManager } from '../logic/WorkstationManager.js';
 import { Player } from '../entities/Player.js';
 import { WashroomManager } from '../logic/WashroomManager.js';
 import { ZoomControl } from '../components/ZoomControl.js';
+import { WorkstationBindingUI } from '../components/WorkstationBindingUI.js';
 
 export class Start extends Phaser.Scene {
     constructor() {
@@ -12,6 +13,9 @@ export class Start extends Phaser.Scene {
         this.cursors = null;
         this.wasdKeys = null;
         this.deskColliders = null;
+        this.currentUser = null;
+        this.bindingUI = null;
+        this.nearbyWorkstation = null;
     }
 
     preload() {
@@ -24,9 +28,19 @@ export class Start extends Phaser.Scene {
         this.scene.launch('TextUIScene');
         this.scene.bringToTop('TextUIScene');
 
+        // 获取用户数据（从场景参数或本地存储）
+        const sceneData = this.scene.settings.data || {};
+        this.currentUser = sceneData.userData || this.getCurrentUserFromStorage();
+        
+        if (!this.currentUser) {
+            // 如果没有用户数据，跳转到注册场景
+            this.scene.start('RegisterScene');
+            return;
+        }
+
         // 游戏逻辑
         this.userData = {
-            username: 'Player',
+            username: this.currentUser.username,
             level: 1,
             hp: 80,
             maxHp: 100,
@@ -38,7 +52,11 @@ export class Start extends Phaser.Scene {
         this.workstationManager = new WorkstationManager(this);
         // 初始化洗手间管理器
         this.washroomManager = new WashroomManager(this);
+        // 初始化工位绑定UI
+        this.bindingUI = new WorkstationBindingUI(this);
+        
         this.setupWorkstationEvents();
+        this.setupUserEvents();
 
         const map = this.createTilemap();
         this.mapLayers = this.createTilesetLayers(map);
@@ -52,7 +70,7 @@ export class Start extends Phaser.Scene {
          this.renderObjectLayer(map, 'floor');
 
         // 创建玩家
-        // this.createPlayer(map);
+        this.createPlayer(map);
         
         // 设置输入
         this.setupInput();
@@ -62,14 +80,32 @@ export class Start extends Phaser.Scene {
         
         // 创建完成后的初始化
         this.time.delayedCall(100, () => {
+            // 清理所有现有绑定和星星标记
+            this.workstationManager.clearAllBindings();
             this.workstationManager.printStatistics();
-            this.setupTestBindings(); // 示例绑定
- 
+            // 暂时注释掉自动绑定，让用户手动绑定
+            // this.setupTestBindings(); // 示例绑定
+            this.checkExpiredWorkstations(); // 检查过期工位
+            
+            // 确保玩家移动是启用的
+            if (this.player && !this.player.enableMovement) {
+                this.player.enableMovement = true;
+                console.log('游戏初始化完成，确保玩家移动已启用');
+            }
         });
+
+        // 发送用户数据到UI
+        this.sendUserDataToUI();
     }
 
     update() {
         this.handlePlayerMovement();
+        this.checkWorkstationProximity();
+        
+        // 更新绑定UI
+        if (this.bindingUI) {
+            this.bindingUI.update();
+        }
     }
 
     // ===== 玩家相关方法 =====
@@ -86,8 +122,17 @@ export class Start extends Phaser.Scene {
         const userHead = userLayer.objects.find(obj => obj.name === 'user_head');
 
         // 创建玩家实例（位置会从保存状态中恢复），启用移动和状态保存
-        this.player = new Player(this, userBody.x, userBody.y - userBody.height, 'characters_list_image', true, true);
+        const playerSpriteKey = this.currentUser?.character || 'characters_list_image';
+        this.player = new Player(this, userBody.x, userBody.y - userBody.height, playerSpriteKey, true, true);
         this.add.existing(this.player);
+        
+        // 确保玩家移动是启用的
+        this.time.delayedCall(50, () => {
+            if (this.player && typeof this.player.enableMovement === 'function') {
+                this.player.enableMovement();
+                console.log('玩家创建完成，移动已启用');
+            }
+        });
         
         // 确保在玩家创建后设置与地图图层的碰撞
         this.time.delayedCall(100, () => {
@@ -143,6 +188,18 @@ export class Start extends Phaser.Scene {
         this.events.on('user-unbound', (data) => {
             // console.log('User unbound event:', data);
             // 在这里添加用户解绑后的处理逻辑
+            if (this.currentUser && this.currentUser.id === data.userId) {
+                // 更新用户的工位列表
+                if (this.currentUser.workstations) {
+                    this.currentUser.workstations = this.currentUser.workstations.filter(
+                        ws => ws.id !== data.workstationId
+                    );
+                }
+                this.saveCurrentUser();
+                
+                // 更新UI显示工位ID
+                this.sendUserDataToUI();
+            }
         });
     }
 
@@ -704,10 +761,142 @@ export class Start extends Phaser.Scene {
         return { x: characterX, y: characterY, direction: characterDirection };
     }
 
+    // ===== 用户管理方法 =====
+    getCurrentUserFromStorage() {
+        try {
+            const userData = localStorage.getItem('pixelDeskUser');
+            return userData ? JSON.parse(userData) : null;
+        } catch (e) {
+            console.warn('Failed to parse user data from localStorage', e);
+            return null;
+        }
+    }
+
+    setupUserEvents() {
+        // 监听积分更新事件
+        this.events.on('user-points-updated', (data) => {
+            if (this.currentUser && this.currentUser.id === data.userId) {
+                this.currentUser.points = data.points;
+                this.saveCurrentUser();
+                this.sendUserDataToUI();
+            }
+        });
+
+        // 监听工位绑定事件
+        this.events.on('user-bound', (data) => {
+            if (this.currentUser && this.currentUser.id === data.userId) {
+                // 更新用户的工位列表
+                if (!this.currentUser.workstations) {
+                    this.currentUser.workstations = [];
+                }
+                
+                const workstationInfo = {
+                    id: data.workstationId,
+                    position: data.workstation.position,
+                    type: data.workstation.type,
+                    boundAt: data.workstation.boundAt,
+                    expiresAt: data.workstation.expiresAt
+                };
+                
+                this.currentUser.workstations.push(workstationInfo);
+                this.saveCurrentUser();
+                
+                // 更新UI显示工位ID
+                this.sendUserDataToUI();
+            }
+        });
+    }
+
+    saveCurrentUser() {
+        if (this.currentUser) {
+            localStorage.setItem('pixelDeskUser', JSON.stringify(this.currentUser));
+        }
+    }
+
+    sendUserDataToUI() {
+        if (this.currentUser) {
+            // 获取当前用户的工位ID
+            const userWorkstation = this.workstationManager.getWorkstationByUser(this.currentUser.id);
+            const workstationId = userWorkstation ? userWorkstation.id : '';
+            
+            this.events.emit('update-user-data', {
+                username: this.currentUser.username,
+                points: this.currentUser.points,
+                character: this.currentUser.character,
+                workstationId: workstationId
+            });
+        }
+    }
+
+    checkExpiredWorkstations() {
+        if (this.workstationManager) {
+            this.workstationManager.checkExpiredWorkstations();
+        }
+    }
+
+    // ===== 工位交互方法 =====
+    checkWorkstationProximity() {
+        if (!this.player || !this.workstationManager) return;
+
+        const playerX = this.player.x;
+        const playerY = this.player.y;
+        const proximityDistance = 100; // 检测距离
+
+        let nearestWorkstation = null;
+        let nearestDistance = Infinity;
+
+        // 检查所有工位
+        this.workstationManager.getAllWorkstations().forEach(workstation => {
+            const distance = Math.sqrt(
+                Math.pow(playerX - (workstation.position.x + workstation.size.width / 2), 2) +
+                Math.pow(playerY - (workstation.position.y + workstation.size.height / 2), 2)
+            );
+
+            if (distance < proximityDistance && distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestWorkstation = workstation;
+            }
+        });
+
+        // 如果找到了新的附近工位且工位未被占用
+        if (nearestWorkstation && !nearestWorkstation.isOccupied) {
+            if (this.nearbyWorkstation !== nearestWorkstation) {
+                this.nearbyWorkstation = nearestWorkstation;
+                this.showWorkstationBindingPrompt();
+            }
+        } else {
+            // 如果没有附近工位，确保玩家移动是启用的
+            if (this.nearbyWorkstation !== null) {
+                this.nearbyWorkstation = null;
+                // 重新启用玩家移动
+                if (this.player && typeof this.player.enableMovement === 'function') {
+                    this.player.enableMovement();
+                    console.log('玩家离开工位区域，重新启用移动');
+                }
+            }
+        }
+    }
+
+    showWorkstationBindingPrompt() {
+        if (this.nearbyWorkstation && this.currentUser && this.bindingUI) {
+            console.log('显示工位绑定UI');
+            this.bindingUI.show(this.nearbyWorkstation, this.currentUser);
+            // 禁用玩家移动
+            if (this.player && typeof this.player.disableMovement === 'function') {
+                this.player.disableMovement();
+                console.log('玩家移动已禁用');
+            }
+        }
+    }
+
+  
     // ===== 清理方法 =====
     shutdown() {
         if (this.workstationManager) {
             this.workstationManager.destroy();
+        }
+        if (this.bindingUI) {
+            this.bindingUI.hide();
         }
         super.shutdown();
     }
