@@ -7,7 +7,7 @@ export class WorkstationManager {
             occupiedTint: 0x00ff00,    // 已占用工位的颜色
             highlightTint: 0xffff00,   // 高亮颜色
             highlightDuration: 500,    // 高亮持续时间
-            debugBounds: true          // 是否显示调试边界
+            debugBounds: false         // 是否显示调试边界
         };
     }
 
@@ -28,7 +28,6 @@ export class WorkstationManager {
             userId: null,
             createdAt: Date.now(),
             metadata: this.extractMetadata(tiledObject),
-            starMarker: null, // 星星标记
             interactionIcon: null // 交互图标
         };
 
@@ -180,9 +179,6 @@ export class WorkstationManager {
             workstation.sprite.setTint(this.config.occupiedTint);
         }
         
-        // 添加星星标记
-        this.addStarMarker(workstation);
-        
         // 移除交互图标
         this.removeInteractionIcon(workstation);
 
@@ -233,9 +229,6 @@ export class WorkstationManager {
         if (workstation.sprite) {
             workstation.sprite.clearTint();
         }
-        
-        // 移除星星标记
-        this.removeStarMarker(workstation);
         
         // 重新添加交互图标
         this.addInteractionIcon(workstation);
@@ -490,40 +483,7 @@ export class WorkstationManager {
         };
     }
 
-    // ===== 星星标记管理 =====
-    addStarMarker(workstation) {
-        if (workstation.starMarker) {
-            return; // 已有星星标记
-        }
-        
-        const starX = workstation.position.x + workstation.size.width / 2;
-        const starY = workstation.position.y - 20;
-        
-        // 创建星星标记
-        const star = this.scene.add.text(
-            starX,
-            starY,
-            '⭐',
-            {
-                fontSize: '24px',
-                fill: '#ffff00'
-            }
-        );
-        star.setOrigin(0.5, 0.5);
-        star.setScrollFactor(0);
-        star.setDepth(1000); // 确保在最上层
-        
-        workstation.starMarker = star;
-    }
-    
-    removeStarMarker(workstation) {
-        if (workstation.starMarker) {
-            workstation.starMarker.destroy();
-            workstation.starMarker = null;
-        }
-    }
-    
-    // ===== 交互图标管理 =====
+        // ===== 交互图标管理 =====
     addInteractionIcon(workstation) {
         if (workstation.interactionIcon) {
             return; // 已有交互图标
@@ -577,22 +537,20 @@ export class WorkstationManager {
         const results = this.unbindAllUsers();
         console.log(`已清理 ${results.length} 个工位绑定`);
         
-        // 移除所有星星标记和交互图标
+        // 移除所有交互图标
         this.workstations.forEach(workstation => {
-            this.removeStarMarker(workstation);
             this.removeInteractionIcon(workstation);
         });
         
-        console.log('所有工位绑定、星星标记和交互图标已清理');
+        console.log('所有工位绑定和交互图标已清理');
     }
     
     destroy() {
-        // 清理所有事件监听器、星星标记和交互图标
+        // 清理所有事件监听器和交互图标
         this.workstations.forEach(workstation => {
             if (workstation.sprite) {
                 workstation.sprite.removeAllListeners();
             }
-            this.removeStarMarker(workstation);
             this.removeInteractionIcon(workstation);
         });
         

@@ -24,7 +24,7 @@ const config = {
         default: "arcade",
         arcade: {
             gravity: { y: 0 }, // 顶视角游戏不需要重力
-            debug: true // 设为 true 可以看到碰撞盒
+            debug: false // 设为 true 可以看到碰撞盒
         }
     }
 }

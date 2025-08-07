@@ -386,7 +386,7 @@ export class Start extends Phaser.Scene {
             this.addDeskCollision(sprite, obj);
         }
         
-        // 添加调试边界
+        // 添加调试边界（已注释）
         this.addDebugBounds(obj, adjustedY);
     }
 
@@ -394,6 +394,23 @@ export class Start extends Phaser.Scene {
         // 启用sprite的物理特性
         this.physics.world.enable(sprite);
         sprite.body.setImmovable(true);
+        
+        // 根据桌子类型调整碰撞边界
+        const collisionSettings = this.getCollisionSettings(obj);
+        const originalWidth = sprite.body.width;
+        const originalHeight = sprite.body.height;
+        
+        // 计算新的碰撞边界大小
+        const newWidth = originalWidth * collisionSettings.scaleX;
+        const newHeight = originalHeight * collisionSettings.scaleY;
+        
+        // 设置碰撞边界大小（居中）
+        sprite.body.setSize(newWidth, newHeight, true);
+        
+        // 如果需要偏移碰撞边界
+        if (collisionSettings.offsetX !== 0 || collisionSettings.offsetY !== 0) {
+            sprite.body.setOffset(collisionSettings.offsetX, collisionSettings.offsetY);
+        }
         
         // 添加到碰撞组
         this.deskColliders.add(sprite);
@@ -408,6 +425,29 @@ export class Start extends Phaser.Scene {
                     this.physics.add.collider(this.player, sprite);
                 }
             });
+        }
+    }
+    
+    getCollisionSettings(obj) {
+        const objName = obj.name || '';
+        const objType = obj.type || '';
+        
+        // 根据不同的桌子类型返回不同的碰撞设置
+        if (objName.includes('long') || objType.includes('long')) {
+            // 长桌子 - 更小的碰撞边界
+            return { scaleX: 0.4, scaleY: 0.4, offsetX: 0, offsetY: 0 };
+        } else if (objName.includes('single') || objType.includes('single')) {
+            // 单人桌 - 中等碰撞边界
+            return { scaleX: 0.6, scaleY: 0.6, offsetX: 0, offsetY: 0 };
+        } else if (objName.includes('bookcase') || objType.includes('bookcase')) {
+            // 书架 - 更大的碰撞边界
+            return { scaleX: 0.7, scaleY: 0.7, offsetX: 0, offsetY: 0 };
+        } else if (objName.includes('sofa') || objType.includes('sofa')) {
+            // 沙发 - 特殊的碰撞边界
+            return { scaleX: 0.5, scaleY: 0.3, offsetX: 0, offsetY: 0 };
+        } else {
+            // 默认设置
+            return { scaleX: 0.5, scaleY: 0.5, offsetX: 0, offsetY: 0 };
         }
     }
 
