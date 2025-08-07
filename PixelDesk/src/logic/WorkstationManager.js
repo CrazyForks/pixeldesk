@@ -28,7 +28,8 @@ export class WorkstationManager {
             userId: null,
             createdAt: Date.now(),
             metadata: this.extractMetadata(tiledObject),
-            starMarker: null // 星星标记
+            starMarker: null, // 星星标记
+            interactionIcon: null // 交互图标
         };
 
         this.workstations.set(tiledObject.id, workstation);
@@ -76,6 +77,11 @@ export class WorkstationManager {
             workstation.sprite.on('pointerover', () => this.onWorkstationHover(workstation.id));
             workstation.sprite.on('pointerout', () => this.onWorkstationOut(workstation.id));
         }
+        
+        // 为未占用的工位添加交互图标
+        if (!workstation.isOccupied) {
+            this.addInteractionIcon(workstation);
+        }
     }
 
     // ===== 事件处理 =====
@@ -86,6 +92,14 @@ export class WorkstationManager {
             console.log(`User bound: ${this.getUserByWorkstation(workstationId) || 'None'}`);
             
             this.highlightWorkstation(workstationId);
+            
+            // 只有未占用的工位才触发绑定事件
+            if (!workstation.isOccupied) {
+                this.scene.events.emit('workstation-binding-request', {
+                    workstationId,
+                    workstation
+                });
+            }
             
             // 触发自定义事件
             this.scene.events.emit('workstation-clicked', {
@@ -168,6 +182,9 @@ export class WorkstationManager {
         
         // 添加星星标记
         this.addStarMarker(workstation);
+        
+        // 移除交互图标
+        this.removeInteractionIcon(workstation);
 
         // 预留后端接口 - 保存绑定信息
         await this.saveWorkstationBinding(workstationId, {
@@ -219,6 +236,9 @@ export class WorkstationManager {
         
         // 移除星星标记
         this.removeStarMarker(workstation);
+        
+        // 重新添加交互图标
+        this.addInteractionIcon(workstation);
 
         console.log(`Successfully unbound user ${userId} from workstation ${workstationId}`);
         
@@ -503,6 +523,53 @@ export class WorkstationManager {
         }
     }
     
+    // ===== 交互图标管理 =====
+    addInteractionIcon(workstation) {
+        if (workstation.interactionIcon) {
+            return; // 已有交互图标
+        }
+        
+        const iconX = workstation.position.x + workstation.size.width / 2;
+        const iconY = workstation.position.y + workstation.size.height / 2;
+        
+        // 创建交互图标
+        const icon = this.scene.add.text(
+            iconX,
+            iconY,
+            '🔗',
+            {
+                fontSize: '20px',
+                fill: '#ffffff',
+                backgroundColor: '#007bff',
+                padding: { x: 4, y: 2 }
+            }
+        );
+        icon.setOrigin(0.5, 0.5);
+        icon.setScrollFactor(0);
+        icon.setDepth(1001); // 确保在最上层
+        icon.setInteractive();
+        
+        // 添加点击事件
+        icon.on('pointerdown', () => this.onWorkstationClick(workstation.id));
+        icon.on('pointerover', () => {
+            icon.setScale(1.2);
+            this.scene.input.setDefaultCursor('pointer');
+        });
+        icon.on('pointerout', () => {
+            icon.setScale(1);
+            this.scene.input.setDefaultCursor('default');
+        });
+        
+        workstation.interactionIcon = icon;
+    }
+    
+    removeInteractionIcon(workstation) {
+        if (workstation.interactionIcon) {
+            workstation.interactionIcon.destroy();
+            workstation.interactionIcon = null;
+        }
+    }
+    
     // ===== 清理方法 =====
     clearAllBindings() {
         // 清理所有工位绑定
@@ -510,21 +577,23 @@ export class WorkstationManager {
         const results = this.unbindAllUsers();
         console.log(`已清理 ${results.length} 个工位绑定`);
         
-        // 移除所有星星标记
+        // 移除所有星星标记和交互图标
         this.workstations.forEach(workstation => {
             this.removeStarMarker(workstation);
+            this.removeInteractionIcon(workstation);
         });
         
-        console.log('所有工位绑定和星星标记已清理');
+        console.log('所有工位绑定、星星标记和交互图标已清理');
     }
     
     destroy() {
-        // 清理所有事件监听器和星星标记
+        // 清理所有事件监听器、星星标记和交互图标
         this.workstations.forEach(workstation => {
             if (workstation.sprite) {
                 workstation.sprite.removeAllListeners();
             }
             this.removeStarMarker(workstation);
+            this.removeInteractionIcon(workstation);
         });
         
         this.workstations.clear();

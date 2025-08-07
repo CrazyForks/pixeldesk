@@ -15,7 +15,6 @@ export class Start extends Phaser.Scene {
         this.deskColliders = null;
         this.currentUser = null;
         this.bindingUI = null;
-        this.nearbyWorkstation = null;
     }
 
     preload() {
@@ -83,8 +82,8 @@ export class Start extends Phaser.Scene {
             // 清理所有现有绑定和星星标记
             this.workstationManager.clearAllBindings();
             this.workstationManager.printStatistics();
-            // 暂时注释掉自动绑定，让用户手动绑定
-            // this.setupTestBindings(); // 示例绑定
+            // 重新启用自动绑定，显示随机其他玩家
+            this.setupTestBindings(); // 示例绑定
             this.checkExpiredWorkstations(); // 检查过期工位
             
             // 确保玩家移动是启用的
@@ -106,7 +105,6 @@ export class Start extends Phaser.Scene {
 
     update() {
         this.handlePlayerMovement();
-        this.checkWorkstationProximity();
         
         // 更新绑定UI
         if (this.bindingUI) {
@@ -184,6 +182,12 @@ export class Start extends Phaser.Scene {
 
     // ===== 工位事件处理 =====
     setupWorkstationEvents() {
+        // 监听工位绑定请求事件
+        this.events.on('workstation-binding-request', (data) => {
+            console.log('Workstation binding request:', data);
+            this.showWorkstationBindingPrompt(data.workstation);
+        });
+
         // 监听工位相关事件
         this.events.on('workstation-clicked', (data) => {
             // console.log('Workstation clicked event:', data);
@@ -845,56 +849,10 @@ export class Start extends Phaser.Scene {
     }
 
     // ===== 工位交互方法 =====
-    checkWorkstationProximity() {
-        if (!this.player || !this.workstationManager) return;
-
-        const playerX = this.player.x;
-        const playerY = this.player.y;
-        const proximityDistance = 100; // 检测距离
-
-        let nearestWorkstation = null;
-        let nearestDistance = Infinity;
-
-        // 检查所有工位
-        this.workstationManager.getAllWorkstations().forEach(workstation => {
-            const distance = Math.sqrt(
-                Math.pow(playerX - (workstation.position.x + workstation.size.width / 2), 2) +
-                Math.pow(playerY - (workstation.position.y + workstation.size.height / 2), 2)
-            );
-
-            if (distance < proximityDistance && distance < nearestDistance) {
-                nearestDistance = distance;
-                nearestWorkstation = workstation;
-            }
-        });
-
-        // 如果找到了新的附近工位且工位未被占用
-        if (nearestWorkstation && !nearestWorkstation.isOccupied) {
-            if (this.nearbyWorkstation !== nearestWorkstation) {
-                this.nearbyWorkstation = nearestWorkstation;
-                this.showWorkstationBindingPrompt();
-            }
-        } else {
-            // 如果没有附近工位，确保玩家移动是启用的
-            if (this.nearbyWorkstation !== null) {
-                this.nearbyWorkstation = null;
-                // 重新启用玩家移动
-                console.log('Start.js: 玩家离开工位区域 - 尝试恢复玩家移动，player对象:', !!this.player);
-                console.log('Start.js: 玩家离开工位区域 - enableMovement方法类型:', typeof this.player?.enableMovement);
-                if (this.player && typeof this.player.enableMovement === 'function') {
-                    this.player.enableMovement();
-                    console.log('Start.js: 玩家离开工位区域，重新启用移动');
-                } else {
-                    console.error('Start.js: 玩家离开工位区域 - 无法恢复玩家移动 - player对象或enableMovement方法不存在');
-                }
-            }
-        }
-    }
-
-    showWorkstationBindingPrompt() {
-        if (this.nearbyWorkstation && this.currentUser && this.bindingUI) {
+    showWorkstationBindingPrompt(workstation) {
+        if (workstation && this.currentUser && this.bindingUI) {
             console.log('显示工位绑定UI');
-            this.bindingUI.show(this.nearbyWorkstation, this.currentUser);
+            this.bindingUI.show(workstation, this.currentUser);
             // 禁用玩家移动
             if (this.player && typeof this.player.disableMovement === 'function') {
                 this.player.disableMovement();
