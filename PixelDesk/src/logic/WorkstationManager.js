@@ -511,7 +511,7 @@ export class WorkstationManager {
             }
         );
         icon.setOrigin(0.5, 0.5);
-        icon.setScrollFactor(0);
+        icon.setScrollFactor(1); // 跟随地图滚动
         icon.setDepth(1001); // 确保在最上层
         icon.setInteractive();
         
@@ -535,7 +535,7 @@ export class WorkstationManager {
         }
         
         const iconX = workstation.position.x + workstation.size.width / 2;
-        const iconY = workstation.position.y + workstation.size.height / 2 - 30; // 在交互图标上方
+        const iconY = workstation.position.y - 20; // 在工位上方
         
         // 创建占用图标
         const icon = this.scene.add.text(
@@ -543,14 +543,14 @@ export class WorkstationManager {
             iconY,
             '👤',
             {
-                fontSize: '24px',
+                fontSize: '20px',
                 fill: '#ffffff',
                 backgroundColor: '#28a745',
-                padding: { x: 6, y: 3 }
+                padding: { x: 4, y: 2 }
             }
         );
         icon.setOrigin(0.5, 0.5);
-        icon.setScrollFactor(0);
+        icon.setScrollFactor(1); // 跟随地图滚动
         icon.setDepth(1002); // 确保在交互图标上方
         
         workstation.occupiedIcon = icon;
