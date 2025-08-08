@@ -58,7 +58,9 @@ export class TextUIScene extends Phaser.Scene {
             
             let displayText = `${username} | 积分: ${points} | 桌子: ${deskCount}`;
             if (workstationId) {
-                displayText += ` | 工位: ${workstationId}`;
+                displayText += ` | 我的工位: ${workstationId}`;
+            } else {
+                displayText += ` | 未绑定工位`;
             }
             
             this.userInfoText.setText(displayText);

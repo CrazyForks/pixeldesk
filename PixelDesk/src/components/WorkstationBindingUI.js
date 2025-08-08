@@ -232,6 +232,9 @@ export class WorkstationBindingUI {
                     points: result.remainingPoints
                 });
                 
+                // 更新用户数据到UI（包括工位ID）
+                this.scene.sendUserDataToUI();
+                
                 // 延迟关闭窗口
                 setTimeout(() => {
                     // 保存scene引用，防止hide()方法影响

@@ -184,6 +184,9 @@ export class WorkstationManager {
 
         // 添加占用图标
         this.addOccupiedIcon(workstation);
+        
+        // 为当前用户的工位添加特殊高亮
+        this.addUserWorkstationHighlight(workstation);
 
         // 预留后端接口 - 保存绑定信息
         await this.saveWorkstationBinding(workstationId, {
@@ -245,6 +248,9 @@ export class WorkstationManager {
 
         // 重新添加交互图标
         this.addInteractionIcon(workstation);
+        
+        // 移除用户工位高亮
+        this.removeUserWorkstationHighlight(workstation);
 
         console.log(`Successfully unbound user ${userId} from workstation ${workstationId}`);
         
@@ -449,6 +455,58 @@ export class WorkstationManager {
         });
     }
     
+    // 高亮当前用户的工位
+    highlightUserWorkstation(currentUserId) {
+        this.workstations.forEach((workstation) => {
+            if (workstation.isOccupied && workstation.userId === currentUserId) {
+                // 为当前用户的工位添加特殊的金色边框
+                this.addUserWorkstationHighlight(workstation);
+            }
+        });
+    }
+    
+    addUserWorkstationHighlight(workstation) {
+        if (workstation.userHighlight) {
+            return; // 已有高亮
+        }
+        
+        // 创建金色边框效果
+        const highlight = this.scene.add.rectangle(
+            workstation.position.x + workstation.size.width / 2,
+            workstation.position.y + workstation.size.height / 2,
+            workstation.size.width + 8,
+            workstation.size.height + 8,
+            null,
+            0
+        );
+        highlight.setStrokeStyle(3, 0xffd700); // 金色边框
+        highlight.setOrigin(0.5, 0.5);
+        highlight.setScrollFactor(1);
+        highlight.setDepth(1003); // 在最上层
+        
+        workstation.userHighlight = highlight;
+        
+        // 添加闪烁效果
+        this.scene.tweens.add({
+            targets: highlight,
+            alpha: 0.3,
+            duration: 1000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+    }
+    
+    removeUserWorkstationHighlight(workstation) {
+        if (workstation.userHighlight) {
+            // 停止闪烁动画
+            this.scene.tweens.killTweensOf(workstation.userHighlight);
+            // 移除高亮对象
+            workstation.userHighlight.destroy();
+            workstation.userHighlight = null;
+        }
+    }
+    
     async saveWorkstationBinding(workstationId, bindingData) {
         // 预留后端接口 - 保存工位绑定信息
         return new Promise((resolve) => {
@@ -594,6 +652,12 @@ export class WorkstationManager {
     addOccupiedIcon(workstation) {
         if (workstation.occupiedIcon) {
             return; // 已有占用图标
+        }
+        
+        // 检查是否为当前用户的工位
+        const currentUser = this.scene.currentUser;
+        if (!currentUser || workstation.userId !== currentUser.id) {
+            return; // 不是当前用户的工位，不显示👤标志
         }
         
         const iconX = workstation.position.x + workstation.size.width / 2;

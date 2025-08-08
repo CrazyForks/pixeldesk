@@ -86,6 +86,14 @@ export class Start extends Phaser.Scene {
             // 加载保存的工位绑定信息
             this.workstationManager.loadSavedBindings();
             
+            // 高亮当前用户的工位
+            if (this.currentUser) {
+                this.workstationManager.highlightUserWorkstation(this.currentUser.id);
+            }
+            
+            // 为其他用户的工位放置角色（跳过当前用户的工位）
+            this.placeCharactersAtOccupiedWorkstations();
+            
             // 重新启用自动绑定，显示随机其他玩家
             this.setupTestBindings(); // 示例绑定
             this.checkExpiredWorkstations(); // 检查过期工位
@@ -706,9 +714,6 @@ export class Start extends Phaser.Scene {
         
         console.log('=== Test bindings complete ===');
         this.workstationManager.printStatistics();
-        
-        // 在绑定完成后放置角色
-        this.placeCharactersAtOccupiedWorkstations();
     }
 
     // 在已绑定工位旁边放置随机角色
@@ -744,6 +749,13 @@ export class Start extends Phaser.Scene {
         
         occupiedWorkstations.forEach((workstation, index) => {
             console.log('workstation',workstation)
+            
+            // 跳过属于当前玩家的工位
+            if (this.currentUser && workstation.userId === this.currentUser.id) {
+                console.log(`Skipping workstation ${workstation.id} - belongs to current user ${this.currentUser.id}`);
+                return;
+            }
+            
             // 随机选择一个角色
             const randomCharacterKey = characterKeys[Math.floor(Math.random() * characterKeys.length)];
             
