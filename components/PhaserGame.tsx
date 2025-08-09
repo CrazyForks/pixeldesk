@@ -13,10 +13,10 @@ export default function PhaserGame({ onPlayerCollision }) {
   const gameContainerRef = useRef(null)
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !gameRef.current) {
       // 自定义 Phaser 配置
       const config = {
-        type: Phaser.CANVAS,
+        type: Phaser.WEBGL,
         title: 'PixelDesk Social',
         description: '社交办公游戏',
         parent: gameContainerRef.current,

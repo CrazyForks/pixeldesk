@@ -167,7 +167,7 @@ export class Player extends Phaser.GameObjects.Container {
         const status = this.playerData.currentStatus;
         this.statusLabel = this.scene.add.text(
             0, 
-            -40, 
+            -20, 
             `${status.emoji} ${status.status}`, 
             {
                 fontSize: '12px',

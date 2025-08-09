@@ -965,74 +965,14 @@ export class Start extends Phaser.Scene {
             };
         }
         
-        // 创建一些示例其他玩家
-        this.createSampleOtherPlayers();
+        // 示例其他玩家已被移除，所有角色都通过工位绑定系统在工位旁边创建
         
         // 设置玩家碰撞检测
         this.setupPlayerCollisions();
     }
     
-    createSampleOtherPlayers() {
-        const samplePlayers = [
-            {
-                id: 'player_1',
-                name: '小明',
-                x: 400,
-                y: 300,
-                character: 'Premade_Character_48x48_01',
-                currentStatus: {
-                    type: 'working',
-                    status: '工作中',
-                    emoji: '💼',
-                    message: '正在写代码...',
-                    timestamp: new Date().toISOString()
-                }
-            },
-            {
-                id: 'player_2',
-                name: '小红',
-                x: 600,
-                y: 400,
-                character: 'Premade_Character_48x48_02',
-                currentStatus: {
-                    type: 'break',
-                    status: '休息中',
-                    emoji: '☕',
-                    message: '喝杯咖啡放松一下',
-                    timestamp: new Date().toISOString()
-                }
-            },
-            {
-                id: 'player_3',
-                name: '小李',
-                x: 800,
-                y: 200,
-                character: 'Premade_Character_48x48_03',
-                currentStatus: {
-                    type: 'reading',
-                    status: '阅读中',
-                    emoji: '📚',
-                    message: '在读《JavaScript高级程序设计》',
-                    timestamp: new Date().toISOString()
-                }
-            }
-        ];
-        
-        samplePlayers.forEach(playerData => {
-            const otherPlayer = new Player(
-                this, 
-                playerData.x, 
-                playerData.y, 
-                playerData.character, 
-                false, // 禁用移动
-                false, // 禁用状态保存
-                true,   // 是其他玩家
-                playerData
-            );
-            this.add.existing(otherPlayer);
-            this.otherPlayers.set(playerData.id, otherPlayer);
-        });
-    }
+    // createSampleOtherPlayers() 方法已被移除
+    // 所有角色现在都通过工位绑定系统在工位旁边创建
     
     setupPlayerCollisions() {
         // 设置主玩家与其他玩家的碰撞检测

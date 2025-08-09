@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 
 // 动态导入 Phaser 游戏组件，避免 SSR 问题
@@ -35,16 +35,34 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // 处理玩家碰撞事件
-  const handlePlayerCollision = (playerData) => {
+  // 处理玩家碰撞事件 - 优化避免不必要重新渲染
+  const handlePlayerCollision = useCallback((playerData) => {
     setSelectedPlayer(playerData)
-  }
+  }, [])
 
-  // 处理状态更新
-  const handleStatusUpdate = (newStatus) => {
-    setMyStatus(newStatus)
+  // 处理状态更新 - 优化避免不必要重新渲染
+  const handleStatusUpdate = useCallback((newStatus) => {
+    // 只有当状态真正改变时才更新
+    if (!myStatus || myStatus.type !== newStatus.type || myStatus.message !== newStatus.message) {
+      setMyStatus(newStatus)
+    }
     // 这里可以发送到服务器或广播给其他玩家
-  }
+  }, [myStatus])
+
+  // 优化：使用 memo 避免 selectedPlayer 变化导致整个组件重新渲染
+  const memoizedPhaserGame = useMemo(() => (
+    <PhaserGame onPlayerCollision={handlePlayerCollision} />
+  ), [handlePlayerCollision])
+
+  // 优化：使用 memo 避免 myStatus 变化导致 PostStatus 不必要重新渲染
+  const memoizedPostStatus = useMemo(() => (
+    <PostStatus onStatusUpdate={handleStatusUpdate} currentStatus={myStatus} />
+  ), [handleStatusUpdate, myStatus])
+
+  // 优化：使用 memo 避免 selectedPlayer 变化导致 SocialFeed 不必要重新渲染
+  const memoizedSocialFeed = useMemo(() => (
+    <SocialFeed player={selectedPlayer} />
+  ), [selectedPlayer])
 
   // 移动端布局
   if (isMobile) {
@@ -52,15 +70,15 @@ export default function Home() {
       <div className="flex flex-col h-screen bg-gray-900">
         {/* 游戏区域 */}
         <div className="flex-1 relative">
-          <PhaserGame onPlayerCollision={handlePlayerCollision} />
+          {memoizedPhaserGame}
         </div>
         
         {/* 底部信息栏 */}
         <div className="h-64 bg-white border-t border-gray-200 overflow-hidden">
           {selectedPlayer ? (
-            <SocialFeed player={selectedPlayer} />
+            memoizedSocialFeed
           ) : (
-            <PostStatus onStatusUpdate={handleStatusUpdate} currentStatus={myStatus} />
+            memoizedPostStatus
           )}
         </div>
       </div>
@@ -91,7 +109,7 @@ export default function Home() {
             <h2 className="text-lg font-semibold text-white">我的状态</h2>
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </div>
-          <PostStatus onStatusUpdate={handleStatusUpdate} currentStatus={myStatus} />
+          {memoizedPostStatus}
         </div>
         
         {/* 社交动态区域 */}
@@ -105,7 +123,7 @@ export default function Home() {
           </div>
           <div className="flex-1 overflow-y-auto">
             {selectedPlayer ? (
-              <SocialFeed player={selectedPlayer} />
+              memoizedSocialFeed
             ) : (
               <div className="flex flex-col items-center justify-center h-full p-6 text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4">
@@ -140,7 +158,7 @@ export default function Home() {
       {/* 右侧 Phaser 游戏区域 */}
       <div className="flex-1 relative bg-black/30 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 to-transparent pointer-events-none"></div>
-        <PhaserGame onPlayerCollision={handlePlayerCollision} />
+        {memoizedPhaserGame}
       </div>
     </div>
   )
