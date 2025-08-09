@@ -1,9 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, FormEvent } from 'react'
 
-export default function SocialFeed({ player }) {
-  const [comments, setComments] = useState([])
+interface SocialFeedProps {
+  player: any
+}
+
+export default function SocialFeed({ player }: SocialFeedProps) {
+  const [comments, setComments] = useState<any[]>([])
   const [newComment, setNewComment] = useState('')
 
   // 模拟玩家动态数据
@@ -31,7 +35,7 @@ export default function SocialFeed({ player }) {
     }
   ]
 
-  const handleSubmitComment = (e) => {
+  const handleSubmitComment = (e: FormEvent) => {
     e.preventDefault()
     if (newComment.trim()) {
       const comment = {
@@ -45,8 +49,8 @@ export default function SocialFeed({ player }) {
     }
   }
 
-  const getStatusBadge = (type) => {
-    const badges = {
+  const getStatusBadge = (type: string) => {
+    const badges: Record<string, string> = {
       working: 'from-blue-500 to-cyan-500',
       break: 'from-green-500 to-emerald-500',
       reading: 'from-purple-500 to-violet-500',

@@ -8,9 +8,14 @@ import { Start } from '../PixelDesk/src/scenes/Start.js'
 import { TextUIScene } from '../PixelDesk/src/scenes/TextUIScene.js'
 import { RegisterScene } from '../PixelDesk/src/scenes/RegisterScene.js'
 
-export default function PhaserGame({ onPlayerCollision }) {
-  const gameRef = useRef(null)
-  const gameContainerRef = useRef(null)
+interface PhaserGameProps {
+  onPlayerCollision: (playerData: any) => void
+  onWorkstationBinding: (workstationData: any, userData: any) => void
+}
+
+export default function PhaserGame({ onPlayerCollision, onWorkstationBinding }: PhaserGameProps) {
+  const gameRef = useRef<Phaser.Game | null>(null)
+  const gameContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !gameRef.current) {
@@ -38,7 +43,7 @@ export default function PhaserGame({ onPlayerCollision }) {
         physics: {
           default: "arcade",
           arcade: {
-            gravity: { y: 0 },
+            gravity: { x: 0, y: 0 },
             debug: false
           }
         }
@@ -48,9 +53,18 @@ export default function PhaserGame({ onPlayerCollision }) {
       gameRef.current = new Phaser.Game(config)
 
       // 设置全局回调函数，用于与 React 通信
-      window.onPlayerCollision = (playerData) => {
-        if (onPlayerCollision) {
-          onPlayerCollision(playerData)
+      if (typeof window !== 'undefined') {
+        (window as any).onPlayerCollision = (playerData: any) => {
+          if (onPlayerCollision) {
+            onPlayerCollision(playerData)
+          }
+        }
+
+        // 设置工位绑定回调函数
+        (window as any).onWorkstationBinding = (workstationData: any, userData: any) => {
+          if (onWorkstationBinding) {
+            onWorkstationBinding(workstationData, userData)
+          }
         }
       }
 

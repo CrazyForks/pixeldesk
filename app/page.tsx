@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 
+// 确保工位绑定管理器在应用启动时就被加载
+import '@/lib/workstationBindingManager'
+
 // 动态导入 Phaser 游戏组件，避免 SSR 问题
 const PhaserGame = dynamic(() => import('@/components/PhaserGame'), {
   ssr: false,
@@ -19,10 +22,22 @@ const PostStatus = dynamic(() => import('@/components/PostStatus'), {
   ssr: false
 })
 
+// 工位绑定弹窗组件
+const WorkstationBindingModal = dynamic(() => import('@/components/WorkstationBindingModal'), {
+  ssr: false
+})
+
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
-  const [myStatus, setMyStatus] = useState('')
+  const [myStatus, setMyStatus] = useState<any>('')
+  
+  // 工位绑定弹窗状态
+  const [bindingModal, setBindingModal] = useState({
+    isVisible: false,
+    workstation: null,
+    user: null
+  })
   
   // 检测移动设备
   useEffect(() => {
@@ -35,13 +50,30 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // 监听积分更新事件
+  useEffect(() => {
+    const handleUserPointsUpdated = (event: CustomEvent) => {
+      const { userId, points } = event.detail
+      
+      // 如果是当前用户的积分更新，更新本地状态
+      // 这里可以根据需要更新UI显示
+      console.log('用户积分更新:', userId, points)
+    }
+
+    window.addEventListener('user-points-updated', handleUserPointsUpdated as EventListener)
+    
+    return () => {
+      window.removeEventListener('user-points-updated', handleUserPointsUpdated as EventListener)
+    }
+  }, [])
+
   // 处理玩家碰撞事件 - 优化避免不必要重新渲染
-  const handlePlayerCollision = useCallback((playerData) => {
+  const handlePlayerCollision = useCallback((playerData: any) => {
     setSelectedPlayer(playerData)
   }, [])
 
   // 处理状态更新 - 优化避免不必要重新渲染
-  const handleStatusUpdate = useCallback((newStatus) => {
+  const handleStatusUpdate = useCallback((newStatus: any) => {
     // 只有当状态真正改变时才更新
     if (!myStatus || myStatus.type !== newStatus.type || myStatus.message !== newStatus.message) {
       setMyStatus(newStatus)
@@ -49,10 +81,56 @@ export default function Home() {
     // 这里可以发送到服务器或广播给其他玩家
   }, [myStatus])
 
+  // 处理工位绑定请求
+  const handleWorkstationBinding = useCallback((workstation: any, user: any) => {
+    setBindingModal({
+      isVisible: true,
+      workstation,
+      user
+    })
+  }, [])
+
+  // 处理工位绑定确认
+  const handleBindingConfirm = useCallback(async () => {
+    try {
+      // 动态导入工位绑定管理器
+      const { workstationBindingManager } = await import('@/lib/workstationBindingManager')
+      
+      const result = await workstationBindingManager.handleBindingConfirm()
+      return result
+    } catch (error) {
+      console.error('工位绑定失败:', error)
+      return { success: false, error: '绑定失败，请重试' }
+    }
+  }, [])
+
+  // 处理工位绑定取消
+  const handleBindingCancel = useCallback(() => {
+    try {
+      // 动态导入工位绑定管理器
+      const { workstationBindingManager } = require('@/lib/workstationBindingManager')
+      workstationBindingManager.handleBindingCancel()
+    } catch (error) {
+      console.error('取消工位绑定失败:', error)
+    }
+  }, [])
+
+  // 关闭工位绑定弹窗
+  const handleBindingModalClose = useCallback(() => {
+    setBindingModal({
+      isVisible: false,
+      workstation: null,
+      user: null
+    })
+  }, [])
+
   // 优化：使用 memo 避免 selectedPlayer 变化导致整个组件重新渲染
   const memoizedPhaserGame = useMemo(() => (
-    <PhaserGame onPlayerCollision={handlePlayerCollision} />
-  ), [handlePlayerCollision])
+    <PhaserGame 
+      onPlayerCollision={handlePlayerCollision} 
+      onWorkstationBinding={handleWorkstationBinding}
+    />
+  ), [handlePlayerCollision, handleWorkstationBinding])
 
   // 优化：使用 memo 避免 myStatus 变化导致 PostStatus 不必要重新渲染
   const memoizedPostStatus = useMemo(() => (
@@ -160,6 +238,16 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 to-transparent pointer-events-none"></div>
         {memoizedPhaserGame}
       </div>
+      
+      {/* 工位绑定弹窗 */}
+      <WorkstationBindingModal
+        isVisible={bindingModal.isVisible}
+        workstation={bindingModal.workstation}
+        user={bindingModal.user}
+        onConfirm={handleBindingConfirm}
+        onCancel={handleBindingCancel}
+        onClose={handleBindingModalClose}
+      />
     </div>
   )
 }

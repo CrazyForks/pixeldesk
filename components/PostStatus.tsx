@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo, useCallback } from 'react'
+import { useState, memo, useCallback, ChangeEvent } from 'react'
 
 const statusOptions = [
   { id: 'working', label: '工作中', emoji: '💼', color: 'from-blue-500 to-cyan-500' },
@@ -11,7 +11,12 @@ const statusOptions = [
   { id: 'lunch', label: '午餐时间', emoji: '🍽️', color: 'from-orange-500 to-amber-500' }
 ]
 
-const PostStatus = memo(({ onStatusUpdate, currentStatus }) => {
+interface PostStatusProps {
+  onStatusUpdate: (status: any) => void
+  currentStatus: any
+}
+
+const PostStatus = memo(({ onStatusUpdate, currentStatus }: PostStatusProps) => {
   const [selectedStatus, setSelectedStatus] = useState('working')
   const [customMessage, setCustomMessage] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
@@ -19,6 +24,8 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus }) => {
   // 优化：避免不必要的重新渲染
   const memoizedHandleSubmit = useCallback(() => {
     const status = statusOptions.find(s => s.id === selectedStatus)
+    if (!status) return
+    
     const fullStatus = {
       type: selectedStatus,
       status: status.label,
@@ -28,8 +35,8 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus }) => {
     }
     
     // 通知 Phaser 游戏更新状态（优先执行，避免延迟）
-    if (typeof window !== 'undefined' && window.updateMyStatus) {
-      window.updateMyStatus(fullStatus)
+    if (typeof window !== 'undefined' && (window as any).updateMyStatus) {
+      (window as any).updateMyStatus(fullStatus)
     }
     
     // 更新 React 组件状态（异步执行，避免阻塞UI）
@@ -43,7 +50,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus }) => {
   }, [selectedStatus, customMessage, onStatusUpdate])
 
   // 优化：缓存状态选择处理函数
-  const memoizedHandleStatusSelect = useCallback((statusId) => {
+  const memoizedHandleStatusSelect = useCallback((statusId: string) => {
     setSelectedStatus(statusId)
   }, [])
 
@@ -58,7 +65,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus }) => {
   }, [])
 
   // 优化：缓存消息变化处理函数
-  const memoizedHandleMessageChange = useCallback((e) => {
+  const memoizedHandleMessageChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
     setCustomMessage(e.target.value)
   }, [])
   

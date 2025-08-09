@@ -125,7 +125,7 @@ export class WorkstationBindingUI {
 
         // 存储窗口组件
         this.bindingWindow = this.scene.add.container(0, 0, [
-            bg, windowBg, title, infoText, costText, userPointsText, ...buttons
+            bg, windowBg, title, infoText, costText, this.userPointsText, ...buttons
         ]);
         this.bindingWindow.setScrollFactor(0);
         this.bindingWindow.setDepth(1000); // 容器深度

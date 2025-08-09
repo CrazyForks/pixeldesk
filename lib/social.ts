@@ -6,7 +6,7 @@ export function generatePlayerId() {
 }
 
 // 格式化时间戳
-export function formatTimestamp(timestamp) {
+export function formatTimestamp(timestamp: string | number | Date) {
   const date = new Date(timestamp)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
@@ -23,8 +23,8 @@ export function formatTimestamp(timestamp) {
 }
 
 // 获取状态对应的颜色类
-export function getStatusColor(type) {
-  const colors = {
+export function getStatusColor(type: string) {
+  const colors: Record<string, string> = {
     working: 'bg-blue-100 text-blue-800',
     break: 'bg-green-100 text-green-800',
     reading: 'bg-purple-100 text-purple-800',

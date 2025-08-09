@@ -29,6 +29,11 @@ export class Start extends Phaser.Scene {
         this.scene.launch('TextUIScene');
         this.scene.bringToTop('TextUIScene');
 
+        // 保存场景引用到全局变量，供Next.js调用
+        if (typeof window !== 'undefined') {
+            window.saveGameScene(this);
+        }
+
         // 获取用户数据（从场景参数或本地存储）
         const sceneData = this.scene.settings.data || {};
         this.currentUser = sceneData.userData || this.getCurrentUserFromStorage();
@@ -943,13 +948,18 @@ export class Start extends Phaser.Scene {
 
     // ===== 工位交互方法 =====
     showWorkstationBindingPrompt(workstation) {
-        if (workstation && this.currentUser && this.bindingUI) {
-            console.log('显示工位绑定UI');
-            this.bindingUI.show(workstation, this.currentUser);
+        if (workstation && this.currentUser) {
+            console.log('触发Next.js工位绑定弹窗');
+            
             // 禁用玩家移动
             if (this.player && typeof this.player.disableMovement === 'function') {
                 this.player.disableMovement();
                 console.log('玩家移动已禁用');
+            }
+            
+            // 调用Next.js的工位绑定回调
+            if (typeof window !== 'undefined' && window.onWorkstationBinding) {
+                window.onWorkstationBinding(workstation, this.currentUser);
             }
         }
     }
