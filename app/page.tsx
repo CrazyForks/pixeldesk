@@ -27,6 +27,11 @@ const WorkstationBindingModal = dynamic(() => import('@/components/WorkstationBi
   ssr: false
 })
 
+// 玩家点击弹窗组件
+const PlayerClickModal = dynamic(() => import('@/components/PlayerClickModal'), {
+  ssr: false
+})
+
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
@@ -37,6 +42,12 @@ export default function Home() {
     isVisible: false,
     workstation: null,
     user: null
+  })
+  
+  // 玩家点击弹窗状态
+  const [playerClickModal, setPlayerClickModal] = useState({
+    isVisible: false,
+    player: null
   })
   
   // 检测移动设备
@@ -90,6 +101,14 @@ export default function Home() {
     })
   }, [])
 
+  // 处理玩家点击请求
+  const handlePlayerClick = useCallback((playerData: any) => {
+    setPlayerClickModal({
+      isVisible: true,
+      player: playerData
+    })
+  }, [])
+
   // 处理工位绑定确认
   const handleBindingConfirm = useCallback(async () => {
     try {
@@ -124,13 +143,22 @@ export default function Home() {
     })
   }, [])
 
+  // 关闭玩家点击弹窗
+  const handlePlayerClickModalClose = useCallback(() => {
+    setPlayerClickModal({
+      isVisible: false,
+      player: null
+    })
+  }, [])
+
   // 优化：使用 memo 避免 selectedPlayer 变化导致整个组件重新渲染
   const memoizedPhaserGame = useMemo(() => (
     <PhaserGame 
       onPlayerCollision={handlePlayerCollision} 
       onWorkstationBinding={handleWorkstationBinding}
+      onPlayerClick={handlePlayerClick}
     />
-  ), [handlePlayerCollision, handleWorkstationBinding])
+  ), [handlePlayerCollision, handleWorkstationBinding, handlePlayerClick])
 
   // 优化：使用 memo 避免 myStatus 变化导致 PostStatus 不必要重新渲染
   const memoizedPostStatus = useMemo(() => (
@@ -247,6 +275,13 @@ export default function Home() {
         onConfirm={handleBindingConfirm}
         onCancel={handleBindingCancel}
         onClose={handleBindingModalClose}
+      />
+      
+      {/* 玩家点击弹窗 */}
+      <PlayerClickModal
+        isVisible={playerClickModal.isVisible}
+        player={playerClickModal.player}
+        onClose={handlePlayerClickModalClose}
       />
     </div>
   )

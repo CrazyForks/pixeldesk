@@ -432,7 +432,7 @@ export class Start extends Phaser.Scene {
         }
         
         // 添加调试边界（已注释）
-        this.addDebugBounds(obj, adjustedY);
+        // this.addDebugBounds(obj, adjustedY);
     }
 
     addDeskCollision(sprite, obj) {

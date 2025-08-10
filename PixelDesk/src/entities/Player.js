@@ -52,6 +52,8 @@ export class Player extends Phaser.GameObjects.Container {
         // 为其他玩家创建状态标签
         if (this.isOtherPlayer) {
             this.createStatusLabel();
+            // 为其他玩家添加点击检测
+            this.setupClickDetection();
         }
     }
     
@@ -269,6 +271,75 @@ export class Player extends Phaser.GameObjects.Container {
         if (this.statusLabel) {
             this.statusLabel.setText(`${newStatus.emoji} ${newStatus.status}`);
         }
+    }
+    
+    // 设置点击检测
+    setupClickDetection() {
+        // 设置整个容器为可交互
+        this.setInteractive(new Phaser.Geom.Rectangle(-20, -30, 40, 60), Phaser.Geom.Rectangle.Contains);
+        
+        // 添加点击事件监听器
+        this.on('pointerdown', (pointer) => {
+            // 只有其他玩家才能被点击
+            if (this.isOtherPlayer) {
+                this.handlePlayerClick(pointer);
+            }
+        });
+        
+        // 添加悬停效果
+        this.on('pointerover', () => {
+            if (this.isOtherPlayer) {
+                // 添加悬停效果
+                this.setAlpha(0.8);
+                this.scene.input.setDefaultCursor('pointer');
+            }
+        });
+        
+        this.on('pointerout', () => {
+            if (this.isOtherPlayer) {
+                // 恢复正常状态
+                this.setAlpha(1);
+                this.scene.input.setDefaultCursor('default');
+            }
+        });
+    }
+    
+    // 处理玩家点击
+    handlePlayerClick(pointer) {
+        console.log('玩家被点击:', this.playerData.name);
+        
+        // 触发全局回调函数
+        if (window.onPlayerClick) {
+            window.onPlayerClick(this.playerData);
+        }
+        
+        // 添加点击动画效果
+        this.addClickAnimation();
+    }
+    
+    // 添加点击动画效果
+    addClickAnimation() {
+        // 缩放动画
+        this.scene.tweens.add({
+            targets: this,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 100,
+            yoyo: true,
+            ease: 'Power2',
+            onComplete: () => {
+                this.setScale(1);
+            }
+        });
+        
+        // 闪烁效果
+        this.scene.tweens.add({
+            targets: this,
+            alpha: 0.5,
+            duration: 150,
+            yoyo: true,
+            ease: 'Power2'
+        });
     }
     
     // 处理与主玩家的碰撞

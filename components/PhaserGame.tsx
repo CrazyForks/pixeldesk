@@ -11,9 +11,10 @@ import { RegisterScene } from '../PixelDesk/src/scenes/RegisterScene.js'
 interface PhaserGameProps {
   onPlayerCollision: (playerData: any) => void
   onWorkstationBinding: (workstationData: any, userData: any) => void
+  onPlayerClick: (playerData: any) => void
 }
 
-export default function PhaserGame({ onPlayerCollision, onWorkstationBinding }: PhaserGameProps) {
+export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, onPlayerClick }: PhaserGameProps) {
   const gameRef = useRef<Phaser.Game | null>(null)
   const gameContainerRef = useRef<HTMLDivElement>(null)
 
@@ -66,6 +67,13 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding }: 
             onWorkstationBinding(workstationData, userData)
           }
         }
+
+        // 设置玩家点击回调函数
+        (window as any).onPlayerClick = (playerData: any) => {
+          if (onPlayerClick) {
+            onPlayerClick(playerData)
+          }
+        }
       }
 
       // 清理函数
@@ -76,7 +84,7 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding }: 
         }
       }
     }
-  }, [onPlayerCollision])
+  }, [onPlayerCollision, onWorkstationBinding, onPlayerClick])
 
   // 处理窗口大小变化
   useEffect(() => {
