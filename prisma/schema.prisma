@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  characterType String
+  points        Int      @default(50)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLogin     DateTime?
+  
+  statusHistory StatusHistory[]
+  workstations  UserWorkstation[]
+  sessions      UserSession[]
+  
+  @@map("users")
+}
+
+model StatusHistory {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  statusType  String
+  statusText  String
+  emoji       String
+  message     String?
+  createdAt   DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("status_history")
+}
+
+model Workstation {
+  id         Int      @id @default(autoincrement())
+  name       String
+  xPosition  Int
+  yPosition  Int
+  isOccupied Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  userWorkstations UserWorkstation[]
+  
+  @@map("workstations")
+}
+
+model UserWorkstation {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  workstationId Int
+  boundAt       DateTime  @default(now())
+  unboundAt     DateTime?
+  isActive      Boolean   @default(true)
+  
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workstation  Workstation  @relation(fields: [workstationId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, workstationId])
+  @@map("user_workstations")
+}
+
+model UserSession {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  sessionToken String    @unique
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_sessions")
+}
