@@ -3,6 +3,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 
+// 声明全局函数的类型
+declare global {
+  interface Window {
+    setWorkstationBindingModal: (modalState: any) => void
+    showWorkstationInfo: (workstationId: number, userId: string) => void
+    showPlayerInfo: (userId: string, userInfo: any) => void
+    showCharacterInfo: (userId: string, userInfo: any, position: { x: number; y: number }) => void
+  }
+}
+
 // 确保工位绑定管理器在应用启动时就被加载
 import '@/lib/workstationBindingManager'
 
@@ -37,6 +47,11 @@ const WorkstationInfoModal = dynamic(() => import('@/components/WorkstationInfoM
   ssr: false
 })
 
+// 角色显示弹窗组件
+const CharacterDisplayModal = dynamic(() => import('@/components/CharacterDisplayModal'), {
+  ssr: false
+})
+
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
@@ -61,6 +76,14 @@ export default function Home() {
     isVisible: false,
     workstationId: null as number | null,
     userId: null as string | null
+  })
+  
+  // 角色显示弹窗状态
+  const [characterDisplayModal, setCharacterDisplayModal] = useState({
+    isVisible: false,
+    userId: null as string | null,
+    userInfo: null as any,
+    position: null as { x: number; y: number } | null
   })
   
   // 检测移动设备和加载用户数据
@@ -94,6 +117,26 @@ export default function Home() {
           isVisible: true,
           workstationId,
           userId
+        })
+      }
+      
+      // 设置角色显示弹窗的全局函数
+      window.showPlayerInfo = (userId: string, userInfo: any) => {
+        setCharacterDisplayModal({
+          isVisible: true,
+          userId,
+          userInfo,
+          position: null
+        })
+      }
+      
+      // 设置角色点击事件的全局函数
+      window.showCharacterInfo = (userId: string, userInfo: any, position: { x: number; y: number }) => {
+        setCharacterDisplayModal({
+          isVisible: true,
+          userId,
+          userInfo,
+          position
         })
       }
     }
@@ -213,6 +256,16 @@ export default function Home() {
       isVisible: false,
       workstationId: null,
       userId: null
+    })
+  }, [])
+
+  // 关闭角色显示弹窗
+  const handleCharacterDisplayModalClose = useCallback(() => {
+    setCharacterDisplayModal({
+      isVisible: false,
+      userId: null,
+      userInfo: null,
+      position: null
     })
   }, [])
 
@@ -360,6 +413,16 @@ export default function Home() {
         userId={workstationInfoModal.userId}
         onClose={handleWorkstationInfoModalClose}
       />
+      
+      {/* 角色显示弹窗 */}
+      {characterDisplayModal.isVisible && (
+        <CharacterDisplayModal
+          userId={characterDisplayModal.userId!}
+          userInfo={characterDisplayModal.userInfo}
+          position={characterDisplayModal.position || undefined}
+          onClose={handleCharacterDisplayModalClose}
+        />
+      )}
     </div>
   )
 }

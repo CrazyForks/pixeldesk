@@ -198,6 +198,9 @@ export class WorkstationManager {
         
         // 为当前用户的工位添加特殊高亮
         this.addUserWorkstationHighlight(workstation);
+        
+        // 在工位上显示角色形象
+        this.addCharacterToWorkstation(workstation, userId, userInfo);
 
         // 调用后端API保存绑定信息并扣除积分
         const saveResult = await this.saveWorkstationBinding(workstationId, {
@@ -295,6 +298,9 @@ export class WorkstationManager {
         
         // 移除用户工位高亮
         this.removeUserWorkstationHighlight(workstation);
+        
+        // 移除角色显示
+        this.removeCharacterFromWorkstation(workstation);
 
         console.log(`Successfully unbound user ${userId} from workstation ${workstationId}`);
         
@@ -520,6 +526,12 @@ export class WorkstationManager {
                 // 移除交互图标，添加占用图标
                 this.removeInteractionIcon(workstation);
                 this.addOccupiedIcon(workstation);
+                
+                // 添加角色显示
+                this.addCharacterToWorkstation(workstation, binding.userId, {
+                    name: binding.user?.name || `玩家${binding.userId.slice(-4)}`,
+                    character: binding.user?.avatar || 'Premade_Character_48x48_01'
+                });
                 
                 console.log(`同步工位 ${binding.workstationId} 绑定状态: 用户 ${binding.userId}`);
             }
@@ -783,6 +795,121 @@ export class WorkstationManager {
             remainingPoints: bindResult.remainingPoints || userPoints - 5
         };
     }
+    
+    // ===== 角色显示管理 =====
+    addCharacterToWorkstation(workstation, userId, userInfo) {
+        if (workstation.characterSprite) {
+            return; // 已有角色精灵
+        }
+        
+        // 计算角色位置（在工位上方）
+        const charX = workstation.position.x + workstation.size.width / 2;
+        const charY = workstation.position.y - 10; // 在工位上方一点
+        
+        // 确定角色图片
+        let characterKey = 'Premade_Character_48x48_01'; // 默认角色
+        if (userInfo.character) {
+            characterKey = userInfo.character;
+        } else if (userInfo.avatar) {
+            characterKey = userInfo.avatar;
+        }
+        
+        // 尝试加载角色图片
+        try {
+            // 如果图片还没加载，先加载
+            if (!this.scene.textures.exists(characterKey)) {
+                this.scene.load.image(characterKey, `/assets/characters/${characterKey}.png`);
+                this.scene.load.once(`complete`, () => {
+                    this.createCharacterSprite(workstation, charX, charY, characterKey, userId);
+                });
+                this.scene.load.start();
+            } else {
+                this.createCharacterSprite(workstation, charX, charY, characterKey, userId);
+            }
+        } catch (error) {
+            console.warn('无法加载角色图片:', characterKey, error);
+            // 使用默认角色
+            if (characterKey !== 'Premade_Character_48x48_01') {
+                this.createCharacterSprite(workstation, charX, charY, 'Premade_Character_48x48_01', userId);
+            }
+        }
+    }
+    
+    createCharacterSprite(workstation, x, y, characterKey, userId) {
+        // 创建角色容器
+        const characterContainer = this.scene.add.container(x, y);
+        characterContainer.setScrollFactor(1); // 跟随地图滚动
+        characterContainer.setDepth(1000); // 在工位上方
+        
+        // 创建角色精灵
+        const characterSprite = this.scene.add.image(0, 0, characterKey);
+        characterSprite.setOrigin(0.5, 0.5);
+        characterSprite.setScale(0.8); // 稍微缩小一点
+        
+        // 添加到容器
+        characterContainer.add(characterSprite);
+        
+        // 添加角色名称标签
+        const nameLabel = this.scene.add.text(0, 25, workstation.userInfo?.name || `玩家${userId.slice(-4)}`, {
+            fontSize: '12px',
+            fill: '#ffffff',
+            backgroundColor: '#333333',
+            padding: { x: 4, y: 2 }
+        });
+        nameLabel.setOrigin(0.5, 0.5);
+        characterContainer.add(nameLabel);
+        
+        // 添加点击事件
+        characterContainer.setInteractive(new Phaser.Geom.Rectangle(-20, -30, 40, 60), Phaser.Geom.Rectangle.Contains);
+        characterContainer.on('pointerdown', () => {
+            this.onCharacterClick(userId, workstation);
+        });
+        
+        // 添加悬停效果
+        characterContainer.on('pointerover', () => {
+            characterContainer.setScale(1.1);
+            this.scene.input.setDefaultCursor('pointer');
+        });
+        
+        characterContainer.on('pointerout', () => {
+            characterContainer.setScale(1);
+            this.scene.input.setDefaultCursor('default');
+        });
+        
+        // 保存引用
+        workstation.characterSprite = characterContainer;
+        workstation.characterKey = characterKey;
+        
+        console.log(`在工位 ${workstation.id} 上添加角色: ${characterKey}`);
+    }
+    
+    onCharacterClick(userId, workstation) {
+        console.log(`点击了工位 ${workstation.id} 上的角色 ${userId}`);
+        
+        // 触发角色点击事件
+        this.scene.events.emit('character-clicked', {
+            userId,
+            workstationId: workstation.id,
+            userInfo: workstation.userInfo,
+            position: { x: workstation.position.x, y: workstation.position.y }
+        });
+        
+        // 如果有全局函数，调用它
+        if (typeof window !== 'undefined' && window.showCharacterInfo) {
+            window.showCharacterInfo(userId, workstation.userInfo, { 
+                x: workstation.position.x, 
+                y: workstation.position.y 
+            });
+        }
+    }
+    
+    removeCharacterFromWorkstation(workstation) {
+        if (workstation.characterSprite) {
+            workstation.characterSprite.destroy();
+            workstation.characterSprite = null;
+            workstation.characterKey = null;
+        }
+    }
 
         // ===== 交互图标管理 =====
     addInteractionIcon(workstation) {
@@ -878,10 +1005,11 @@ export class WorkstationManager {
         const results = this.unbindAllUsers();
         console.log(`已清理 ${results.length} 个工位绑定`);
         
-        // 移除所有交互图标和占用图标
+        // 移除所有交互图标、占用图标和角色显示
         this.workstations.forEach(workstation => {
             this.removeInteractionIcon(workstation);
             this.removeOccupiedIcon(workstation);
+            this.removeCharacterFromWorkstation(workstation);
         });
         
         console.log('所有工位绑定和交互图标已清理');
@@ -895,6 +1023,7 @@ export class WorkstationManager {
             }
             this.removeInteractionIcon(workstation);
             this.removeOccupiedIcon(workstation);
+            this.removeCharacterFromWorkstation(workstation);
         });
         
         this.workstations.clear();
