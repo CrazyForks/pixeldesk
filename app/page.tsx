@@ -441,7 +441,7 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* 左侧 Next.js 页面区域 - 现代化设计 */}
-      <div className="w-96 bg-black/20 backdrop-blur-lg border-r border-white/10 flex flex-col">
+      <div className="w-96 bg-black/20 backdrop-blur-lg border-r border-white/10 flex flex-col overflow-auto">
         {/* 顶部标题栏 */}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center space-x-3">
