@@ -512,6 +512,13 @@ export class WorkstationManager {
                 // 应用绑定状态
                 workstation.isOccupied = true;
                 workstation.userId = binding.userId;
+                workstation.userInfo = {
+                    name: binding.user?.name,
+                    username: binding.user?.username,
+                    avatar: binding.user?.avatar,
+                    character: binding.user?.character,
+                    points: binding.user?.points
+                };
                 workstation.boundAt = binding.boundAt;
                 workstation.expiresAt = expiresAt.toISOString();
                 workstation.remainingDays = Math.ceil((expiresAt - now) / (24 * 60 * 60 * 1000));
@@ -529,7 +536,7 @@ export class WorkstationManager {
                 
                 // 添加角色显示
                 this.addCharacterToWorkstation(workstation, binding.userId, {
-                    name: binding.user?.name || `玩家${binding.userId.slice(-4)}`,
+                    name: binding.user?.name || binding.user?.username || `玩家${binding.userId.slice(-4)}`,
                     avatar: binding.user?.avatar || binding.user?.character || 'Premade_Character_48x48_01'
                 });
                 
@@ -866,7 +873,7 @@ export class WorkstationManager {
         this.setCharacterDirectionFrame(headSprite, bodySprite, characterDirection);
         
         // 添加角色名称标签
-        const nameLabel = this.scene.add.text(0, 25, workstation.userInfo?.name || `玩家${userId.slice(-4)}`, {
+        const nameLabel = this.scene.add.text(0, 25, workstation.userInfo?.name || workstation.userInfo?.username || `玩家${userId.slice(-4)}`, {
             fontSize: '12px',
             fill: '#ffffff',
             backgroundColor: '#333333',

@@ -10,6 +10,20 @@ interface CharacterDisplayProps {
     avatar?: string
     status?: string
     points?: number
+    currentStatus?: {
+      type?: string
+      status?: string
+      emoji?: string
+      message?: string
+      timestamp?: string
+    }
+    statusHistory?: Array<{
+      type: string
+      status: string
+      emoji: string
+      message: string
+      timestamp: string
+    }>
   }
   position?: { x: number; y: number }
   onClose: () => void
@@ -27,6 +41,8 @@ export default function CharacterDisplayModal({
   const [chatHistory, setChatHistory] = useState([
     { id: 1, sender: 'system', message: '你开始与玩家对话', timestamp: new Date().toISOString() }
   ])
+  const [realStatusHistory, setRealStatusHistory] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   
   useEffect(() => {
     // 设置角色图片
@@ -36,8 +52,36 @@ export default function CharacterDisplayModal({
     }
   }, [userInfo.character, userInfo.avatar])
 
+  useEffect(() => {
+    // 当用户ID变化时，从数据库获取真实的状态历史数据
+    if (userId) {
+      fetchRealStatusHistory()
+    }
+  }, [userId])
+
+  const fetchRealStatusHistory = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/users/${userId}/status-history`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setRealStatusHistory(data.data)
+        } else {
+          console.warn('获取状态历史失败:', data.error)
+        }
+      } else {
+        console.warn('获取状态历史API调用失败:', response.status)
+      }
+    } catch (error) {
+      console.error('获取状态历史时出错:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const getCharacterName = () => {
-    return userInfo.name || `玩家${userId.slice(-4)}`
+    return userInfo.name || userInfo.username || `玩家${userId.slice(-4)}`
   }
 
   const handleSendMessage = () => {
@@ -142,10 +186,38 @@ export default function CharacterDisplayModal({
               </div>
             </div>
 
-            {/* 状态信息 */}
-            {userInfo.status && (
-              <div className="bg-white/10 rounded-lg p-3">
-                <p className="text-white text-sm">📝 {userInfo.status}</p>
+            {/* 当前状态信息 */}
+            {userInfo.currentStatus ? (
+              <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-white/20 rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl">{userInfo.currentStatus.emoji || '💼'}</span>
+                  <div>
+                    <p className="text-white text-sm font-medium">
+                      {userInfo.currentStatus.status || '当前状态'}
+                    </p>
+                    <p className="text-white/70 text-xs">
+                      {userInfo.currentStatus.message || '正在工作中...'}
+                    </p>
+                    {userInfo.currentStatus.timestamp && (
+                      <p className="text-white/50 text-xs mt-1">
+                        {new Date(userInfo.currentStatus.timestamp).toLocaleTimeString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-white/20 rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl">💻</span>
+                  <div>
+                    <p className="text-white text-sm font-medium">工作中</p>
+                    <p className="text-white/70 text-xs">正在开发新功能</p>
+                    <p className="text-white/50 text-xs mt-1">
+                      {new Date().toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -224,16 +296,56 @@ export default function CharacterDisplayModal({
 
         {activeTab === 'history' && (
           <div className="space-y-3">
-            <h5 className="text-white text-sm font-medium">互动历史</h5>
+            <h5 className="text-white text-sm font-medium">状态动态</h5>
             <div className="h-48 overflow-y-auto space-y-2">
-              {chatHistory.map((msg) => (
-                <div key={msg.id} className="bg-white/5 rounded-lg p-3">
-                  <p className="text-white text-sm">{msg.message}</p>
-                  <p className="text-white/50 text-xs mt-1">
-                    {new Date(msg.timestamp).toLocaleString()}
-                  </p>
+              {/* 当前状态 */}
+              {userInfo.currentStatus && (
+                <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">{userInfo.currentStatus.emoji || '💼'}</span>
+                    <div>
+                      <p className="text-white text-sm font-medium">
+                        {userInfo.currentStatus.status || '当前状态'}
+                      </p>
+                      <p className="text-white/70 text-xs">
+                        {userInfo.currentStatus.message || '正在工作中...'}
+                      </p>
+                      {userInfo.currentStatus.timestamp && (
+                        <p className="text-white/50 text-xs mt-1">
+                          {new Date(userInfo.currentStatus.timestamp).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* 历史状态记录 */}
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  <span className="ml-2 text-white/60 text-sm">加载中...</span>
+                </div>
+              ) : realStatusHistory.length > 0 ? (
+                realStatusHistory.map((status, index) => (
+                  <div key={index} className="bg-white/5 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg">{status.emoji}</span>
+                      <div>
+                        <p className="text-white text-sm font-medium">{status.status}</p>
+                        <p className="text-white/70 text-xs">{status.message}</p>
+                        <p className="text-white/50 text-xs mt-1">
+                          {new Date(status.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-white/50 text-sm">
+                  该玩家还没有发布过状态
+                </div>
+              )}
             </div>
           </div>
         )}
