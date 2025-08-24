@@ -1,7 +1,18 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
+import { Press_Start_2P, VT323 } from 'next/font/google'
 
 const inter = Inter({ subsets: ['latin'] })
+const pressStart2P = Press_Start_2P({ 
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-pixel'
+})
+const vt323 = VT323({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-retro'
+})
 
 export const metadata = {
   title: 'PixelDesk - 社交办公游戏',
@@ -14,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh">
-      <body className={inter.className}>
+    <html lang="zh" className={`${pressStart2P.variable} ${vt323.variable}`}>
+      <body className={`${inter.className} font-pixel`}>
         <div id="app-root">
           {children}
         </div>

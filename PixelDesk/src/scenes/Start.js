@@ -39,6 +39,44 @@ export class Start extends Phaser.Scene {
             // 添加获取工位统计的全局函数
             window.getGameWorkstationStats = this.getWorkstationStats.bind(this);
             
+            // 快速回到工位功能
+            window.teleportToWorkstation = async () => {
+                if (!this.currentUser) {
+                    console.warn('没有当前用户信息');
+                    return { success: false, error: '请先登录' };
+                }
+                
+                // 显示确认对话框
+                const confirmed = confirm('快速回到工位将扣除1积分，确定要继续吗？');
+                if (!confirmed) {
+                    return { success: false, error: '操作已取消' };
+                }
+                
+                try {
+                    const result = await this.workstationManager.teleportToWorkstation(this.currentUser.id, this.player);
+                    
+                    if (result.success) {
+                        // 广播积分更新事件
+                        const event = new CustomEvent('user-points-updated', {
+                            detail: {
+                                userId: this.currentUser.id,
+                                points: result.remainingPoints
+                            }
+                        });
+                        window.dispatchEvent(event);
+                        
+                        alert(`成功回到工位！扣除1积分，剩余积分: ${result.remainingPoints}`);
+                    } else {
+                        alert(`操作失败: ${result.error}`);
+                    }
+                    
+                    return result;
+                } catch (error) {
+                    console.error('传送失败:', error);
+                    return { success: false, error: '传送失败，请重试' };
+                }
+            };
+            
             // 触发Phaser游戏初始化完成事件
             window.dispatchEvent(new Event('phaser-game-ready'));
         }
@@ -158,6 +196,11 @@ export class Start extends Phaser.Scene {
         // 更新绑定UI
         if (this.bindingUI) {
             this.bindingUI.update();
+        }
+
+        // 检查T键按下，快速回到工位
+        if (Phaser.Input.Keyboard.JustDown(this.teleportKey)) {
+            this.handleTeleportKeyPress();
         }
     }
 
@@ -752,12 +795,40 @@ export class Start extends Phaser.Scene {
                 this.adjustZoom(zoomDelta);
             }
         });
+
+        // 添加键盘快捷键：T键快速回到工位
+        this.teleportKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     }
 
     // ===== 全局函数方法 =====
     saveGameScene() {
         // 保存游戏场景引用的全局函数
         console.log('Game scene saved globally');
+    }
+
+    // 处理T键按下事件
+    async handleTeleportKeyPress() {
+        if (!this.currentUser) {
+            console.warn('没有当前用户信息，无法使用快速回到工位功能');
+            return;
+        }
+
+        // 检查玩家是否有绑定的工位
+        const userWorkstation = this.workstationManager.getWorkstationByUser(this.currentUser.id);
+        if (!userWorkstation) {
+            console.warn('用户没有绑定的工位，无法使用快速回到工位功能');
+            return;
+        }
+
+        // 调用全局teleportToWorkstation函数
+        if (typeof window !== 'undefined' && window.teleportToWorkstation) {
+            const result = await window.teleportToWorkstation();
+            if (result && result.success) {
+                console.log('键盘快捷键：成功回到工位');
+            } else if (result && result.error) {
+                console.warn('键盘快捷键：回到工位失败:', result.error);
+            }
+        }
     }
     
     getWorkstationCount() {

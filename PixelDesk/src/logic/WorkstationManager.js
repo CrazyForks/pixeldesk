@@ -903,17 +903,20 @@ export class WorkstationManager {
     onCharacterClick(userId, workstation) {
         console.log(`点击了工位 ${workstation.id} 上的角色 ${userId}`);
         
+        // 检查userInfo是否为null或undefined
+        const userInfo = workstation.userInfo || {};
+        
         // 触发角色点击事件
         this.scene.events.emit('character-clicked', {
             userId,
             workstationId: workstation.id,
-            userInfo: workstation.userInfo,
+            userInfo: userInfo,
             position: { x: workstation.position.x, y: workstation.position.y }
         });
         
         // 如果有全局函数，调用它
         if (typeof window !== 'undefined' && window.showCharacterInfo) {
-            window.showCharacterInfo(userId, workstation.userInfo, { 
+            window.showCharacterInfo(userId, userInfo, { 
                 x: workstation.position.x, 
                 y: workstation.position.y 
             });
@@ -1117,6 +1120,91 @@ export class WorkstationManager {
         }
     }
     
+    // ===== 快速回到工位功能 =====
+    async teleportToWorkstation(userId, player) {
+        const workstation = this.getWorkstationByUser(userId);
+        if (!workstation) {
+            console.warn(`用户 ${userId} 没有绑定的工位`);
+            return { success: false, error: '您还没有绑定工位' };
+        }
+
+        console.log(`找到用户 ${userId} 的绑定工位: ID ${workstation.id}, 位置 (${workstation.position.x}, ${workstation.position.y})`);
+        if (workstation.sprite) {
+            console.log(`工位精灵实际位置: (${workstation.sprite.x}, ${workstation.sprite.y})`);
+        }
+
+        // 计算传送位置（工位前方）
+        const teleportPosition = this.calculateTeleportPosition(workstation);
+        
+        // 扣除积分（1积分）
+        const pointsResult = await this.updateUserPoints(userId, -1);
+        if (!pointsResult.success) {
+            console.error('扣除积分失败:', pointsResult.error);
+            return { success: false, error: '积分扣除失败' };
+        }
+
+        // 执行传送
+        if (player && typeof player.teleportTo === 'function') {
+            console.log(`执行传送: 玩家当前位置 (${player.x}, ${player.y}) -> 目标位置 (${teleportPosition.x}, ${teleportPosition.y})`);
+            player.teleportTo(teleportPosition.x, teleportPosition.y, teleportPosition.direction);
+        }
+
+        console.log(`用户 ${userId} 快速回到工位，扣除1积分，剩余积分: ${pointsResult.newPoints}`);
+        
+        // 触发事件
+        this.scene.events.emit('teleport-to-workstation', {
+            userId,
+            workstationId: workstation.id,
+            position: teleportPosition,
+            pointsDeducted: 1,
+            remainingPoints: pointsResult.newPoints
+        });
+
+        return { 
+            success: true, 
+            workstation,
+            position: teleportPosition,
+            pointsDeducted: 1,
+            remainingPoints: pointsResult.newPoints
+        };
+    }
+
+    // 计算传送位置（工位前方）
+    calculateTeleportPosition(workstation) {
+        // 使用工位精灵的实际位置，而不是Tiled对象的位置
+        const spriteX = workstation.sprite ? workstation.sprite.x : workstation.position.x;
+        const spriteY = workstation.sprite ? workstation.sprite.y : workstation.position.y;
+        const { size, direction } = workstation;
+        const offset = 60; // 距离工位的偏移量
+        
+        let teleportX = spriteX + size.width / 2;
+        let teleportY = spriteY + size.height / 2;
+        let teleportDirection = 'down';
+
+        switch (direction) {
+            case 'right':
+                teleportX = spriteX + size.width + offset;
+                teleportY = spriteY + size.height / 2;
+                teleportDirection = 'left';
+                break;
+            case 'left':
+                teleportX = spriteX - offset;
+                teleportY = spriteY + size.height / 2;
+                teleportDirection = 'right';
+                break;
+            case 'single':
+            case 'center':
+            default:
+                teleportX = spriteX + size.width / 2;
+                teleportY = spriteY - offset;
+                teleportDirection = 'down';
+                break;
+        }
+
+        console.log(`计算传送位置: 工位ID ${workstation.id}, 精灵位置 (${spriteX}, ${spriteY}), 传送位置 (${teleportX}, ${teleportY})`);
+        return { x: teleportX, y: teleportY, direction: teleportDirection };
+    }
+
     // ===== 清理方法 =====
     clearAllBindings() {
         // 清理所有工位绑定

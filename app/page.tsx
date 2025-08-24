@@ -18,6 +18,14 @@ declare global {
       availableWorkstations: number
       occupancyRate: string
     }
+    teleportToWorkstation: () => Promise<{
+      success: boolean
+      error?: string
+      workstation?: any
+      position?: { x: number; y: number; direction: string }
+      pointsDeducted?: number
+      remainingPoints?: number
+    }>
   }
 }
 
@@ -491,6 +499,23 @@ export default function Home() {
                 <span className="text-gray-300 text-sm">占用率</span>
                 <span className="text-purple-400 font-medium">{workstationStats.occupancyRate}</span>
               </div>
+              
+              {/* 快速回到工位按钮 */}
+              {currentUser?.workstationId && (
+                <div className="pt-4 border-t border-white/10 mt-4">
+                  <button
+                    onClick={async () => {
+                      if (typeof window !== 'undefined' && window.teleportToWorkstation) {
+                        await window.teleportToWorkstation();
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
+                  >
+                    🚀 快速回到工位
+                    <span className="text-xs ml-2 opacity-80">(消耗1积分)</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center py-4">

@@ -366,6 +366,50 @@ export class Player extends Phaser.GameObjects.Container {
         this.enableMovement = true;
         console.log('Player.enableMovement() 执行完成，新的enableMovement值:', this.enableMovement);
     }
+
+    // 传送玩家到指定位置
+    teleportTo(x, y, direction = 'down') {
+        if (!this.scene || !this.body) return false;
+        
+        // 停止当前移动
+        if (this.body.velocity) {
+            this.body.velocity.x = 0;
+            this.body.velocity.y = 0;
+        }
+        
+        // 设置新位置
+        this.setPosition(x, y);
+        
+        // 设置朝向
+        this.setDirectionFrame(direction);
+        
+        // 保存状态
+        this.saveState();
+        
+        // 添加传送特效
+        this.addTeleportEffect();
+        
+        console.log(`玩家传送到位置: (${x}, ${y}), 朝向: ${direction}`);
+        return true;
+    }
+
+    // 添加传送特效
+    addTeleportEffect() {
+        // 创建传送特效
+        const effect = this.scene.add.particles(this.x, this.y, 'particle', {
+            speed: { min: 50, max: 150 },
+            scale: { start: 0.5, end: 0 },
+            blendMode: 'ADD',
+            lifespan: 1000,
+            quantity: 10,
+            frequency: 100
+        });
+        
+        // 1秒后销毁特效
+        this.scene.time.delayedCall(1000, () => {
+            effect.destroy();
+        });
+    }
     
     destroy() {
         // 清理事件监听器
