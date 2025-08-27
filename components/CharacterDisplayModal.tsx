@@ -6,6 +6,7 @@ interface CharacterDisplayProps {
   userId: string
   userInfo: {
     name?: string
+    username?: string
     character?: string
     avatar?: string
     status?: string
@@ -43,45 +44,74 @@ export default function CharacterDisplayModal({
   ])
   const [realStatusHistory, setRealStatusHistory] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [userInfoState, setUserInfoState] = useState(userInfo)
   
   useEffect(() => {
     // 设置角色图片
-    if (userInfo.character || userInfo.avatar) {
-      const characterKey = userInfo.character || userInfo.avatar
+    if (userInfoState.character || userInfoState.avatar) {
+      const characterKey = userInfoState.character || userInfoState.avatar
       setCharacterImage(`/assets/characters/${characterKey}.png`)
     }
-  }, [userInfo.character, userInfo.avatar])
+  }, [userInfoState.character, userInfoState.avatar])
 
   useEffect(() => {
-    // 当用户ID变化时，从数据库获取真实的状态历史数据
+    // 当用户ID变化时，从数据库获取真实的状态数据
     if (userId) {
-      fetchRealStatusHistory()
+      fetchRealStatusData()
     }
   }, [userId])
 
-  const fetchRealStatusHistory = async () => {
+  const fetchRealStatusData = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/users/${userId}/status-history`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          setRealStatusHistory(data.data)
-        } else {
-          console.warn('获取状态历史失败:', data.error)
+      // 同时获取用户信息和状态历史
+      const [userResponse, statusHistoryResponse] = await Promise.all([
+        fetch(`/api/users?userId=${userId}`),
+        fetch(`/api/status-history?userId=${userId}`)
+      ])
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        if (userData.success && userData.data) {
+          // 更新userInfo
+          setUserInfoState(prev => ({
+            ...prev,
+            ...userData.data
+          }))
         }
-      } else {
-        console.warn('获取状态历史API调用失败:', response.status)
+      }
+
+      if (statusHistoryResponse.ok) {
+        const historyData = await statusHistoryResponse.json()
+        if (historyData.success) {
+          setRealStatusHistory(historyData.data)
+          
+          // 如果有状态历史，设置最新的状态为当前状态
+          if (historyData.data && historyData.data.length > 0) {
+            const latestStatus = historyData.data[0]
+            setUserInfoState(prev => ({
+              ...prev,
+              currentStatus: {
+                type: latestStatus.type,
+                status: latestStatus.status,
+                emoji: latestStatus.emoji,
+                message: latestStatus.message,
+                timestamp: latestStatus.timestamp
+              }
+            }))
+          }
+        }
       }
     } catch (error) {
-      console.error('获取状态历史时出错:', error)
+      console.error('获取状态数据时出错:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
+
   const getCharacterName = () => {
-    return userInfo.name || userInfo.username || `玩家${userId.slice(-4)}`
+    return userInfoState.name || userInfoState.username || `玩家${userId.slice(-4)}`
   }
 
   const handleSendMessage = () => {
@@ -180,42 +210,39 @@ export default function CharacterDisplayModal({
               <div>
                 <h4 className="text-white text-lg font-semibold">{getCharacterName()}</h4>
                 <p className="text-white/60 text-sm">ID: {userId}</p>
-                {userInfo.points && (
-                  <p className="text-yellow-400 text-sm">💰 {userInfo.points} 积分</p>
+                {userInfoState.points && (
+                  <p className="text-yellow-400 text-sm">💰 {userInfoState.points} 积分</p>
                 )}
               </div>
             </div>
 
             {/* 当前状态信息 */}
-            {userInfo.currentStatus ? (
+            {userInfoState.currentStatus ? (
               <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-white/20 rounded-lg p-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xl">{userInfo.currentStatus.emoji || '💼'}</span>
+                  <span className="text-xl">{userInfoState.currentStatus.emoji || '💼'}</span>
                   <div>
                     <p className="text-white text-sm font-medium">
-                      {userInfo.currentStatus.status || '当前状态'}
+                      {userInfoState.currentStatus.status || '当前状态'}
                     </p>
                     <p className="text-white/70 text-xs">
-                      {userInfo.currentStatus.message || '正在工作中...'}
+                      {userInfoState.currentStatus.message || '正在工作中...'}
                     </p>
-                    {userInfo.currentStatus.timestamp && (
+                    {userInfoState.currentStatus.timestamp && (
                       <p className="text-white/50 text-xs mt-1">
-                        {new Date(userInfo.currentStatus.timestamp).toLocaleTimeString()}
+                        {new Date(userInfoState.currentStatus.timestamp).toLocaleTimeString()}
                       </p>
                     )}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-white/20 rounded-lg p-3">
+              <div className="bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-white/10 rounded-lg p-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xl">💻</span>
+                  <span className="text-xl">🤔</span>
                   <div>
-                    <p className="text-white text-sm font-medium">工作中</p>
-                    <p className="text-white/70 text-xs">正在开发新功能</p>
-                    <p className="text-white/50 text-xs mt-1">
-                      {new Date().toLocaleTimeString()}
-                    </p>
+                    <p className="text-white text-sm font-medium">暂无状态</p>
+                    <p className="text-white/60 text-xs">该用户还没有发布过状态</p>
                   </div>
                 </div>
               </div>
@@ -279,7 +306,7 @@ export default function CharacterDisplayModal({
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="输入消息..."
                 className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:border-white/40"
               />
@@ -299,20 +326,20 @@ export default function CharacterDisplayModal({
             <h5 className="text-white text-sm font-medium">状态动态</h5>
             <div className="h-48 overflow-y-auto space-y-2">
               {/* 当前状态 */}
-              {userInfo.currentStatus && (
+              {userInfoState.currentStatus && (
                 <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
                   <div className="flex items-center space-x-2">
-                    <span className="text-lg">{userInfo.currentStatus.emoji || '💼'}</span>
+                    <span className="text-lg">{userInfoState.currentStatus.emoji || '💼'}</span>
                     <div>
                       <p className="text-white text-sm font-medium">
-                        {userInfo.currentStatus.status || '当前状态'}
+                        {userInfoState.currentStatus.status || '当前状态'}
                       </p>
                       <p className="text-white/70 text-xs">
-                        {userInfo.currentStatus.message || '正在工作中...'}
+                        {userInfoState.currentStatus.message || '正在工作中...'}
                       </p>
-                      {userInfo.currentStatus.timestamp && (
+                      {userInfoState.currentStatus.timestamp && (
                         <p className="text-white/50 text-xs mt-1">
-                          {new Date(userInfo.currentStatus.timestamp).toLocaleString()}
+                          {new Date(userInfoState.currentStatus.timestamp).toLocaleString()}
                         </p>
                       )}
                     </div>

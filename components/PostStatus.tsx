@@ -37,6 +37,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
 
   // 初始化时加载状态历史
   useEffect(() => {
+    console.log('PostStatus mounted with userId:', userId)
     if (userId) {
       // 加载状态历史
       loadStatusHistory()
@@ -44,15 +45,34 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
   }, [userId])
 
   // 加载状态历史
-  const loadStatusHistory = useCallback(() => {
+  const loadStatusHistory = useCallback(async () => {
+    console.log('Loading status history for userId:', userId)
     if (userId) {
-      const history = statusHistoryManager.getStatusHistory(userId)
-      setStatusHistory(history)
+      try {
+        // 通过API从数据库加载状态历史
+        console.log('Loading from API...')
+        const response = await fetch(`/api/status-history?userId=${userId}`)
+        if (response.ok) {
+          const result = await response.json()
+          console.log('API history loaded:', result.data.length, 'items')
+          setStatusHistory(result.data)
+        } else {
+          throw new Error(`API error: ${response.status}`)
+        }
+      } catch (error) {
+        console.error('Error loading status history from API:', error)
+        // 如果API失败，回退到本地缓存
+        console.log('Falling back to localStorage...')
+        const history = statusHistoryManager.getStatusHistory(userId)
+        console.log('LocalStorage history loaded:', history.length, 'items')
+        setStatusHistory(history)
+      }
     }
   }, [userId])
 
   // 优化：避免不必要的重新渲染
-  const memoizedHandleSubmit = useCallback(() => {
+  const memoizedHandleSubmit = useCallback(async () => {
+    console.log('HandleSubmit called with userId:', userId)
     const status = statusOptions.find(s => s.id === selectedStatus)
     if (!status) return
     
@@ -64,12 +84,45 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       timestamp: new Date().toISOString()
     }
     
-    // 保存状态历史记录
-    if (userId) {
-      statusHistoryManager.addStatusHistory(fullStatus, userId)
-      // 重新加载状态历史
-      loadStatusHistory()
+    // 保存状态历史记录到数据库和本地缓存
+    console.log('Saving status with userId:', userId, 'status:', fullStatus)
+    
+    if (!userId) {
+      console.error('Cannot save status: userId is null or undefined')
+      return
     }
+    
+    try {
+      // 通过API保存到数据库
+      console.log('Calling API to save status...')
+      const response = await fetch('/api/status-history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          status: fullStatus.status,
+          type: fullStatus.type,
+          emoji: fullStatus.emoji,
+          message: fullStatus.message
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Status saved to database via API:', result)
+      } else {
+        console.error('Failed to save status via API:', response.status)
+      }
+    } catch (error) {
+      console.error('Error saving status via API:', error)
+    }
+    
+    // 同时保存到本地缓存（用于快速UI更新）
+    statusHistoryManager.addStatusHistory(fullStatus, userId)
+    // 重新加载状态历史
+    loadStatusHistory()
     
     // 通知 Phaser 游戏更新状态（优先执行，避免延迟）
     if (typeof window !== 'undefined' && (window as any).updateMyStatus) {

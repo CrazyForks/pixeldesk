@@ -45,9 +45,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 缓存到Redis
-    const redis = require('../../../lib/redis').redis
-    await redis.setJSON(`status:${userId}:${historyItem.id}`, historyItem, 3600)
+    // Redis已禁用，跳过缓存操作
 
     return NextResponse.json({ success: true, data: historyItem })
   } catch (error) {
@@ -70,12 +68,7 @@ export async function DELETE(request: NextRequest) {
       where: { userId }
     })
 
-    // 清除Redis缓存
-    const redis = require('../../../lib/redis').redis
-    const keys = await redis.keys(`status:${userId}:*`)
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
+    // Redis已禁用，跳过缓存清理操作
 
     return NextResponse.json({ success: true })
   } catch (error) {

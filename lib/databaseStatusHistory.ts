@@ -53,6 +53,7 @@ export class DatabaseStatusHistoryManager {
    */
   async addStatusHistory(status: any, userId?: string): Promise<StatusHistory | null> {
     try {
+      console.log('Database manager: Adding status history for user:', userId, 'status:', status)
       const historyItem = await prisma.statusHistory.create({
         data: {
           userId: userId || '',
@@ -64,10 +65,8 @@ export class DatabaseStatusHistoryManager {
         }
       })
 
-      // 清除用户缓存
-      if (userId) {
-        await redis.del(`status_history:${userId}`)
-      }
+      console.log('Database manager: Status saved successfully:', historyItem)
+      // Redis已禁用，跳过缓存清理操作
 
       return historyItem
     } catch (error) {

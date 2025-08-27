@@ -58,9 +58,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 缓存到Redis
-    const redis = require('@/lib/redis').redis
-    await redis.setJSON(`user:${id}`, user, 3600)
+    // Redis已禁用，跳过缓存操作
 
     return NextResponse.json({ success: true, data: user })
   } catch (error) {
@@ -87,9 +85,7 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    // 更新Redis缓存
-    const redis = require('@/lib/redis').redis
-    await redis.setJSON(`user:${userId}`, user, 3600)
+    // Redis已禁用，跳过缓存操作
 
     return NextResponse.json({ success: true, data: user })
   } catch (error) {
