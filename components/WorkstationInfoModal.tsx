@@ -176,7 +176,7 @@ const WorkstationInfoModal = memo(({
         {/* 标题 */}
         <div className="mb-4">
           <h2 className="text-lg font-bold text-white mb-1">工位信息</h2>
-          <div className="w-8 h-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded"></div>
+          <div className="w-8 h-1 bg-gradient-to-r from-retro-green to-retro-blue rounded"></div>
         </div>
 
         {/* 加载状态 */}
@@ -209,7 +209,7 @@ const WorkstationInfoModal = memo(({
                       className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-retro-purple to-retro-pink flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-xs">
                         {userInfo.name.charAt(0).toUpperCase()}
                       </span>
@@ -287,7 +287,7 @@ const WorkstationInfoModal = memo(({
                       className={`h-1.5 rounded-full transition-all duration-300 ${
                         timeInfo.isExpired 
                           ? 'bg-red-500' 
-                          : 'bg-gradient-to-r from-green-500 to-emerald-500'
+                          : 'bg-gradient-to-r from-retro-green to-retro-blue'
                       }`}
                       style={{ 
                         width: `${timeInfo.usagePercentage}%` 

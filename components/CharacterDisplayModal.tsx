@@ -218,7 +218,7 @@ export default function CharacterDisplayModal({
 
             {/* 当前状态信息 */}
             {userInfoState.currentStatus ? (
-              <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-white/20 rounded-lg p-3">
+              <div className="bg-gradient-to-r from-retro-green/20 to-retro-blue/20 border border-white/20 rounded-lg p-3">
                 <div className="flex items-center space-x-2">
                   <span className="text-xl">{userInfoState.currentStatus.emoji || '💼'}</span>
                   <div>
@@ -237,7 +237,7 @@ export default function CharacterDisplayModal({
                 </div>
               </div>
             ) : (
-              <div className="bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-white/10 rounded-lg p-3">
+              <div className="bg-gradient-to-r from-retro-textMuted/20 to-retro-border/20 border border-white/10 rounded-lg p-3">
                 <div className="flex items-center space-x-2">
                   <span className="text-xl">🤔</span>
                   <div>

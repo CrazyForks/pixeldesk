@@ -41,6 +41,24 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // 复古像素风格色彩
+        retro: {
+          bg: {
+            dark: '#1a1b26',
+            darker: '#16161e',
+          },
+          text: '#c0caf5',
+          textMuted: '#565f89',
+          border: '#414868',
+          red: '#ff5c57',
+          orange: '#ff9e3b',
+          yellow: '#f9f871',
+          green: '#5af78e',
+          blue: '#57c7ff',
+          purple: '#c74ded',
+          pink: '#ff6ac1',
+          cyan: '#9aedfe',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

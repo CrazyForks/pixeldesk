@@ -28,14 +28,14 @@ const PlayerClickModal = memo(({
   // 获取状态徽章样式
   const getStatusBadge = (type: string) => {
     const badges: Record<string, string> = {
-      working: 'from-blue-500 to-cyan-500',
-      break: 'from-green-500 to-emerald-500',
-      reading: 'from-purple-500 to-violet-500',
-      restroom: 'from-yellow-500 to-orange-500',
-      meeting: 'from-red-500 to-pink-500',
-      lunch: 'from-orange-500 to-amber-500'
+      working: 'from-retro-blue to-retro-cyan',
+      break: 'from-retro-green to-retro-blue',
+      reading: 'from-retro-purple to-retro-pink',
+      restroom: 'from-retro-yellow to-retro-orange',
+      meeting: 'from-retro-red to-retro-pink',
+      lunch: 'from-retro-orange to-retro-yellow'
     }
-    return badges[type] || 'from-gray-500 to-slate-500'
+    return badges[type] || 'from-retro-textMuted to-retro-border'
   }
 
   // 获取状态图标
@@ -102,7 +102,7 @@ const PlayerClickModal = memo(({
         {/* 玩家信息头部 */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center">
               <span className="text-xl font-bold text-white">
                 {player.name?.charAt(0) || 'P'}
               </span>
@@ -117,7 +117,7 @@ const PlayerClickModal = memo(({
               </div>
             </div>
           </div>
-          <div className="w-12 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
+          <div className="w-12 h-1 bg-gradient-to-r from-retro-purple to-retro-pink rounded"></div>
         </div>
 
         {/* 标签页 */}
@@ -132,8 +132,8 @@ const PlayerClickModal = memo(({
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  ? 'bg-gradient-to-r from-retro-purple to-retro-pink text-white shadow-lg'
+                  : 'text-retro-textMuted hover:text-white hover:bg-gray-700/50'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -192,7 +192,7 @@ const PlayerClickModal = memo(({
                     placeholder="输入消息..."
                     className="flex-1 px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 text-sm"
                   />
-                  <button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                  <button className="bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-blue hover:to-retro-cyan text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
                     发送
                   </button>
                 </div>
@@ -242,7 +242,7 @@ const PlayerClickModal = memo(({
               // 这里可以添加关注功能
               console.log('关注玩家:', player.name)
             }}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all duration-200"
+            className="flex-1 py-2 px-4 bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-blue hover:to-retro-cyan text-white rounded-lg font-medium transition-all duration-200"
           >
             关注
           </button>

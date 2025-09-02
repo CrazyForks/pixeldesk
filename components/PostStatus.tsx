@@ -4,12 +4,13 @@ import { useState, memo, useCallback, ChangeEvent, useEffect } from 'react'
 import { statusHistoryManager, formatTimestamp, getStatusBadge } from '../lib/statusHistory'
 
 const statusOptions = [
-  { id: 'working', label: '工作中', emoji: '💼', color: 'from-blue-500 to-cyan-500' },
-  { id: 'break', label: '休息中', emoji: '☕', color: 'from-green-500 to-emerald-500' },
-  { id: 'reading', label: '阅读中', emoji: '📚', color: 'from-purple-500 to-violet-500' },
-  { id: 'restroom', label: '洗手间', emoji: '🚻', color: 'from-yellow-500 to-orange-500' },
-  { id: 'meeting', label: '会议中', emoji: '👥', color: 'from-red-500 to-pink-500' },
-  { id: 'lunch', label: '午餐时间', emoji: '🍽️', color: 'from-orange-500 to-amber-500' }
+  { id: 'working', label: '工作中', emoji: '💼', color: 'from-retro-blue to-retro-cyan' },
+  { id: 'break', label: '休息中', emoji: '☕', color: 'from-retro-green to-retro-blue' },
+  { id: 'reading', label: '阅读中', emoji: '📚', color: 'from-retro-purple to-retro-pink' },
+  { id: 'restroom', label: '洗手间', emoji: '🚻', color: 'from-retro-yellow to-retro-orange' },
+  { id: 'meeting', label: '会议中', emoji: '👥', color: 'from-retro-red to-retro-pink' },
+  { id: 'lunch', label: '午餐时间', emoji: '🍽️', color: 'from-retro-orange to-retro-yellow' },
+  { id: 'off_work', label: '下班了', emoji: '🏠', color: 'from-retro-textMuted to-retro-border' }
 ]
 
 interface PostStatusProps {
@@ -119,6 +120,33 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       console.error('Error saving status via API:', error)
     }
     
+    // 时间跟踪：根据状态类型开始或结束活动
+    try {
+      console.log('Calling time tracking API for status:', selectedStatus)
+      const timeTrackingResponse = await fetch('/api/time-tracking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          action: 'start',
+          activityType: selectedStatus,
+          workstationId: userData?.workstationId,
+          notes: customMessage
+        })
+      })
+      
+      if (timeTrackingResponse.ok) {
+        const result = await timeTrackingResponse.json()
+        console.log('Time tracking started:', result)
+      } else {
+        console.error('Failed to start time tracking:', timeTrackingResponse.status)
+      }
+    } catch (error) {
+      console.error('Error starting time tracking:', error)
+    }
+    
     // 同时保存到本地缓存（用于快速UI更新）
     statusHistoryManager.addStatusHistory(fullStatus, userId)
     // 重新加载状态历史
@@ -137,7 +165,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
     // 平滑收起面板
     setIsExpanded(false)
     setCustomMessage('')
-  }, [selectedStatus, customMessage, onStatusUpdate, userId, loadStatusHistory])
+  }, [selectedStatus, customMessage, onStatusUpdate, userId, loadStatusHistory, userData?.workstationId])
 
   // 优化：缓存状态选择处理函数
   const memoizedHandleStatusSelect = useCallback((statusId: string) => {
@@ -169,11 +197,11 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       {/* 用户信息卡片 */}
       {userData && (
         <div className="group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/20 to-retro-purple/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-retro-blue to-retro-purple rounded-full flex items-center justify-center">
                   <span className="text-xl font-bold text-white">
                     {userData.username?.charAt(0).toUpperCase() || 'U'}
                   </span>
@@ -184,26 +212,26 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-yellow-400 font-bold text-xl">
+                <div className="text-retro-yellow font-bold text-xl">
                   <span className="text-sm">💎</span> {userData.points || 0}
                 </div>
-                <div className="text-gray-400 text-xs">积分</div>
+                <div className="text-retro-textMuted text-xs">积分</div>
               </div>
             </div>
             
             {/* 工位信息 */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/10">
+            <div className="flex items-center justify-between pt-3 border-t border-retro-border">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🏢</span>
-                <span className="text-gray-300 text-sm">工位状态</span>
+                <span className="text-retro-text text-sm">工位状态</span>
               </div>
               <div className="text-right">
                 {userData.workstationId ? (
-                  <div className="text-green-400 text-sm font-medium">
+                  <div className="text-retro-green text-sm font-medium">
                     已绑定: {userData.workstationId}
                   </div>
                 ) : (
-                  <div className="text-orange-400 text-sm font-medium">
+                  <div className="text-retro-orange text-sm font-medium">
                     未绑定工位
                   </div>
                 )}
@@ -216,40 +244,40 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       {/* 工位统计信息 */}
       {workstationStats && (
         <div className="group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-retro-green/20 to-retro-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🏢</span>
                 <span className="text-white font-medium">工位统计</span>
               </div>
-              <div className="text-xs text-gray-400">实时更新</div>
+              <div className="text-xs text-retro-textMuted">实时更新</div>
             </div>
             
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-lg font-bold text-blue-400">
+                <div className="text-lg font-bold text-retro-blue">
                   {workstationStats.totalWorkstations || 0}
                 </div>
-                <div className="text-xs text-gray-400">总工位</div>
+                <div className="text-xs text-retro-textMuted">总工位</div>
               </div>
               <div>
-                <div className="text-lg font-bold text-green-400">
+                <div className="text-lg font-bold text-retro-green">
                   {workstationStats.boundWorkstations || 0}
                 </div>
-                <div className="text-xs text-gray-400">已绑定</div>
+                <div className="text-xs text-retro-textMuted">已绑定</div>
               </div>
               <div>
-                <div className="text-lg font-bold text-orange-400">
+                <div className="text-lg font-bold text-retro-orange">
                   {workstationStats.availableWorkstations || 0}
                 </div>
-                <div className="text-xs text-gray-400">可用</div>
+                <div className="text-xs text-retro-textMuted">可用</div>
               </div>
             </div>
             
             {/* 进度条 */}
-            <div className="mt-3 pt-3 border-t border-white/10">
-              <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+            <div className="mt-3 pt-3 border-t border-retro-border">
+              <div className="flex items-center justify-between text-xs text-retro-textMuted mb-1">
                 <span>占用率</span>
                 <span>
                   {workstationStats.totalWorkstations && workstationStats.boundWorkstations ? 
@@ -257,9 +285,9 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
                     0}%
                 </span>
               </div>
-              <div className="w-full bg-white/10 rounded-full h-2">
+              <div className="w-full bg-retro-border rounded-full h-2">
                 <div 
-                  className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-retro-green to-retro-blue h-2 rounded-full transition-all duration-300"
                   style={{ 
                     width: `${workstationStats.totalWorkstations && workstationStats.boundWorkstations ? 
                       (workstationStats.boundWorkstations / workstationStats.totalWorkstations) * 100 : 
@@ -275,17 +303,17 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       {/* 当前状态显示 */}
       {currentStatus && (
         <div className="group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/20 to-retro-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center">
                 <span className="text-xl">{currentStatus.emoji}</span>
               </div>
               <div className="flex-1">
                 <div className="text-white font-medium">{currentStatus.status}</div>
-                <div className="text-gray-400 text-sm">{currentStatus.message}</div>
+                <div className="text-retro-textMuted text-sm">{currentStatus.message}</div>
               </div>
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-retro-green rounded-full animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -294,9 +322,9 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       {/* 状态选择按钮 */}
       <button
         onClick={memoizedHandleToggle}
-        className="w-full group relative overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+        className="w-full group relative overflow-hidden bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-blue hover:to-retro-cyan text-white font-medium py-3 px-6 rounded-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
       >
-        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
         <div className="relative flex items-center justify-center gap-2">
           <span className="text-lg">📝</span>
           <span>{isExpanded ? '取消' : '更新状态'}</span>
@@ -307,12 +335,12 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       {userId && (
         <button
           onClick={memoizedHandleToggleHistory}
-          className="w-full group relative overflow-hidden bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-xl transition-all duration-300 border border-white/10 hover:border-white/20"
+          className="w-full group relative overflow-hidden bg-retro-border/50 hover:bg-retro-border/70 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 border border-retro-border hover:border-retro-blue"
         >
           <div className="relative flex items-center justify-center gap-2">
             <span className="text-lg">📊</span>
             <span>{showHistory ? '隐藏历史' : '查看状态历史'}</span>
-            <span className="text-xs bg-purple-500/30 text-white px-2 py-1 rounded-full">
+            <span className="text-xs bg-retro-purple/50 text-white px-2 py-1 rounded-full">
               {statusHistory.length}
             </span>
           </div>
@@ -322,7 +350,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
       {/* 详细状态设置 */}
       {isExpanded && (
         <div 
-          className="space-y-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4"
+          className="space-y-4 bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4"
           onClick={(e) => {
             // 阻止点击事件冒泡到Phaser游戏
             e.stopPropagation();
@@ -385,13 +413,13 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
           <div className="flex gap-3">
             <button
               onClick={memoizedHandleSubmit}
-              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+              className="flex-1 bg-gradient-to-r from-retro-green to-retro-blue hover:from-retro-blue hover:to-retro-cyan text-white font-medium py-3 px-6 rounded-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
             >
               发布状态
             </button>
             <button
               onClick={memoizedHandleCancel}
-              className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border border-white/10 hover:border-white/20"
+              className="flex-1 bg-retro-border/50 hover:bg-retro-border/70 text-white font-medium py-3 px-6 rounded-md transition-all duration-200 border border-retro-border hover:border-retro-blue"
             >
               取消
             </button>
@@ -401,33 +429,33 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
 
       {/* 状态历史显示 */}
       {showHistory && userId && (
-        <div className="space-y-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+        <div className="space-y-3 bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-white font-medium">我的状态历史</h3>
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-retro-textMuted">
               共 {statusHistory.length} 条记录
             </div>
           </div>
           
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {statusHistory.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-retro-textMuted">
                 <div className="text-4xl mb-2">📝</div>
                 <div className="text-sm">还没有状态记录</div>
                 <div className="text-xs mt-1">发布你的第一个状态吧！</div>
               </div>
             ) : (
               statusHistory.map((history) => (
-                <div key={history.id} className="bg-white/5 rounded-lg p-3 border border-white/5">
+                <div key={history.id} className="bg-retro-border/30 rounded-md p-3 border border-retro-border">
                   <div className="flex items-center justify-between mb-2">
                     <div className={`px-2 py-1 rounded-full bg-gradient-to-r ${getStatusBadge(history.type)} text-white text-xs font-medium`}>
                       {history.emoji} {history.status}
                     </div>
-                    <span className="text-gray-400 text-xs">
+                    <span className="text-retro-textMuted text-xs">
                       {formatTimestamp(history.timestamp)}
                     </span>
                   </div>
-                  <p className="text-gray-300 text-sm">{history.message}</p>
+                  <p className="text-retro-text text-sm">{history.message}</p>
                 </div>
               ))
             )}
@@ -435,19 +463,19 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
           
           {/* 状态统计 */}
           {statusHistory.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-white/10">
+            <div className="mt-4 pt-3 border-t border-retro-border">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-lg font-bold text-white">
                     {statusHistoryManager.getStatusHistoryStats(userId).todayCount}
                   </div>
-                  <div className="text-xs text-gray-400">今日状态</div>
+                  <div className="text-xs text-retro-textMuted">今日状态</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-white">
                     {statusHistory.length}
                   </div>
-                  <div className="text-xs text-gray-400">总记录数</div>
+                  <div className="text-xs text-retro-textMuted">总记录数</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-white">
@@ -457,7 +485,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData, work
                      statusHistoryManager.getStatusHistoryStats(userId).mostUsedStatus === 'meeting' ? '👥' :
                      statusHistoryManager.getStatusHistoryStats(userId).mostUsedStatus === 'lunch' ? '🍽️' : '🚻'}
                   </div>
-                  <div className="text-xs text-gray-400">最常用</div>
+                  <div className="text-xs text-retro-textMuted">最常用</div>
                 </div>
               </div>
             </div>

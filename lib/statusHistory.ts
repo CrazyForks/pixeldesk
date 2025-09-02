@@ -164,12 +164,12 @@ export const formatTimestamp = (timestamp: string): string => {
 // 获取状态徽章样式
 export const getStatusBadge = (type: string): string => {
   const badges: Record<string, string> = {
-    working: 'from-blue-500 to-cyan-500',
-    break: 'from-green-500 to-emerald-500',
-    reading: 'from-purple-500 to-violet-500',
-    restroom: 'from-yellow-500 to-orange-500',
-    meeting: 'from-red-500 to-pink-500',
-    lunch: 'from-orange-500 to-amber-500'
+    working: 'from-retro-blue to-retro-cyan',
+    break: 'from-retro-green to-retro-blue',
+    reading: 'from-retro-purple to-retro-pink',
+    restroom: 'from-retro-yellow to-retro-orange',
+    meeting: 'from-retro-red to-retro-pink',
+    lunch: 'from-retro-orange to-retro-yellow'
   }
-  return badges[type] || 'from-gray-500 to-slate-500'
+  return badges[type] || 'from-retro-textMuted to-retro-border'
 }
