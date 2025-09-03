@@ -1,3 +1,5 @@
+import { Player } from '../entities/Player.js';
+
 export class WorkstationManager {
     constructor(scene) {
         this.scene = scene;
@@ -847,60 +849,53 @@ export class WorkstationManager {
     }
     
     createCharacterSprite(workstation, x, y, characterKey, userId, characterDirection) {
-        // 创建角色容器
-        const characterContainer = this.scene.add.container(x, y);
-        characterContainer.setScrollFactor(1); // 跟随地图滚动
-        characterContainer.setDepth(1000); // 在工位上方
+        // 创建真正的Player实例（其他玩家）
+        const playerData = {
+            id: userId,
+            name: workstation.userInfo?.name || workstation.userInfo?.username || `玩家${userId.slice(-4)}`,
+            currentStatus: {
+                type: 'working',
+                status: '工作中',
+                emoji: '💼',
+                message: '正在工作中...',
+                timestamp: new Date().toISOString()
+            }
+        };
         
-        // 创建头部和身体精灵（像Player类一样）
-        const headSprite = this.scene.add.image(0, 0, characterKey);
-        const bodySprite = this.scene.add.image(0, 48, characterKey);
+        // 创建Player实例（禁用移动和状态保存，标记为其他玩家）
+        const character = new Player(this.scene, x, y, characterKey, false, false, true, playerData);
         
-        // 设置纹理区域（从tileset中提取正确的帧）
-        headSprite.setFrame(0);  // user_head对应的帧
-        bodySprite.setFrame(56);  // user_body对应的帧
+        // 设置角色朝向
+        character.setDirectionFrame(characterDirection);
         
-        // 设置原点和缩放
-        headSprite.setOrigin(0.5, 0.5);
-        bodySprite.setOrigin(0.5, 0.5);
-        headSprite.setScale(0.8); // 稍微缩小一点
-        bodySprite.setScale(0.8);
+        // 设置缩放（稍微缩小一点）
+        character.setScale(0.8);
         
-        // 添加到容器
-        characterContainer.add([headSprite, bodySprite]);
-        
-        // 使用传入的方向设置角色朝向
-        this.setCharacterDirectionFrame(headSprite, bodySprite, characterDirection);
-        
-        // 添加角色名称标签
-        const nameLabel = this.scene.add.text(0, 25, workstation.userInfo?.name || workstation.userInfo?.username || `玩家${userId.slice(-4)}`, {
-            fontSize: '12px',
-            fill: '#ffffff',
-            backgroundColor: '#333333',
-            padding: { x: 4, y: 2 }
-        });
-        nameLabel.setOrigin(0.5, 0.5);
-        characterContainer.add(nameLabel);
+        // 设置深度
+        character.setDepth(1000); // 在工位上方
         
         // 添加点击事件
-        characterContainer.setInteractive(new Phaser.Geom.Rectangle(-20, -30, 40, 60), Phaser.Geom.Rectangle.Contains);
-        characterContainer.on('pointerdown', () => {
+        character.setInteractive(new Phaser.Geom.Rectangle(-20, -30, 40, 60), Phaser.Geom.Rectangle.Contains);
+        character.on('pointerdown', () => {
             this.onCharacterClick(userId, workstation);
         });
         
         // 添加悬停效果
-        characterContainer.on('pointerover', () => {
-            characterContainer.setScale(1.1);
+        character.on('pointerover', () => {
+            character.setScale(0.88); // 稍微放大
             this.scene.input.setDefaultCursor('pointer');
         });
         
-        characterContainer.on('pointerout', () => {
-            characterContainer.setScale(1);
+        character.on('pointerout', () => {
+            character.setScale(0.8); // 恢复原大小
             this.scene.input.setDefaultCursor('default');
         });
         
+        // 添加到场景
+        this.scene.add.existing(character);
+        
         // 保存引用
-        workstation.characterSprite = characterContainer;
+        workstation.characterSprite = character;
         workstation.characterKey = characterKey;
         workstation.characterDirection = characterDirection;
         

@@ -1,5 +1,4 @@
 import { Start } from './scenes/Start.js';
-import { TextUIScene } from './scenes/TextUIScene.js';
 import { RegisterScene } from './scenes/RegisterScene.js';
 
 const config = {
@@ -13,8 +12,7 @@ const config = {
     pixelArt: true,
     scene: [
         RegisterScene,
-        Start,
-        TextUIScene
+        Start
     ],
     scale: {
         mode: Phaser.Scale.FIT,

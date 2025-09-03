@@ -40,11 +40,11 @@ export class Player extends Phaser.GameObjects.Container {
         this.bodySprite.setFrame(56); // user_body对应的帧
         this.headSprite.setFrame(0);  // user_head对应的帧
 
-        // 初始化角色浮动动画
-        this.initCharacterFloatAnimation();
-
         // 启用物理特性
         scene.physics.world.enable(this);
+
+        // 初始化角色浮动动画（必须在物理体创建后）
+        this.initCharacterFloatAnimation();
         // 修改碰撞体大小和偏移量，使其与玩家精灵重叠
         this.body.setSize(40, 60);
         this.body.setOffset(-20, -12);
@@ -194,37 +194,63 @@ export class Player extends Phaser.GameObjects.Container {
     // 初始化角色浮动动画
     initCharacterFloatAnimation() {
         // 角色浮动动画参数
-        this.characterFloatAmplitude = 1.5; // 角色浮动幅度（像素）
-        this.characterFloatSpeed = 0.003;   // 角色浮动速度
-        this.characterFloatOffset = 0;      // 当前浮动偏移
+        this.characterFloatAmplitude = 1.5;   // 角色浮动幅度（像素）
+        this.characterFloatInterval = 2000;   // 浮动间隔（毫秒）
+        this.characterFloatDuration = 800;    // 单次浮动持续时间（毫秒）
         
         // 记录角色的初始Y位置
         this.characterBaseY = this.y;
         
-        // 启动角色浮动动画
-        this.scene.events.on('update', this.updateCharacterFloatAnimation, this);
+        // 启动周期性浮动动画
+        this.startPeriodicFloatAnimation();
     }
     
-    // 更新角色浮动动画
-    updateCharacterFloatAnimation() {
-        if (!this.body || !this.isVisible) return;
+    // 启动周期性浮动动画
+    startPeriodicFloatAnimation() {
+        // 清除之前的计时器（如果有）
+        if (this.floatTimer) {
+            this.floatTimer.remove();
+        }
         
-        // 如果角色正在移动，不应用浮动动画
-        if (this.body.velocity.x !== 0 || this.body.velocity.y !== 0) {
+        // 创建周期性浮动计时器
+        this.floatTimer = this.scene.time.addEvent({
+            delay: this.characterFloatInterval,
+            callback: this.performFloatAnimation,
+            callbackScope: this,
+            loop: true
+        });
+        
+        // 立即执行第一次浮动
+        this.performFloatAnimation();
+    }
+    
+    // 执行单次浮动动画
+    performFloatAnimation() {
+        if (!this.body || this.body.velocity.x !== 0 || this.body.velocity.y !== 0) {
             return;
         }
         
-        // 计算浮动偏移
-        this.characterFloatOffset += this.characterFloatSpeed;
-        const floatY = Math.sin(this.characterFloatOffset) * this.characterFloatAmplitude;
-        
-        // 应用浮动效果到整个角色容器
-        this.y = this.characterBaseY + floatY;
-        
-        // 同时更新物理体的位置
-        if (this.body) {
-            this.body.y = this.y;
-        }
+        // 创建浮动动画
+        this.scene.tweens.add({
+            targets: this,
+            y: this.characterBaseY - this.characterFloatAmplitude,
+            duration: this.characterFloatDuration / 2,
+            ease: 'Sine.easeOut',
+            yoyo: true,
+            onUpdate: () => {
+                // 同步更新物理体位置
+                if (this.body) {
+                    this.body.y = this.y;
+                }
+            },
+            onComplete: () => {
+                // 动画完成后重置到基准位置
+                this.y = this.characterBaseY;
+                if (this.body) {
+                    this.body.y = this.characterBaseY;
+                }
+            }
+        });
     }
     
     // 初始化浮动动画
@@ -454,8 +480,12 @@ export class Player extends Phaser.GameObjects.Container {
         // 清理事件监听器
         if (this.scene) {
             this.scene.events.off('update', this.updateFloatingAnimation, this);
-            this.scene.events.off('update', this.updateCharacterFloatAnimation, this);
             this.scene.events.off('update', this.checkVisibility, this);
+        }
+        
+        // 清理浮动计时器
+        if (this.floatTimer) {
+            this.floatTimer.remove();
         }
         
         // 清理精灵

@@ -22,6 +22,8 @@ model User {
   
   statusHistory StatusHistory[]
   workstations  UserWorkstation[]
+  workSessions  WorkSession[]
+  timeTracking  TimeTracking[]
   
   @@map("users")
 }
@@ -62,4 +64,41 @@ model UserWorkstation {
   
   @@unique([userId, workstationId])
   @@map("user_workstations")
+}
+
+// 工作会话表 - 记录每次上班到下班的完整会话
+model WorkSession {
+  id            Int       @id @default(autoincrement())
+  userId        String
+  workstationId String?   // 绑定的工位ID（可能为空）
+  startTime     DateTime  @default(now())
+  endTime       DateTime? // 下班时间，为空表示还在上班中
+  totalMinutes  Int?      // 总工作时长（分钟），下班时计算
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("work_sessions")
+}
+
+// 时间统计表 - 记录各种活动的时间片段
+model TimeTracking {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  activityType String  // 活动类型：working, break, reading, restroom, meeting, lunch, off_work
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  duration    Int?     // 持续时长（分钟），结束时计算
+  date        DateTime @default(now()) // 用于按日期查询统计
+  workstationId String? // 相关的工位ID
+  notes       String?  // 备注信息
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, date])
+  @@index([userId, activityType])
+  @@map("time_tracking")
 }

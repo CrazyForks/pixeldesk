@@ -26,8 +26,6 @@ export class Start extends Phaser.Scene {
     }
 
     create() {
-        this.scene.launch('TextUIScene');
-        this.scene.bringToTop('TextUIScene');
 
         // 保存场景引用到全局变量，供Next.js调用
         if (typeof window !== 'undefined') {
@@ -473,12 +471,6 @@ export class Start extends Phaser.Scene {
             
             // 发送更新到UI
             this.sendUserDataToUI();
-            
-            // 如果TextUIScene存在，也更新它
-            const textUIScene = this.scene.get('TextUIScene');
-            if (textUIScene && textUIScene.updateDeskCount) {
-                textUIScene.updateDeskCount(this.userData.deskCount);
-            }
         }
     }
 
@@ -1209,9 +1201,46 @@ export class Start extends Phaser.Scene {
     setupSocialFeatures() {
         // 监听状态更新事件
         if (typeof window !== 'undefined') {
-            window.updateMyStatus = (statusData) => {
+            window.updateMyStatus = async (statusData) => {
                 this.myStatus = statusData;
                 console.log('我的状态已更新:', statusData);
+                
+                // 根据状态更新工位角色可见性
+                if (this.currentUser && this.workstationManager) {
+                    const userWorkstation = this.workstationManager.getWorkstationByUser(this.currentUser.id);
+                    if (userWorkstation && userWorkstation.character) {
+                        // 如果状态是"下班了"，隐藏角色；否则显示角色
+                        const isOffWork = statusData.type === 'off_work';
+                        userWorkstation.character.player.setVisible(!isOffWork);
+                        console.log(`工位 ${userWorkstation.id} 角色可见性: ${!isOffWork} (状态: ${statusData.type})`);
+                    }
+                }
+                
+                // 如果是下班状态，结束所有活动
+                if (statusData.type === 'off_work' && this.currentUser) {
+                    try {
+                        console.log('检测到下班状态，结束所有活动...');
+                        const response = await fetch('/api/time-tracking', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                userId: this.currentUser.id,
+                                action: 'end'
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            console.log('下班时间跟踪完成:', result);
+                        } else {
+                            console.error('结束活动失败:', response.status);
+                        }
+                    } catch (error) {
+                        console.error('结束活动时出错:', error);
+                    }
+                }
             };
         }
         

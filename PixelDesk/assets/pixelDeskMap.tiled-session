@@ -3,10 +3,10 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json",
+    "activeFile": "",
     "expandedProjectPaths": [
-        "templates",
-        "."
+        ".",
+        "templates"
     ],
     "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
@@ -44,10 +44,10 @@
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json": {
             "scale": 0.33,
-            "selectedLayer": 6,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 4178.787878787879,
-                "y": 886.3636363636365
+                "x": 5863.636363636364,
+                "y": 904.5454545454546
             }
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#bathroom": {
@@ -149,7 +149,6 @@
     "map.tileHeight": 48,
     "map.tileWidth": 48,
     "openFiles": [
-        "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json"
     ],
     "project": "pixelDeskMap.tiled-project",
     "property.type": "bool",

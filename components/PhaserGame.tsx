@@ -5,7 +5,6 @@ import Phaser from 'phaser'
 
 // 导入 Phaser 场景
 import { Start } from '../PixelDesk/src/scenes/Start.js'
-import { TextUIScene } from '../PixelDesk/src/scenes/TextUIScene.js'
 import { RegisterScene } from '../PixelDesk/src/scenes/RegisterScene.js'
 
 interface PhaserGameProps {
@@ -32,8 +31,7 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
         pixelArt: true,
         scene: [
           RegisterScene,
-          Start,
-          TextUIScene
+          Start
         ],
         scale: {
           mode: Phaser.Scale.RESIZE,
