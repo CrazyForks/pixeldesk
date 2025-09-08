@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碰撞事件总线测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button.danger {
+            background-color: #f44336;
+        }
+        .button.danger:hover {
+            background-color: #da190b;
+        }
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status.inactive {
+            background-color: #666;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 碰撞事件总线测试</h1>
+        
+        <div class="test-section">
+            <h2>📡 事件总线状态</h2>
+            <div id="eventBusStatus" class="status inactive">
+                事件总线未初始化
+            </div>
+            <button class="button" onclick="initializeEventBus()">初始化事件总线</button>
+            <button class="button" onclick="testEventBus()">测试事件总线</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 碰撞事件测试</h2>
+            <div id="collisionStatus" class="status inactive">
+                无碰撞事件
+            </div>
+            <button class="button" onclick="simulateCollisionStart()">模拟碰撞开始</button>
+            <button class="button" onclick="simulateCollisionEnd()">模拟碰撞结束</button>
+            <button class="button danger" onclick="clearCollisionEvents()">清除碰撞事件</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 标签页切换测试</h2>
+            <div id="tabStatus" class="status inactive">
+                当前标签页: 未知
+            </div>
+            <button class="button" onclick="simulateTabSwitch('status-info')">切换到状态信息</button>
+            <button class="button" onclick="simulateTabSwitch('player-interaction')">切换到玩家交互</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 事件统计</h2>
+            <div id="eventStats">
+                <p>碰撞开始事件: <span id="collisionStartCount">0</span></p>
+                <p>碰撞结束事件: <span id="collisionEndCount">0</span></p>
+                <p>标签页切换事件: <span id="tabSwitchCount">0</span></p>
+                <p>总事件数: <span id="totalEventCount">0</span></p>
+            </div>
+            <button class="button danger" onclick="resetStats()">重置统计</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 事件日志</h2>
+            <div id="eventLog" class="log">
+                等待事件...
+            </div>
+            <button class="button danger" onclick="clearLog()">清除日志</button>
+        </div>
+    </div>
+
+    <script>
+        // 事件统计
+        let stats = {
+            collisionStart: 0,
+            collisionEnd: 0,
+            tabSwitch: 0,
+            total: 0
+        };
+
+        // 模拟事件总线（简化版本）
+        class MockEventBus {
+            constructor() {
+                this.listeners = new Map();
+                this.debugMode = true;
+            }
+
+            on(event, callback) {
+                if (!this.listeners.has(event)) {
+                    this.listeners.set(event, new Set());
+                }
+                this.listeners.get(event).add(callback);
+                this.log(`[EventBus] 订阅事件: ${event}`);
+            }
+
+            off(event, callback) {
+                const eventListeners = this.listeners.get(event);
+                if (eventListeners) {
+                    eventListeners.delete(callback);
+                    if (eventListeners.size === 0) {
+                        this.listeners.delete(event);
+                    }
+                    this.log(`[EventBus] 取消订阅事件: ${event}`);
+                }
+            }
+
+            emit(event, data) {
+                const eventListeners = this.listeners.get(event);
+                if (eventListeners && eventListeners.size > 0) {
+                    this.log(`[EventBus] 发送事件: ${event}`, data);
+                    const listenersArray = Array.from(eventListeners);
+                    listenersArray.forEach(callback => {
+                        try {
+                            callback(data);
+                        } catch (error) {
+                            this.log(`[EventBus] 事件监听器错误 ${event}: ${error.message}`);
+                        }
+                    });
+                } else {
+                    this.log(`[EventBus] 没有监听器: ${event}`);
+                }
+            }
+
+            log(message, data = null) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logElement = document.getElementById('eventLog');
+                const logMessage = `[${timestamp}] ${message}`;
+                
+                if (data) {
+                    logElement.innerHTML += `${logMessage}\n${JSON.stringify(data, null, 2)}\n\n`;
+                } else {
+                    logElement.innerHTML += `${logMessage}\n`;
+                }
+                
+                logElement.scrollTop = logElement.scrollHeight;
+                console.log(logMessage, data);
+            }
+
+            listenerCount(event) {
+                return this.listeners.get(event)?.size || 0;
+            }
+
+            eventNames() {
+                return Array.from(this.listeners.keys());
+            }
+        }
+
+        let eventBus = null;
+        let currentCollisionPlayer = null;
+        let currentTab = 'status-info';
+
+        // 初始化事件总线
+        function initializeEventBus() {
+            eventBus = new MockEventBus();
+            
+            // 设置碰撞事件监听器
+            eventBus.on('player:collision:start', handleCollisionStart);
+            eventBus.on('player:collision:end', handleCollisionEnd);
+            eventBus.on('tab:switch', handleTabSwitch);
+
+            // 更新状态显示
+            document.getElementById('eventBusStatus').className = 'status active';
+            document.getElementById('eventBusStatus').textContent = '事件总线已初始化';
+            
+            eventBus.log('🚀 事件总线初始化完成');
+        }
+
+        // 测试事件总线
+        function testEventBus() {
+            if (!eventBus) {
+                alert('请先初始化事件总线');
+                return;
+            }
+
+            // 发送测试事件
+            eventBus.emit('test:event', { message: '这是一个测试事件', timestamp: Date.now() });
+            
+            // 显示监听器统计
+            const eventNames = eventBus.eventNames();
+            eventBus.log(`📊 当前注册的事件: ${eventNames.join(', ')}`);
+            eventNames.forEach(eventName => {
+                const count = eventBus.listenerCount(eventName);
+                eventBus.log(`   - ${eventName}: ${count} 个监听器`);
+            });
+        }
+
+        // 处理碰撞开始事件
+        function handleCollisionStart(event) {
+            currentCollisionPlayer = event.targetPlayer;
+            stats.collisionStart++;
+            stats.total++;
+            updateStats();
+            
+            document.getElementById('collisionStatus').className = 'status active';
+            document.getElementById('collisionStatus').textContent = `碰撞中: ${event.targetPlayer.name}`;
+            
+            eventBus.log('🎯 碰撞开始事件处理完成');
+        }
+
+        // 处理碰撞结束事件
+        function handleCollisionEnd(event) {
+            currentCollisionPlayer = null;
+            stats.collisionEnd++;
+            stats.total++;
+            updateStats();
+            
+            document.getElementById('collisionStatus').className = 'status inactive';
+            document.getElementById('collisionStatus').textContent = '无碰撞事件';
+            
+            eventBus.log('🎯 碰撞结束事件处理完成');
+        }
+
+        // 处理标签页切换事件
+        function handleTabSwitch(event) {
+            currentTab = event.toTab;
+            stats.tabSwitch++;
+            stats.total++;
+            updateStats();
+            
+            document.getElementById('tabStatus').className = 'status active';
+            document.getElementById('tabStatus').textContent = `当前标签页: ${event.toTab} (${event.trigger})`;
+            
+            eventBus.log('📋 标签页切换事件处理完成');
+        }
+
+        // 模拟碰撞开始
+        function simulateCollisionStart() {
+            if (!eventBus) {
+                alert('请先初始化事件总线');
+                return;
+            }
+
+            const collisionEvent = {
+                type: 'collision_start',
+                mainPlayer: {
+                    id: 'main-player',
+                    name: '我',
+                    currentStatus: {
+                        type: 'working',
+                        status: '工作中',
+                        emoji: '💼',
+                        message: '正在测试碰撞系统',
+                        timestamp: new Date().toISOString()
+                    }
+                },
+                targetPlayer: {
+                    id: 'test-player-1',
+                    name: '张三',
+                    currentStatus: {
+                        type: 'working',
+                        status: '工作中',
+                        emoji: '💼',
+                        message: '正在开发新功能...',
+                        timestamp: new Date().toISOString()
+                    }
+                },
+                timestamp: Date.now(),
+                position: { x: 100, y: 200 }
+            };
+
+            eventBus.emit('player:collision:start', collisionEvent);
+        }
+
+        // 模拟碰撞结束
+        function simulateCollisionEnd() {
+            if (!eventBus) {
+                alert('请先初始化事件总线');
+                return;
+            }
+
+            const collisionEvent = {
+                type: 'collision_end',
+                mainPlayer: {
+                    id: 'main-player',
+                    name: '我',
+                    currentStatus: {
+                        type: 'working',
+                        status: '工作中',
+                        emoji: '💼',
+                        message: '正在测试碰撞系统',
+                        timestamp: new Date().toISOString()
+                    }
+                },
+                targetPlayer: {
+                    id: 'test-player-1',
+                    name: '张三',
+                    currentStatus: {
+                        type: 'working',
+                        status: '工作中',
+                        emoji: '💼',
+                        message: '正在开发新功能...',
+                        timestamp: new Date().toISOString()
+                    }
+                },
+                timestamp: Date.now(),
+                duration: 2500,
+                position: { x: 150, y: 250 }
+            };
+
+            eventBus.emit('player:collision:end', collisionEvent);
+        }
+
+        // 模拟标签页切换
+        function simulateTabSwitch(tabId) {
+            if (!eventBus) {
+                alert('请先初始化事件总线');
+                return;
+            }
+
+            const tabSwitchEvent = {
+                type: 'tab_switch',
+                fromTab: currentTab,
+                toTab: tabId,
+                trigger: 'manual',
+                timestamp: Date.now()
+            };
+
+            eventBus.emit('tab:switch', tabSwitchEvent);
+        }
+
+        // 清除碰撞事件
+        function clearCollisionEvents() {
+            currentCollisionPlayer = null;
+            document.getElementById('collisionStatus').className = 'status inactive';
+            document.getElementById('collisionStatus').textContent = '无碰撞事件';
+            
+            if (eventBus) {
+                eventBus.log('🧹 碰撞事件已清除');
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('collisionStartCount').textContent = stats.collisionStart;
+            document.getElementById('collisionEndCount').textContent = stats.collisionEnd;
+            document.getElementById('tabSwitchCount').textContent = stats.tabSwitch;
+            document.getElementById('totalEventCount').textContent = stats.total;
+        }
+
+        // 重置统计
+        function resetStats() {
+            stats = {
+                collisionStart: 0,
+                collisionEnd: 0,
+                tabSwitch: 0,
+                total: 0
+            };
+            updateStats();
+            
+            if (eventBus) {
+                eventBus.log('📊 统计信息已重置');
+            }
+        }
+
+        // 清除日志
+        function clearLog() {
+            document.getElementById('eventLog').innerHTML = '日志已清除...\n';
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            console.log('🎮 碰撞事件总线测试页面加载完成');
+            updateStats();
+        });
+    </script>
+</body>
+</html>

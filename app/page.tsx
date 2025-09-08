@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
+import { EventBus, CollisionEvent } from '@/lib/eventBus'
 
 // 声明全局函数的类型
 declare global {
@@ -73,9 +74,20 @@ const TeleportConfirmModal = dynamic(() => import('@/components/TeleportConfirmM
   ssr: false
 })
 
+// 布局管理器组件
+const LayoutManager = dynamic(() => import('@/components/LayoutManager'), {
+  ssr: false
+})
+
+// 信息面板组件
+const InfoPanel = dynamic(() => import('@/components/InfoPanel'), {
+  ssr: false
+})
+
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [collisionPlayer, setCollisionPlayer] = useState<any>(null)
   const [myStatus, setMyStatus] = useState<any>('')
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [workstationStats, setWorkstationStats] = useState<any>(null)
@@ -313,6 +325,29 @@ export default function Home() {
     setSelectedPlayer(playerData)
   }, [])
 
+  // Set up event bus listeners for collision events
+  useEffect(() => {
+    const handleCollisionStart = (event: CollisionEvent) => {
+      console.log('[HomePage] Collision start:', event)
+      setCollisionPlayer(event.targetPlayer)
+    }
+
+    const handleCollisionEnd = (event: CollisionEvent) => {
+      console.log('[HomePage] Collision end:', event)
+      setCollisionPlayer(null)
+    }
+
+    // Subscribe to collision events
+    EventBus.on('player:collision:start', handleCollisionStart)
+    EventBus.on('player:collision:end', handleCollisionEnd)
+
+    // Cleanup on unmount
+    return () => {
+      EventBus.off('player:collision:start', handleCollisionStart)
+      EventBus.off('player:collision:end', handleCollisionEnd)
+    }
+  }, [])
+
   // 处理状态更新 - 优化避免不必要重新渲染
   const handleStatusUpdate = useCallback((newStatus: any) => {
     // 只有当状态真正改变时才更新
@@ -442,157 +477,38 @@ export default function Home() {
     <SocialFeed player={selectedPlayer} />
   ), [selectedPlayer])
 
-  // 移动端布局
-  if (isMobile) {
-    return (
-      <div className="flex flex-col h-screen bg-gray-900">
-        {/* 游戏区域 */}
-        <div className="flex-1 relative">
-          {memoizedPhaserGame}
-        </div>
-        
-        {/* 底部信息栏 */}
-        <div className="h-64 bg-white border-t border-gray-200 overflow-hidden">
-          {selectedPlayer ? (
-            memoizedSocialFeed
-          ) : (
-            memoizedPostStatus
-          )}
-        </div>
-      </div>
-    )
-  }
+  // Create memoized info panel content for mobile
+  const memoizedMobileInfoPanel = useMemo(() => (
+    selectedPlayer ? memoizedSocialFeed : memoizedPostStatus
+  ), [selectedPlayer, memoizedSocialFeed, memoizedPostStatus])
 
-  // 桌面端左右布局
+  // Create memoized info panel content for desktop
+  const memoizedDesktopInfoPanel = useMemo(() => (
+    <InfoPanel
+      selectedPlayer={selectedPlayer}
+      collisionPlayer={collisionPlayer}
+      currentUser={currentUser}
+      workstationStats={workstationStats}
+      onTeleportClick={() => {
+        setTeleportConfirmModal({
+          isVisible: true,
+          currentPoints: currentUser?.points || 0
+        })
+      }}
+    >
+      {memoizedPostStatus}
+    </InfoPanel>
+  ), [selectedPlayer, collisionPlayer, currentUser, workstationStats, memoizedPostStatus])
+
+  // Use layout manager for both mobile and desktop
   return (
-    <div className="flex h-screen bg-gradient-to-br from-retro-bg-darker via-retro-bg-dark to-retro-bg-darker">
-      {/* 左侧 Next.js 页面区域 - 现代化设计 */}
-      <div className="w-96 bg-retro-bg-darker/80 backdrop-blur-lg border-r border-retro-border flex flex-col overflow-auto">
-        {/* 顶部标题栏 */}
-        <div className="p-6 border-b border-retro-border">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-retro-purple to-retro-pink rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">PixelDesk</h1>
-              <p className="text-xs text-retro-textMuted">社交办公空间</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* 个人状态区域 */}
-        <div className="p-6 border-b border-retro-border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">我的状态</h2>
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          </div>
-          {memoizedPostStatus}
-        </div>
-        
-        {/* 工位统计区域 */}
-        <div className="p-6 border-b border-retro-border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">工位统计</h2>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-              <span className="text-xs text-retro-textMuted">实时</span>
-            </div>
-          </div>
-          {workstationStats ? (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300 text-sm">工位总数</span>
-                <span className="text-white font-medium">{workstationStats.totalWorkstations}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300 text-sm">已绑定</span>
-                <span className="text-green-400 font-medium">{workstationStats.boundWorkstations}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300 text-sm">可用</span>
-                <span className="text-blue-400 font-medium">{workstationStats.availableWorkstations}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300 text-sm">占用率</span>
-                <span className="text-purple-400 font-medium">{workstationStats.occupancyRate}</span>
-              </div>
-              
-              {/* 快速回到工位按钮 */}
-              {currentUser?.workstationId && (
-                <div className="pt-4 border-t border-retro-border mt-4">
-                  <button
-                    onClick={() => {
-                      setTeleportConfirmModal({
-                        isVisible: true,
-                        currentPoints: currentUser?.points || 0
-                      })
-                    }}
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
-                  >
-                    🚀 快速回到工位
-                    <span className="text-xs ml-2 opacity-80">(消耗1积分)</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center py-4">
-              <div className="w-4 h-4 bg-purple-400 rounded-full animate-pulse mr-2"></div>
-              <span className="text-retro-textMuted text-sm">加载中...</span>
-            </div>
-          )}
-        </div>
-        
-        {/* 社交动态区域 */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex items-center justify-between p-6 border-b border-retro-border">
-            <h2 className="text-lg font-semibold text-white">社交动态</h2>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span className="text-xs text-retro-textMuted">实时</span>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {selectedPlayer ? (
-              memoizedSocialFeed
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-retro-purple/20 to-retro-pink/20 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-retro-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-white font-medium mb-2">探索社交空间</h3>
-                <p className="text-retro-textMuted text-sm leading-relaxed">
-                  在游戏中靠近其他玩家<br />
-                  查看他们的动态信息并进行互动
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* 底部状态栏 */}
-        <div className="p-4 border-t border-retro-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-xs text-retro-textMuted">在线</span>
-            </div>
-            <div className="text-xs text-gray-500">
-              PixelDesk v1.0
-            </div>
-          </div>
-        </div>
-      </div>
+    <div>
+      <LayoutManager
+        gameComponent={memoizedPhaserGame}
+        infoPanel={isMobile ? memoizedMobileInfoPanel : memoizedDesktopInfoPanel}
+      />
       
-      {/* 右侧 Phaser 游戏区域 */}
-      <div className="flex-1 relative bg-black/30 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 to-transparent pointer-events-none"></div>
-        {memoizedPhaserGame}
-      </div>
-      
+      {/* All modals remain the same */}
       {/* 工位绑定弹窗 */}
       <WorkstationBindingModal
         isVisible={bindingModal.isVisible}

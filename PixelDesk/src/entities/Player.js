@@ -30,6 +30,11 @@ export class Player extends Phaser.GameObjects.Container {
             }
         };
         
+        // 初始化碰撞检测状态
+        this.isColliding = false;
+        this.collisionStartTime = null;
+        this.collisionDebounceTimer = null;
+        
         // 创建身体和头部精灵
         this.bodySprite = scene.add.image(0, 48, this.spriteKey);
         this.headSprite = scene.add.image(0, 0, this.spriteKey);
@@ -460,11 +465,76 @@ export class Player extends Phaser.GameObjects.Container {
         });
     }
     
-    // 处理与主玩家的碰撞
+    // 处理与主玩家的碰撞开始
+    handleCollisionStart(mainPlayer) {
+        if (this.isOtherPlayer && !this.isColliding) {
+            this.isColliding = true;
+            this.collisionStartTime = Date.now();
+            
+            // 创建碰撞事件数据
+            const collisionEvent = {
+                type: 'collision_start',
+                mainPlayer: mainPlayer.playerData,
+                targetPlayer: this.playerData,
+                timestamp: this.collisionStartTime,
+                position: { x: this.x, y: this.y }
+            };
+            
+            // 使用事件总线触发碰撞开始事件
+            if (window.gameEventBus) {
+                window.gameEventBus.emit('player:collision:start', collisionEvent);
+            }
+            
+            // 保持向后兼容性
+            if (window.onPlayerCollisionStart) {
+                window.onPlayerCollisionStart(collisionEvent);
+            }
+            
+            console.log('碰撞开始:', this.playerData.name, 'at', new Date(this.collisionStartTime).toLocaleTimeString());
+        }
+    }
+    
+    // 处理与主玩家的碰撞结束
+    handleCollisionEnd(mainPlayer) {
+        if (this.isOtherPlayer && this.isColliding) {
+            this.isColliding = false;
+            const collisionEndTime = Date.now();
+            const collisionDuration = collisionEndTime - (this.collisionStartTime || collisionEndTime);
+            
+            // 创建碰撞结束事件数据
+            const collisionEvent = {
+                type: 'collision_end',
+                mainPlayer: mainPlayer.playerData,
+                targetPlayer: this.playerData,
+                timestamp: collisionEndTime,
+                duration: collisionDuration,
+                position: { x: this.x, y: this.y }
+            };
+            
+            // 使用事件总线触发碰撞结束事件
+            if (window.gameEventBus) {
+                window.gameEventBus.emit('player:collision:end', collisionEvent);
+            }
+            
+            // 保持向后兼容性
+            if (window.onPlayerCollisionEnd) {
+                window.onPlayerCollisionEnd(collisionEvent);
+            }
+            
+            console.log('碰撞结束:', this.playerData.name, '持续时间:', collisionDuration + 'ms');
+            this.collisionStartTime = null;
+        }
+    }
+    
+    // 处理与主玩家的碰撞（保持向后兼容）
     handleCollisionWithMainPlayer(mainPlayer) {
+        // 保持原有的碰撞处理逻辑以确保向后兼容
         if (this.isOtherPlayer && window.onPlayerCollision) {
             window.onPlayerCollision(this.playerData);
         }
+        
+        // 同时触发新的碰撞开始事件
+        this.handleCollisionStart(mainPlayer);
     }
     
     // 禁用玩家移动
@@ -544,6 +614,11 @@ export class Player extends Phaser.GameObjects.Container {
         // 清理防抖计时器
         if (this.visibilityDebounceTimer) {
             this.scene.time.removeEvent(this.visibilityDebounceTimer);
+        }
+        
+        // 清理碰撞防抖计时器
+        if (this.collisionDebounceTimer) {
+            this.scene.time.removeEvent(this.collisionDebounceTimer);
         }
         
         // 清理精灵

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碰撞系统修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button.danger {
+            background-color: #f44336;
+        }
+        .button.danger:hover {
+            background-color: #da190b;
+        }
+        .button.info {
+            background-color: #2196F3;
+        }
+        .button.info:hover {
+            background-color: #0b7dda;
+        }
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status.inactive {
+            background-color: #666;
+            color: #ccc;
+        }
+        .status.warning {
+            background-color: #ff9800;
+            color: white;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .info-box {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .info-box h4 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 碰撞系统修复测试</h1>
+        
+        <div class="test-section">
+            <h2>🎮 系统状态</h2>
+            <div id="systemStatus" class="status inactive">
+                系统未连接
+            </div>
+            <button class="button" onclick="checkSystem()">检查系统</button>
+            <button class="button info" onclick="initializeSystem()">初始化系统</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 碰撞测试</h2>
+            <div class="info-grid">
+                <div class="info-box">
+                    <h4>测试步骤</h4>
+                    <p>1. 检查系统状态</p>
+                    <p>2. 获取玩家信息</p>
+                    <p>3. 调试碰撞系统</p>
+                    <p>4. 执行强制碰撞测试</p>
+                    <p>5. 监控碰撞事件</p>
+                </div>
+                <div class="info-box">
+                    <h4>当前状态</h4>
+                    <p>主玩家: <span id="mainPlayerStatus">未知</span></p>
+                    <p>测试玩家: <span id="testPlayerCount">0</span></p>
+                    <p>碰撞敏感度: <span id="sensitivity">50px</span></p>
+                    <p>当前碰撞: <span id="currentCollisions">0</span></p>
+                </div>
+            </div>
+            
+            <button class="button" onclick="getPlayerInfo()">获取玩家信息</button>
+            <button class="button" onclick="debugCollisionSystem()">调试碰撞系统</button>
+            <button class="button info" onclick="forceCollisionTest()">强制碰撞测试</button>
+            <button class="button danger" onclick="resetSystem()">重置系统</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 实时监控</h2>
+            <div id="monitoringStatus" class="status inactive">
+                监控未启动
+            </div>
+            <button class="button" onclick="startMonitoring()">开始监控</button>
+            <button class="button danger" onclick="stopMonitoring()">停止监控</button>
+            
+            <div class="info-grid">
+                <div class="info-box">
+                    <h4>玩家位置</h4>
+                    <p>主玩家: <span id="mainPlayerPos">未知</span></p>
+                    <p>最近测试玩家: <span id="nearestPlayer">未知</span></p>
+                    <p>最小距离: <span id="minDistance">未知</span></p>
+                </div>
+                <div class="info-box">
+                    <h4>事件统计</h4>
+                    <p>碰撞开始: <span id="collisionStartCount">0</span></p>
+                    <p>碰撞结束: <span id="collisionEndCount">0</span></p>
+                    <p>总事件: <span id="totalEvents">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 测试日志</h2>
+            <div id="testLog" class="log">
+                等待测试开始...
+            </div>
+            <button class="button danger" onclick="clearLog()">清除日志</button>
+        </div>
+    </div>
+
+    <script>
+        let monitoringInterval = null;
+        let eventCounts = {
+            collisionStart: 0,
+            collisionEnd: 0,
+            total: 0
+        };
+
+        // 日志函数
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('testLog');
+            const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            const logMessage = `[${timestamp}] ${prefix} ${message}\n`;
+            
+            logElement.textContent += logMessage;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(logMessage);
+        }
+
+        // 检查系统
+        function checkSystem() {
+            log('检查系统状态...');
+            
+            const hasGameEventBus = typeof window.gameEventBus !== 'undefined';
+            const hasDebugFunctions = typeof window.debugCollisionSystem === 'function';
+            const hasForceTest = typeof window.forceCollisionTest === 'function';
+            const hasPlayerInfo = typeof window.getPlayerInfo === 'function';
+            
+            if (hasGameEventBus && hasDebugFunctions && hasForceTest && hasPlayerInfo) {
+                document.getElementById('systemStatus').className = 'status active';
+                document.getElementById('systemStatus').textContent = '系统已连接';
+                log('系统检查通过', 'success');
+                return true;
+            } else {
+                document.getElementById('systemStatus').className = 'status warning';
+                document.getElementById('systemStatus').textContent = '系统部分连接';
+                log(`系统检查: EventBus=${hasGameEventBus}, Debug=${hasDebugFunctions}, ForceTest=${hasForceTest}, PlayerInfo=${hasPlayerInfo}`, 'warning');
+                return false;
+            }
+        }
+
+        // 初始化系统
+        function initializeSystem() {
+            log('初始化系统...');
+            
+            if (!checkSystem()) {
+                log('系统检查失败，无法初始化', 'error');
+                return;
+            }
+            
+            // 设置事件监听器
+            if (window.gameEventBus) {
+                window.gameEventBus.on('player:collision:start', (event) => {
+                    eventCounts.collisionStart++;
+                    eventCounts.total++;
+                    updateEventCounts();
+                    log(`碰撞开始: ${event.targetPlayer.name}`, 'success');
+                });
+                
+                window.gameEventBus.on('player:collision:end', (event) => {
+                    eventCounts.collisionEnd++;
+                    eventCounts.total++;
+                    updateEventCounts();
+                    log(`碰撞结束: ${event.targetPlayer.name}`, 'info');
+                });
+                
+                log('事件监听器已设置', 'success');
+            }
+            
+            log('系统初始化完成', 'success');
+        }
+
+        // 获取玩家信息
+        function getPlayerInfo() {
+            log('获取玩家信息...');
+            
+            if (typeof window.getPlayerInfo === 'function') {
+                const info = window.getPlayerInfo();
+                
+                if (info.mainPlayer) {
+                    document.getElementById('mainPlayerStatus').textContent = '已创建';
+                    document.getElementById('mainPlayerPos').textContent = `(${Math.round(info.mainPlayer.position.x)}, ${Math.round(info.mainPlayer.position.y)})`;
+                    log(`主玩家: ${info.mainPlayer.playerData.name} at (${Math.round(info.mainPlayer.position.x)}, ${Math.round(info.mainPlayer.position.y)})`, 'info');
+                } else {
+                    document.getElementById('mainPlayerStatus').textContent = '未创建';
+                    log('主玩家未创建', 'warning');
+                }
+                
+                document.getElementById('testPlayerCount').textContent = info.testPlayers.length;
+                document.getElementById('sensitivity').textContent = info.collisionSystem.sensitivity + 'px';
+                document.getElementById('currentCollisions').textContent = info.collisionSystem.currentCollisions.length;
+                
+                log(`测试玩家数量: ${info.testPlayers.length}`, 'info');
+                info.testPlayers.forEach((player, index) => {
+                    log(`  ${index + 1}. ${player.name} at (${Math.round(player.position.x)}, ${Math.round(player.position.y)})`, 'info');
+                });
+                
+                return info;
+            } else {
+                log('无法获取玩家信息', 'error');
+                return null;
+            }
+        }
+
+        // 调试碰撞系统
+        function debugCollisionSystem() {
+            log('调试碰撞系统...');
+            
+            if (typeof window.debugCollisionSystem === 'function') {
+                const debug = window.debugCollisionSystem();
+                
+                log(`碰撞系统调试信息:`, 'info');
+                log(`  主玩家: ${debug.mainPlayer ? `(${Math.round(debug.mainPlayer.x)}, ${Math.round(debug.mainPlayer.y)})` : '未创建'}`, 'info');
+                log(`  测试玩家: ${debug.testPlayers}`, 'info');
+                log(`  敏感度: ${debug.sensitivity}px`, 'info');
+                log(`  当前碰撞: ${debug.currentCollisions}`, 'info');
+                log(`  历史记录: ${debug.collisionHistory}`, 'info');
+                
+                return debug;
+            } else {
+                log('无法调试碰撞系统', 'error');
+                return null;
+            }
+        }
+
+        // 强制碰撞测试
+        function forceCollisionTest() {
+            log('执行强制碰撞测试...');
+            
+            if (typeof window.forceCollisionTest === 'function') {
+                const result = window.forceCollisionTest();
+                
+                if (result.success) {
+                    log(`强制碰撞测试成功: ${result.message}`, 'success');
+                    log(`目标位置: (${result.targetPosition.x}, ${result.targetPosition.y})`, 'info');
+                    log(`测试玩家: ${result.testPlayer}`, 'info');
+                    
+                    // 等待一段时间后检查结果
+                    setTimeout(() => {
+                        const info = getPlayerInfo();
+                        if (info && info.collisionSystem.currentCollisions.length > 0) {
+                            log('碰撞检测成功！', 'success');
+                        } else {
+                            log('碰撞检测可能失败，请检查距离和敏感度', 'warning');
+                        }
+                    }, 500);
+                    
+                } else {
+                    log(`强制碰撞测试失败: ${result.error}`, 'error');
+                }
+                
+                return result;
+            } else {
+                log('无法执行强制碰撞测试', 'error');
+                return null;
+            }
+        }
+
+        // 重置系统
+        function resetSystem() {
+            log('重置系统...');
+            
+            // 停止监控
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+            }
+            
+            // 重置计数器
+            eventCounts = {
+                collisionStart: 0,
+                collisionEnd: 0,
+                total: 0
+            };
+            updateEventCounts();
+            
+            // 重置状态显示
+            document.getElementById('systemStatus').className = 'status inactive';
+            document.getElementById('systemStatus').textContent = '系统未连接';
+            document.getElementById('monitoringStatus').className = 'status inactive';
+            document.getElementById('monitoringStatus').textContent = '监控未启动';
+            
+            log('系统已重置', 'info');
+        }
+
+        // 开始监控
+        function startMonitoring() {
+            log('开始实时监控...');
+            
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+            }
+            
+            monitoringInterval = setInterval(() => {
+                updateMonitoringInfo();
+            }, 1000);
+            
+            document.getElementById('monitoringStatus').className = 'status active';
+            document.getElementById('monitoringStatus').textContent = '监控中';
+            log('实时监控已启动', 'success');
+        }
+
+        // 停止监控
+        function stopMonitoring() {
+            log('停止实时监控...');
+            
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+            }
+            
+            document.getElementById('monitoringStatus').className = 'status inactive';
+            document.getElementById('monitoringStatus').textContent = '监控已停止';
+            log('实时监控已停止', 'info');
+        }
+
+        // 更新监控信息
+        function updateMonitoringInfo() {
+            if (typeof window.getPlayerInfo === 'function') {
+                const info = window.getPlayerInfo();
+                
+                if (info && info.mainPlayer) {
+                    document.getElementById('mainPlayerPos').textContent = `(${Math.round(info.mainPlayer.position.x)}, ${Math.round(info.mainPlayer.position.y)})`;
+                    
+                    // 找到最近的测试玩家
+                    let nearestPlayer = null;
+                    let minDistance = Infinity;
+                    
+                    info.testPlayers.forEach(player => {
+                        const distance = Math.sqrt(
+                            Math.pow(info.mainPlayer.position.x - player.position.x, 2) +
+                            Math.pow(info.mainPlayer.position.y - player.position.y, 2)
+                        );
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearestPlayer = player;
+                        }
+                    });
+                    
+                    if (nearestPlayer) {
+                        document.getElementById('nearestPlayer').textContent = nearestPlayer.name;
+                        document.getElementById('minDistance').textContent = Math.round(minDistance) + 'px';
+                    }
+                    
+                    document.getElementById('currentCollisions').textContent = info.collisionSystem.currentCollisions.length;
+                }
+            }
+        }
+
+        // 更新事件计数
+        function updateEventCounts() {
+            document.getElementById('collisionStartCount').textContent = eventCounts.collisionStart;
+            document.getElementById('collisionEndCount').textContent = eventCounts.collisionEnd;
+            document.getElementById('totalEvents').textContent = eventCounts.total;
+        }
+
+        // 清除日志
+        function clearLog() {
+            document.getElementById('testLog').textContent = '日志已清除...\n';
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            log('🔧 碰撞系统修复测试工具已加载');
+            
+            // 延迟检查系统，等待游戏加载
+            setTimeout(() => {
+                if (checkSystem()) {
+                    initializeSystem();
+                } else {
+                    log('请等待游戏完全加载后再进行测试', 'warning');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

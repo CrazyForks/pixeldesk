@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真实玩家碰撞测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button.info {
+            background-color: #2196F3;
+        }
+        .button.info:hover {
+            background-color: #0b7dda;
+        }
+        .button.warning {
+            background-color: #ff9800;
+        }
+        .button.warning:hover {
+            background-color: #e68900;
+        }
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-size: 13px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status.inactive {
+            background-color: #666;
+            color: #ccc;
+        }
+        .status.warning {
+            background-color: #ff9800;
+            color: white;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .info-box {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .info-box h4 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .player-list {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .player-item {
+            background-color: #444;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .player-name {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .player-id {
+            font-size: 12px;
+            color: #999;
+        }
+        .collision-notification {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            animation: fadeIn 0.5s ease-in;
+        }
+        .collision-notification.end {
+            background-color: #ff9800;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 真实玩家碰撞测试</h1>
+        
+        <div class="test-section">
+            <h2>🎮 系统状态</h2>
+            <div id="systemStatus" class="status inactive">
+                等待系统连接...
+            </div>
+            <button class="button" onclick="checkSystem()">检查系统</button>
+            <button class="button info" onclick="loadRealPlayers()">加载真实玩家</button>
+            <button class="button warning" onclick="testCollision()">测试碰撞</button>
+        </div>
+
+        <div class="test-section">
+            <h2>👥 玩家信息</h2>
+            <div class="grid">
+                <div class="info-box">
+                    <h4>当前用户</h4>
+                    <p>用户名: <span id="currentUserName">未知</span></p>
+                    <p>用户ID: <span id="currentUserId">未知</span></p>
+                    <p>位置: <span id="currentUserPos">未知</span></p>
+                </div>
+                <div class="info-box">
+                    <h4>碰撞状态</h4>
+                    <p>碰撞敏感度: <span id="sensitivity">50px</span></p>
+                    <p>当前碰撞数: <span id="currentCollisions">0</span></p>
+                    <p>碰撞历史: <span id="collisionHistory">0</span></p>
+                </div>
+            </div>
+            
+            <div class="player-list">
+                <h4>在线玩家列表</h4>
+                <div id="playerList">
+                    <p>正在加载玩家信息...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 碰撞通知</h2>
+            <div id="collisionNotifications">
+                <p class="info-box">等待碰撞事件...</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 详细日志</h2>
+            <div id="detailLog" class="log">
+                等待日志信息...
+            </div>
+            <button class="button" onclick="clearLog()">清除日志</button>
+            <button class="button info" onclick="exportLog()">导出日志</button>
+        </div>
+    </div>
+
+    <script>
+        let collisionCount = 0;
+
+        // 日志函数
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('detailLog');
+            const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : type === 'collision' ? '🎯' : 'ℹ️';
+            const logMessage = `[${timestamp}] ${prefix} ${message}\n`;
+            
+            logElement.textContent += logMessage;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(logMessage);
+        }
+
+        // 检查系统
+        function checkSystem() {
+            log('检查系统连接状态...');
+            
+            const hasGameEventBus = typeof window.gameEventBus !== 'undefined';
+            const hasPlayerInfo = typeof window.getPlayerInfo === 'function';
+            const hasForceTest = typeof window.forceCollisionTest === 'function';
+            
+            if (hasGameEventBus && hasPlayerInfo && hasForceTest) {
+                document.getElementById('systemStatus').className = 'status active';
+                document.getElementById('systemStatus').textContent = '✅ 系统已连接，可以进行碰撞测试';
+                log('系统连接正常，所有功能可用', 'success');
+                
+                // 设置事件监听器
+                setupEventListeners();
+                
+                // 获取当前用户信息
+                getCurrentUserInfo();
+                
+                return true;
+            } else {
+                document.getElementById('systemStatus').className = 'status warning';
+                document.getElementById('systemStatus').textContent = '⚠️ 系统部分连接，请检查游戏是否完全加载';
+                log(`系统检查结果: EventBus=${hasGameEventBus}, PlayerInfo=${hasPlayerInfo}, ForceTest=${hasForceTest}`, 'warning');
+                return false;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            if (window.gameEventBus) {
+                // 监听碰撞开始事件
+                window.gameEventBus.on('player:collision:start', (event) => {
+                    collisionCount++;
+                    const message = `碰撞开始: ${event.mainPlayer.name} ↔ ${event.targetPlayer.name}`;
+                    log(message, 'collision');
+                    showCollisionNotification(message, 'start');
+                    updateCollisionStats();
+                });
+                
+                // 监听碰撞结束事件
+                window.gameEventBus.on('player:collision:end', (event) => {
+                    const duration = event.duration ? Math.round(event.duration / 1000) : 0;
+                    const message = `碰撞结束: ${event.mainPlayer.name} ↔ ${event.targetPlayer.name} (持续${duration}秒)`;
+                    log(message, 'collision');
+                    showCollisionNotification(message, 'end');
+                    updateCollisionStats();
+                });
+                
+                log('事件监听器设置完成', 'success');
+            }
+            
+            // 监听游戏内通知
+            if (typeof window !== 'undefined') {
+                window.addEventListener('collision-notification', (event) => {
+                    const { message, type } = event.detail;
+                    log(`游戏通知: ${message}`, 'collision');
+                });
+            }
+        }
+
+        // 获取当前用户信息
+        function getCurrentUserInfo() {
+            if (window.getPlayerInfo) {
+                const info = window.getPlayerInfo();
+                
+                if (info && info.mainPlayer) {
+                    document.getElementById('currentUserName').textContent = info.mainPlayer.playerData.name;
+                    document.getElementById('currentUserId').textContent = info.mainPlayer.playerData.id;
+                    document.getElementById('currentUserPos').textContent = `(${Math.round(info.mainPlayer.position.x)}, ${Math.round(info.mainPlayer.position.y)})`;
+                    
+                    log(`当前用户: ${info.mainPlayer.playerData.name} (ID: ${info.mainPlayer.playerData.id})`, 'info');
+                } else {
+                    log('无法获取当前用户信息', 'warning');
+                }
+            }
+        }
+
+        // 加载真实玩家
+        function loadRealPlayers() {
+            log('加载真实玩家信息...');
+            
+            if (window.getPlayerInfo) {
+                const info = window.getPlayerInfo();
+                
+                if (info && info.testPlayers) {
+                    const playerListElement = document.getElementById('playerList');
+                    playerListElement.innerHTML = '';
+                    
+                    if (info.testPlayers.length === 0) {
+                        playerListElement.innerHTML = '<p>没有找到其他玩家</p>';
+                        log('没有找到其他在线玩家', 'warning');
+                    } else {
+                        info.testPlayers.forEach((player, index) => {
+                            const playerItem = document.createElement('div');
+                            playerItem.className = 'player-item';
+                            playerItem.innerHTML = `
+                                <div>
+                                    <div class="player-name">${player.name}</div>
+                                    <div class="player-id">ID: ${player.workstationId}</div>
+                                </div>
+                                <div>
+                                    <small>位置: (${Math.round(player.position.x)}, ${Math.round(player.position.y)})</small>
+                                </div>
+                            `;
+                            playerListElement.appendChild(playerItem);
+                        });
+                        
+                        log(`加载了 ${info.testPlayers.length} 个真实玩家`, 'success');
+                        info.testPlayers.forEach((player, index) => {
+                            log(`  ${index + 1}. ${player.name} - 位置: (${Math.round(player.position.x)}, ${Math.round(player.position.y)})`, 'info');
+                        });
+                    }
+                    
+                    // 更新碰撞系统信息
+                    if (info.collisionSystem) {
+                        document.getElementById('sensitivity').textContent = info.collisionSystem.sensitivity + 'px';
+                        document.getElementById('currentCollisions').textContent = info.collisionSystem.currentCollisions.length;
+                        document.getElementById('collisionHistory').textContent = info.collisionSystem.historyCount;
+                    }
+                } else {
+                    log('无法获取玩家信息', 'error');
+                }
+            } else {
+                log('getPlayerInfo 函数不可用', 'error');
+            }
+        }
+
+        // 测试碰撞
+        function testCollision() {
+            log('开始碰撞测试...');
+            
+            if (window.forceCollisionTest) {
+                const result = window.forceCollisionTest();
+                
+                if (result && result.success) {
+                    log(`碰撞测试启动成功: ${result.message}`, 'success');
+                    log(`目标玩家: ${result.testPlayer}`, 'info');
+                    log(`目标位置: (${result.targetPosition.x}, ${result.targetPosition.y})`, 'info');
+                    
+                    // 等待碰撞事件
+                    setTimeout(() => {
+                        log('等待碰撞事件触发...', 'info');
+                    }, 500);
+                } else {
+                    const error = result ? result.error : '未知错误';
+                    log(`碰撞测试失败: ${error}`, 'error');
+                }
+            } else {
+                log('forceCollisionTest 函数不可用', 'error');
+            }
+        }
+
+        // 显示碰撞通知
+        function showCollisionNotification(message, type) {
+            const notificationsElement = document.getElementById('collisionNotifications');
+            
+            const notification = document.createElement('div');
+            notification.className = `collision-notification ${type}`;
+            notification.innerHTML = `
+                <strong>${type === 'start' ? '🎯 碰撞开始' : '✅碰撞结束'}</strong><br>
+                ${message}<br>
+                <small>时间: ${new Date().toLocaleTimeString()}</small>
+            `;
+            
+            notificationsElement.appendChild(notification);
+            
+            // 5秒后移除通知
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+
+        // 更新碰撞统计
+        function updateCollisionStats() {
+            if (window.getPlayerInfo) {
+                const info = window.getPlayerInfo();
+                if (info && info.collisionSystem) {
+                    document.getElementById('currentCollisions').textContent = info.collisionSystem.currentCollisions.length;
+                    document.getElementById('collisionHistory').textContent = info.collisionSystem.historyCount;
+                }
+            }
+        }
+
+        // 清除日志
+        function clearLog() {
+            document.getElementById('detailLog').textContent = '日志已清除...\n';
+        }
+
+        // 导出日志
+        function exportLog() {
+            const logContent = document.getElementById('detailLog').textContent;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `collision-test-${new Date().toISOString().slice(0, 19)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            log('日志已导出', 'success');
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            log('🎯 真实玩家碰撞测试工具已加载');
+            
+            // 延迟检查系统，等待游戏加载
+            setTimeout(() => {
+                checkSystem();
+            }, 2000);
+            
+            // 定期更新玩家信息
+            setInterval(() => {
+                if (window.getPlayerInfo) {
+                    getCurrentUserInfo();
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

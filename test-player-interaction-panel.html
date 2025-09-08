@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayerInteractionPanel Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-container {
+            max-width: 400px;
+            height: 600px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        /* Basic retro theme styles */
+        .retro-bg-darker { background-color: #16213e; }
+        .retro-border { border-color: #2a3f5f; }
+        .retro-text { color: #e2e8f0; }
+        .retro-textMuted { color: #94a3b8; }
+        .retro-purple { color: #8b5cf6; }
+        .retro-pink { color: #ec4899; }
+        .from-retro-purple { background: linear-gradient(to right, #8b5cf6, #a855f7); }
+        .to-retro-pink { background: linear-gradient(to right, #ec4899, #f472b6); }
+        .from-retro-purple\/10 { background: rgba(139, 92, 246, 0.1); }
+        .to-retro-pink\/10 { background: rgba(236, 72, 153, 0.1); }
+        .from-retro-purple\/20 { background: rgba(139, 92, 246, 0.2); }
+        .to-retro-pink\/20 { background: rgba(236, 72, 153, 0.2); }
+        .from-retro-purple\/30 { background: rgba(139, 92, 246, 0.3); }
+        .to-retro-pink\/30 { background: rgba(236, 72, 153, 0.3); }
+        .retro-border\/30 { border-color: rgba(42, 63, 95, 0.3); }
+        .bg-retro-border\/30 { background-color: rgba(42, 63, 95, 0.3); }
+    </style>
+</head>
+<body>
+    <h1>PlayerInteractionPanel Component Test</h1>
+    <div id="root" class="test-container"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // Mock PlayerInteractionPanel component (simplified version for testing)
+        function PlayerInteractionPanel({ player, onSendMessage, onFollow, onViewProfile }) {
+            const [chatMessages, setChatMessages] = useState([]);
+            const [newMessage, setNewMessage] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+
+            // Mock initial messages
+            useEffect(() => {
+                const mockMessages = [
+                    {
+                        id: '1',
+                        senderId: player.id,
+                        receiverId: 'current-user',
+                        content: '你好！很高兴遇到你',
+                        timestamp: new Date(Date.now() - 300000).toISOString(),
+                        type: 'text'
+                    },
+                    {
+                        id: '2',
+                        senderId: 'current-user',
+                        receiverId: player.id,
+                        content: '你好！我也很高兴认识你',
+                        timestamp: new Date(Date.now() - 240000).toISOString(),
+                        type: 'text'
+                    }
+                ];
+                setChatMessages(mockMessages);
+            }, [player.id]);
+
+            const handleSendMessage = async (e) => {
+                e.preventDefault();
+                if (!newMessage.trim() || isLoading) return;
+
+                setIsLoading(true);
+                
+                const message = {
+                    id: Date.now().toString(),
+                    senderId: 'current-user',
+                    receiverId: player.id,
+                    content: newMessage.trim(),
+                    timestamp: new Date().toISOString(),
+                    type: 'text'
+                };
+
+                setChatMessages(prev => [...prev, message]);
+                setNewMessage('');
+
+                if (onSendMessage) {
+                    try {
+                        await onSendMessage(message.content);
+                    } catch (error) {
+                        console.error('Failed to send message:', error);
+                    }
+                }
+
+                setIsLoading(false);
+            };
+
+            const formatTimestamp = (timestamp) => {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now.getTime() - date.getTime();
+                const diffMins = Math.floor(diffMs / 60000);
+                
+                if (diffMins < 1) return '刚刚';
+                if (diffMins < 60) return `${diffMins}分钟前`;
+                if (diffMins < 1440) return `${Math.floor(diffMins / 60)}小时前`;
+                return date.toLocaleDateString();
+            };
+
+            return (
+                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#16213e' }}>
+                    {/* Player Info Header */}
+                    <div style={{ padding: '24px', borderBottom: '1px solid #2a3f5f', background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1))' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{ 
+                                    width: '64px', 
+                                    height: '64px', 
+                                    background: 'linear-gradient(to bottom right, #8b5cf6, #ec4899)', 
+                                    borderRadius: '50%', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    <span style={{ color: 'white', fontWeight: 'bold', fontSize: '20px' }}>
+                                        {player.name?.charAt(0)?.toUpperCase() || '?'}
+                                    </span>
+                                </div>
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    bottom: '-4px', 
+                                    right: '-4px', 
+                                    width: '20px', 
+                                    height: '20px', 
+                                    borderRadius: '50%', 
+                                    border: '2px solid #16213e',
+                                    background: player.isOnline ? '#4ade80' : '#9ca3af'
+                                }}></div>
+                            </div>
+
+                            <div style={{ flex: 1 }}>
+                                <h3 style={{ color: 'white', fontWeight: '600', fontSize: '18px', margin: '0 0 4px 0' }}>
+                                    {player.name || '未知玩家'}
+                                </h3>
+                                
+                                {player.currentStatus && (
+                                    <div style={{ 
+                                        display: 'inline-flex', 
+                                        alignItems: 'center', 
+                                        padding: '4px 12px', 
+                                        borderRadius: '9999px', 
+                                        background: 'linear-gradient(to right, #3b82f6, #06b6d4)', 
+                                        color: 'white', 
+                                        fontSize: '14px', 
+                                        fontWeight: '500',
+                                        marginBottom: '8px'
+                                    }}>
+                                        {player.currentStatus.emoji && (
+                                            <span style={{ marginRight: '4px' }}>{player.currentStatus.emoji}</span>
+                                        )}
+                                        {player.currentStatus.status}
+                                    </div>
+                                )}
+                                
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ 
+                                        width: '8px', 
+                                        height: '8px', 
+                                        borderRadius: '50%',
+                                        background: player.isOnline ? '#4ade80' : '#9ca3af',
+                                        animation: player.isOnline ? 'pulse 2s infinite' : 'none'
+                                    }}></div>
+                                    <span style={{ color: '#94a3b8', fontSize: '14px' }}>
+                                        {player.isOnline ? '在线' : `最后在线: ${player.lastSeen || '未知'}`}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {player.currentStatus?.message && (
+                            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(42, 63, 95, 0.3)', borderRadius: '8px' }}>
+                                <p style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.5', margin: 0 }}>
+                                    {player.currentStatus.message}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div style={{ padding: '16px', borderBottom: '1px solid #2a3f5f' }}>
+                        <h4 style={{ color: 'white', fontWeight: '500', marginBottom: '12px', fontSize: '14px' }}>快速操作</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                            <button
+                                onClick={() => onFollow && onFollow(player.id)}
+                                style={{ 
+                                    background: 'rgba(139, 92, 246, 0.2)', 
+                                    color: 'white', 
+                                    padding: '8px 12px', 
+                                    borderRadius: '8px', 
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => e.target.style.background = 'rgba(139, 92, 246, 0.3)'}
+                                onMouseOut={(e) => e.target.style.background = 'rgba(139, 92, 246, 0.2)'}
+                            >
+                                <div>👥</div>
+                                <div>关注</div>
+                            </button>
+                            <button
+                                onClick={() => onViewProfile && onViewProfile(player.id)}
+                                style={{ 
+                                    background: 'rgba(236, 72, 153, 0.2)', 
+                                    color: 'white', 
+                                    padding: '8px 12px', 
+                                    borderRadius: '8px', 
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => e.target.style.background = 'rgba(236, 72, 153, 0.3)'}
+                                onMouseOut={(e) => e.target.style.background = 'rgba(236, 72, 153, 0.2)'}
+                            >
+                                <div>👁️</div>
+                                <div>详情</div>
+                            </button>
+                            <button
+                                style={{ 
+                                    background: 'rgba(59, 130, 246, 0.2)', 
+                                    color: 'white', 
+                                    padding: '8px 12px', 
+                                    borderRadius: '8px', 
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => e.target.style.background = 'rgba(59, 130, 246, 0.3)'}
+                                onMouseOut={(e) => e.target.style.background = 'rgba(59, 130, 246, 0.2)'}
+                            >
+                                <div>🎮</div>
+                                <div>邀请</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Chat Messages */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                        <div style={{ padding: '16px', borderBottom: '1px solid #2a3f5f' }}>
+                            <h4 style={{ color: 'white', fontWeight: '500', fontSize: '14px', display: 'flex', alignItems: 'center', margin: 0 }}>
+                                💬 快速聊天
+                                <div style={{ marginLeft: '8px', width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%', animation: 'pulse 2s infinite' }}></div>
+                            </h4>
+                        </div>
+                        
+                        {/* Messages Container */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+                            {chatMessages.length === 0 ? (
+                                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '32px 0' }}>
+                                    <div style={{ width: '48px', height: '48px', background: 'rgba(42, 63, 95, 0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                                        💬
+                                    </div>
+                                    <p style={{ fontSize: '14px', margin: '0 0 4px 0' }}>还没有聊天记录</p>
+                                    <p style={{ fontSize: '12px', margin: 0 }}>发送第一条消息开始对话吧！</p>
+                                </div>
+                            ) : (
+                                chatMessages.map((message) => (
+                                    <div
+                                        key={message.id}
+                                        style={{ 
+                                            display: 'flex', 
+                                            justifyContent: message.senderId === 'current-user' ? 'flex-end' : 'flex-start',
+                                            marginBottom: '12px'
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                maxWidth: '80%',
+                                                padding: '12px',
+                                                borderRadius: '8px',
+                                                background: message.senderId === 'current-user'
+                                                    ? 'linear-gradient(to right, #8b5cf6, #ec4899)'
+                                                    : 'rgba(42, 63, 95, 0.3)',
+                                                color: 'white'
+                                            }}
+                                        >
+                                            <p style={{ fontSize: '14px', lineHeight: '1.5', margin: '0 0 4px 0' }}>{message.content}</p>
+                                            <p style={{ 
+                                                fontSize: '12px', 
+                                                margin: 0,
+                                                color: message.senderId === 'current-user' ? 'rgba(255, 255, 255, 0.7)' : '#94a3b8'
+                                            }}>
+                                                {formatTimestamp(message.timestamp)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Message Input */}
+                        <div style={{ padding: '16px', borderTop: '1px solid #2a3f5f' }}>
+                            <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px' }}>
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder="输入消息..."
+                                    disabled={isLoading}
+                                    style={{
+                                        flex: 1,
+                                        padding: '8px 12px',
+                                        background: 'rgba(42, 63, 95, 0.3)',
+                                        border: '1px solid #2a3f5f',
+                                        borderRadius: '8px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        outline: 'none'
+                                    }}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!newMessage.trim() || isLoading}
+                                    style={{
+                                        background: 'linear-gradient(to right, #8b5cf6, #ec4899)',
+                                        color: 'white',
+                                        fontWeight: '500',
+                                        padding: '8px 16px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        fontSize: '14px',
+                                        cursor: newMessage.trim() && !isLoading ? 'pointer' : 'not-allowed',
+                                        opacity: newMessage.trim() && !isLoading ? 1 : 0.5
+                                    }}
+                                >
+                                    {isLoading ? '发送中...' : '发送'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Test App
+        function TestApp() {
+            const mockPlayer = {
+                id: 'test-player-1',
+                name: 'Alice Chen',
+                avatar: undefined,
+                currentStatus: {
+                    type: 'working',
+                    status: '专注工作中',
+                    emoji: '💼',
+                    message: '正在处理一个重要的项目，请稍后联系我。',
+                    timestamp: new Date().toISOString()
+                },
+                isOnline: true,
+                lastSeen: undefined
+            };
+
+            const handleSendMessage = async (message) => {
+                console.log('Sending message:', message);
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            };
+
+            const handleFollow = (playerId) => {
+                console.log('Following player:', playerId);
+                alert(`已关注玩家: ${playerId}`);
+            };
+
+            const handleViewProfile = (playerId) => {
+                console.log('Viewing profile:', playerId);
+                alert(`查看玩家资料: ${playerId}`);
+            };
+
+            return (
+                <PlayerInteractionPanel
+                    player={mockPlayer}
+                    onSendMessage={handleSendMessage}
+                    onFollow={handleFollow}
+                    onViewProfile={handleViewProfile}
+                />
+            );
+        }
+
+        // Render the test app
+        ReactDOM.render(<TestApp />, document.getElementById('root'));
+    </script>
+
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</body>
+</html>
