@@ -12,6 +12,8 @@ interface InfoPanelProps {
   workstationStats?: any
   onTeleportClick?: () => void
   collisionPlayer?: any
+  isMobile?: boolean
+  isTablet?: boolean
 }
 
 export default function InfoPanel({ 
@@ -20,7 +22,9 @@ export default function InfoPanel({
   currentUser, 
   workstationStats, 
   onTeleportClick,
-  collisionPlayer
+  collisionPlayer,
+  isMobile = false,
+  isTablet = false
 }: InfoPanelProps) {
   // Define available tabs
   const tabs: TabType[] = [
@@ -71,6 +75,8 @@ export default function InfoPanel({
           tabs={tabs}
           collisionPlayer={collisionPlayer}
           className="flex-1"
+          isMobile={isMobile}
+          isTablet={isTablet}
         />
       </div>
       

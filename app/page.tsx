@@ -129,10 +129,27 @@ export default function Home() {
   // 错误消息状态
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   
+  // Enhanced device detection
+  const [deviceType, setDeviceType] = useState<'mobile' | 'tablet' | 'desktop'>('desktop')
+  const [isTablet, setIsTablet] = useState(false)
+
   // 检测移动设备和加载用户数据
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+    const checkDeviceType = () => {
+      const width = window.innerWidth
+      if (width < 640) {
+        setDeviceType('mobile')
+        setIsMobile(true)
+        setIsTablet(false)
+      } else if (width < 1024) {
+        setDeviceType('tablet')
+        setIsMobile(false)
+        setIsTablet(true)
+      } else {
+        setDeviceType('desktop')
+        setIsMobile(false)
+        setIsTablet(false)
+      }
     }
     
     // 加载当前用户数据
@@ -221,12 +238,12 @@ export default function Home() {
       })
     }
     
-    checkMobile()
+    checkDeviceType()
     loadCurrentUser()
     loadWorkstationStats()
     loadUserWorkstationBinding()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
+    window.addEventListener('resize', checkDeviceType)
+    return () => window.removeEventListener('resize', checkDeviceType)
   }, [])
 
   // 监听积分更新事件
@@ -325,7 +342,7 @@ export default function Home() {
     setSelectedPlayer(playerData)
   }, [])
 
-  // Set up event bus listeners for collision events
+  // Set up event bus listeners for collision and click events
   useEffect(() => {
     const handleCollisionStart = (event: CollisionEvent) => {
       console.log('[HomePage] Collision start:', event)
@@ -337,14 +354,23 @@ export default function Home() {
       setCollisionPlayer(null)
     }
 
-    // Subscribe to collision events
+    const handlePlayerClickEvent = (event: any) => {
+      console.log('[HomePage] Player click event:', event)
+      // For click events, we set the collision player to trigger the same UI behavior
+      // The TabManager will handle the priority logic between collision and click
+      setCollisionPlayer(event.targetPlayer)
+    }
+
+    // Subscribe to collision and click events
     EventBus.on('player:collision:start', handleCollisionStart)
     EventBus.on('player:collision:end', handleCollisionEnd)
+    EventBus.on('player:click', handlePlayerClickEvent)
 
     // Cleanup on unmount
     return () => {
       EventBus.off('player:collision:start', handleCollisionStart)
       EventBus.off('player:collision:end', handleCollisionEnd)
+      EventBus.off('player:click', handlePlayerClickEvent)
     }
   }, [])
 
@@ -364,10 +390,25 @@ export default function Home() {
   }, [])
 
   
-  // 处理玩家点击请求
+  // 处理玩家点击请求 - 保持向后兼容性，同时支持新的标签页系统
   const handlePlayerClick = useCallback((playerData: any) => {
+    console.log('[HomePage] Legacy player click handler:', playerData)
+    
+    // 新系统：通过EventBus触发点击事件，让TabManager处理
+    // 这样可以确保点击和碰撞产生一致的用户体验
+    const clickEvent = {
+      type: 'player_click',
+      targetPlayer: playerData,
+      timestamp: Date.now(),
+      position: { x: 0, y: 0 }, // 位置信息在这里不重要
+      trigger: 'click'
+    }
+    EventBus.emit('player:click', clickEvent)
+    
+    // 旧系统：保持向后兼容性，仍然显示模态框作为备选
+    // 但在新的标签页系统中，这个模态框不会显示，因为标签页会处理交互
     setPlayerClickModal({
-      isVisible: true,
+      isVisible: false, // 设置为false，让新的标签页系统处理
       player: playerData
     })
   }, [])
@@ -495,10 +536,12 @@ export default function Home() {
           currentPoints: currentUser?.points || 0
         })
       }}
+      isMobile={isMobile}
+      isTablet={isTablet}
     >
       {memoizedPostStatus}
     </InfoPanel>
-  ), [selectedPlayer, collisionPlayer, currentUser, workstationStats, memoizedPostStatus])
+  ), [selectedPlayer, collisionPlayer, currentUser, workstationStats, memoizedPostStatus, isMobile, isTablet])
 
   // Use layout manager for both mobile and desktop
   return (

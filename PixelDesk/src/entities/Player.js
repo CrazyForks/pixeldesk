@@ -431,7 +431,21 @@ export class Player extends Phaser.GameObjects.Container {
     handlePlayerClick(pointer) {
         console.log('玩家被点击:', this.playerData.name);
         
-        // 触发全局回调函数
+        // 创建点击事件数据
+        const clickEvent = {
+            type: 'player_click',
+            targetPlayer: this.playerData,
+            timestamp: Date.now(),
+            position: { x: this.x, y: this.y },
+            trigger: 'click'
+        };
+        
+        // 使用事件总线触发点击事件
+        if (window.gameEventBus) {
+            window.gameEventBus.emit('player:click', clickEvent);
+        }
+        
+        // 保持向后兼容性 - 触发全局回调函数
         if (window.onPlayerClick) {
             window.onPlayerClick(this.playerData);
         }
@@ -442,12 +456,12 @@ export class Player extends Phaser.GameObjects.Container {
     
     // 添加点击动画效果
     addClickAnimation() {
-        // 缩放动画
+        // 缩放动画 - 点击时更明显的效果
         this.scene.tweens.add({
             targets: this,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 100,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 120,
             yoyo: true,
             ease: 'Power2',
             onComplete: () => {
@@ -455,14 +469,81 @@ export class Player extends Phaser.GameObjects.Container {
             }
         });
         
-        // 闪烁效果
+        // 蓝色闪烁效果 - 区别于碰撞的粉色效果
         this.scene.tweens.add({
             targets: this,
-            alpha: 0.5,
-            duration: 150,
+            alpha: 0.3,
+            duration: 200,
             yoyo: true,
             ease: 'Power2'
         });
+        
+        // 添加蓝色光环效果表示点击交互
+        const clickRing = this.scene.add.graphics();
+        clickRing.lineStyle(3, 0x00BFFF, 0.8); // 蓝色光环
+        clickRing.strokeCircle(this.x, this.y, 30);
+        
+        // 光环扩散动画
+        this.scene.tweens.add({
+            targets: clickRing,
+            scaleX: 2,
+            scaleY: 2,
+            alpha: 0,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => {
+                clickRing.destroy();
+            }
+        });
+    }
+    
+    // 添加碰撞动画效果 - 区别于点击动画
+    addCollisionAnimation() {
+        // 轻微的脉冲效果
+        this.scene.tweens.add({
+            targets: this,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 300,
+            yoyo: true,
+            ease: 'Sine.easeInOut',
+            repeat: -1, // 持续脉冲直到碰撞结束
+            onComplete: () => {
+                this.setScale(1);
+            }
+        });
+        
+        // 粉色光环效果表示碰撞交互
+        const collisionRing = this.scene.add.graphics();
+        collisionRing.lineStyle(2, 0xFF69B4, 0.6); // 粉色光环
+        collisionRing.strokeCircle(this.x, this.y, 25);
+        
+        // 持续的光环脉冲动画
+        this.collisionRing = collisionRing; // 保存引用以便在碰撞结束时清理
+        this.scene.tweens.add({
+            targets: collisionRing,
+            scaleX: 1.5,
+            scaleY: 1.5,
+            alpha: 0.3,
+            duration: 800,
+            yoyo: true,
+            ease: 'Sine.easeInOut',
+            repeat: -1 // 持续动画
+        });
+    }
+    
+    // 清理碰撞动画效果
+    clearCollisionAnimation() {
+        // 停止所有针对此对象的缩放动画
+        this.scene.tweens.killTweensOf(this);
+        this.setScale(1);
+        
+        // 清理碰撞光环
+        if (this.collisionRing) {
+            this.scene.tweens.killTweensOf(this.collisionRing);
+            this.collisionRing.destroy();
+            this.collisionRing = null;
+        }
     }
     
     // 处理与主玩家的碰撞开始
@@ -489,6 +570,9 @@ export class Player extends Phaser.GameObjects.Container {
             if (window.onPlayerCollisionStart) {
                 window.onPlayerCollisionStart(collisionEvent);
             }
+            
+            // 添加碰撞视觉效果 - 粉色光环区别于点击的蓝色
+            this.addCollisionAnimation();
             
             console.log('碰撞开始:', this.playerData.name, 'at', new Date(this.collisionStartTime).toLocaleTimeString());
         }
@@ -520,6 +604,9 @@ export class Player extends Phaser.GameObjects.Container {
             if (window.onPlayerCollisionEnd) {
                 window.onPlayerCollisionEnd(collisionEvent);
             }
+            
+            // 清理碰撞动画效果
+            this.clearCollisionAnimation();
             
             console.log('碰撞结束:', this.playerData.name, '持续时间:', collisionDuration + 'ms');
             this.collisionStartTime = null;

@@ -126,6 +126,56 @@ canvas {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* 增强的脉冲发光效果 */
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 滑入动画 */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.3s ease-out;
+}
+
+/* 闪烁效果 */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 /* 悬浮效果 */
 .hover-float {
   transition: transform 0.3s ease;
@@ -234,23 +284,139 @@ canvas {
   transform: translateY(-1px);
 }
 
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .desktop-layout {
+/* Enhanced responsive adjustments */
+@media (max-width: 640px) {
+  .desktop-layout, .tablet-layout {
     display: none;
   }
   
   .mobile-layout {
+    display: block;
+  }
+  
+  /* Mobile-specific tab adjustments */
+  .tab-container {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .tab-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Compact mobile spacing */
+  .mobile-compact {
+    padding: 0.5rem;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .desktop-layout, .mobile-layout {
+    display: none;
+  }
+  
+  .tablet-layout {
+    display: block;
+  }
+  
+  /* Tablet-specific adjustments */
+  .tablet-spacing {
+    padding: 0.75rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobile-layout, .tablet-layout {
+    display: none;
+  }
+  
+  .desktop-layout {
     display: block;
   }
 }
 
-@media (min-width: 769px) {
-  .desktop-layout {
+/* Responsive tab system utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive text utilities */
+@media (max-width: 480px) {
+  .xs\:inline {
+    display: inline;
+  }
+  
+  .xs\:hidden {
+    display: none;
+  }
+}
+
+/* Enhanced responsive breakpoints for better control */
+@media (max-width: 480px) {
+  .ultra-mobile-hide {
+    display: none;
+  }
+  
+  .ultra-mobile-show {
+    display: block;
+  }
+}
+
+@media (min-width: 481px) {
+  .ultra-mobile-hide {
     display: block;
   }
   
-  .mobile-layout {
+  .ultra-mobile-show {
     display: none;
+  }
+}
+
+/* Responsive layout transitions */
+.layout-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive game area adjustments */
+@media (max-width: 640px) {
+  #game-container {
+    min-height: 60vh;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  #game-container {
+    min-height: 100vh;
+  }
+}
+
+@media (min-width: 1025px) {
+  #game-container {
+    min-height: 100vh;
+  }
+}
+
+/* Responsive info panel adjustments */
+@media (max-width: 640px) {
+  .info-panel-mobile {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 640px) {
+  .info-panel-mobile {
+    max-height: 100vh;
+    width: 280px;
   }
 }

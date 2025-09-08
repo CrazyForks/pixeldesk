@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
+import { EventBus } from '../lib/eventBus'
 
 interface PlayerData {
   id: string
@@ -26,6 +27,15 @@ interface ChatMessage {
   content: string
   timestamp: string
   type: 'text' | 'emoji' | 'system'
+  status?: 'sending' | 'sent' | 'delivered' | 'failed'
+}
+
+interface SocialAction {
+  id: string
+  type: 'follow' | 'unfollow' | 'block' | 'report' | 'invite'
+  targetUserId: string
+  timestamp: string
+  status: 'pending' | 'completed' | 'failed'
 }
 
 interface PlayerInteractionPanelProps {
@@ -34,6 +44,8 @@ interface PlayerInteractionPanelProps {
   onFollow?: (playerId: string) => void
   onViewProfile?: (playerId: string) => void
   className?: string
+  isMobile?: boolean
+  isTablet?: boolean
 }
 
 export default function PlayerInteractionPanel({
@@ -41,35 +53,58 @@ export default function PlayerInteractionPanel({
   onSendMessage,
   onFollow,
   onViewProfile,
-  className = ''
+  className = '',
+  isMobile = false,
+  isTablet = false
 }: PlayerInteractionPanelProps) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isPlayerLoading, setIsPlayerLoading] = useState(true)
+  const [actionFeedback, setActionFeedback] = useState<{type: string, message: string} | null>(null)
+  const [messageSendingId, setMessageSendingId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Mock chat messages for demonstration
+  // Mock chat messages for demonstration with loading simulation
   useEffect(() => {
-    const mockMessages: ChatMessage[] = [
-      {
-        id: '1',
-        senderId: player.id,
-        receiverId: 'current-user',
-        content: '你好！很高兴遇到你',
-        timestamp: new Date(Date.now() - 300000).toISOString(),
-        type: 'text'
-      },
-      {
-        id: '2',
-        senderId: 'current-user',
-        receiverId: player.id,
-        content: '你好！我也很高兴认识你',
-        timestamp: new Date(Date.now() - 240000).toISOString(),
-        type: 'text'
-      }
-    ]
-    setChatMessages(mockMessages)
+    setIsPlayerLoading(true)
+    
+    // Simulate loading delay for player information
+    const loadingTimer = setTimeout(() => {
+      const mockMessages: ChatMessage[] = [
+        {
+          id: '1',
+          senderId: player.id,
+          receiverId: 'current-user',
+          content: '你好！很高兴遇到你',
+          timestamp: new Date(Date.now() - 300000).toISOString(),
+          type: 'text'
+        },
+        {
+          id: '2',
+          senderId: 'current-user',
+          receiverId: player.id,
+          content: '你好！我也很高兴认识你',
+          timestamp: new Date(Date.now() - 240000).toISOString(),
+          type: 'text'
+        }
+      ]
+      setChatMessages(mockMessages)
+      setIsPlayerLoading(false)
+    }, 800)
+
+    return () => clearTimeout(loadingTimer)
   }, [player.id])
+
+  // Clear action feedback after delay
+  useEffect(() => {
+    if (actionFeedback) {
+      const timer = setTimeout(() => {
+        setActionFeedback(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [actionFeedback])
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -88,8 +123,13 @@ export default function PlayerInteractionPanel({
       receiverId: player.id,
       content: newMessage.trim(),
       timestamp: new Date().toISOString(),
-      type: 'text'
+      type: 'text',
+      status: 'sending'
     }
+
+    // Set sending feedback
+    setMessageSendingId(message.id)
+    setActionFeedback({ type: 'info', message: '正在发送消息...' })
 
     // Add message to local state
     setChatMessages(prev => [...prev, message])
@@ -99,25 +139,56 @@ export default function PlayerInteractionPanel({
     if (onSendMessage) {
       try {
         await onSendMessage(message.content)
+        // Update message status to sent
+        setChatMessages(prev => prev.map(msg => 
+          msg.id === message.id ? { ...msg, status: 'sent' } : msg
+        ))
+        setActionFeedback({ type: 'success', message: '消息发送成功！' })
       } catch (error) {
         console.error('Failed to send message:', error)
-        // Could add error handling UI here
+        setChatMessages(prev => prev.map(msg => 
+          msg.id === message.id ? { ...msg, status: 'failed' } : msg
+        ))
+        setActionFeedback({ type: 'error', message: '消息发送失败，请重试' })
       }
+    } else {
+      // Simulate successful send
+      setTimeout(() => {
+        setChatMessages(prev => prev.map(msg => 
+          msg.id === message.id ? { ...msg, status: 'sent' } : msg
+        ))
+        setActionFeedback({ type: 'success', message: '消息发送成功！' })
+      }, 1000)
     }
 
     setIsLoading(false)
+    setMessageSendingId(null)
   }
 
   const handleFollow = () => {
+    setActionFeedback({ type: 'info', message: '正在关注用户...' })
+    
     if (onFollow) {
       onFollow(player.id)
     }
+    
+    // Simulate success feedback
+    setTimeout(() => {
+      setActionFeedback({ type: 'success', message: `已关注 ${player.name}！` })
+    }, 800)
   }
 
   const handleViewProfile = () => {
+    setActionFeedback({ type: 'info', message: '正在加载用户详情...' })
+    
     if (onViewProfile) {
       onViewProfile(player.id)
     }
+    
+    // Simulate success feedback
+    setTimeout(() => {
+      setActionFeedback({ type: 'success', message: '用户详情已打开' })
+    }, 600)
   }
 
   const formatTimestamp = (timestamp: string) => {
@@ -145,13 +216,50 @@ export default function PlayerInteractionPanel({
   }
 
   return (
-    <div className={`h-full flex flex-col bg-retro-bg-darker ${className}`}>
+    <div className={`h-full flex flex-col bg-retro-bg-darker ${className} relative`}>
+      {/* Action Feedback Toast */}
+      {actionFeedback && (
+        <div className="absolute top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm border ${
+            actionFeedback.type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-300' :
+            actionFeedback.type === 'error' ? 'bg-red-500/20 border-red-500/50 text-red-300' :
+            'bg-blue-500/20 border-blue-500/50 text-blue-300'
+          }`}>
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${
+                actionFeedback.type === 'success' ? 'bg-green-400' :
+                actionFeedback.type === 'error' ? 'bg-red-400' :
+                'bg-blue-400 animate-pulse'
+              }`}></div>
+              <span className="text-sm font-medium">{actionFeedback.message}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Player Info Header */}
-      <div className="p-6 border-b border-retro-border bg-gradient-to-r from-retro-purple/10 to-retro-pink/10">
-        <div className="flex items-center space-x-4">
+      <div className="p-6 border-b border-retro-border bg-gradient-to-r from-retro-purple/10 to-retro-pink/10 relative">
+        {/* Loading overlay */}
+        {isPlayerLoading && (
+          <div className="absolute inset-0 bg-retro-bg-darker/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="flex items-center space-x-2 mb-3">
+                <div className="w-3 h-3 bg-retro-purple rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-3 h-3 bg-retro-pink rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-3 h-3 bg-retro-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <div className="text-white text-sm font-medium">加载玩家信息</div>
+              <div className="text-retro-textMuted text-xs mt-1">正在获取详细资料...</div>
+            </div>
+          </div>
+        )}
+
+        <div className={`flex items-center space-x-4 transition-all duration-500 ${
+          isPlayerLoading ? 'opacity-30 blur-sm' : 'opacity-100 blur-0'
+        }`}>
           {/* Avatar */}
           <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center shadow-lg animate-pulse-glow">
               {player.avatar ? (
                 <img 
                   src={player.avatar} 
@@ -164,9 +272,9 @@ export default function PlayerInteractionPanel({
                 </span>
               )}
             </div>
-            {/* Online Status Indicator */}
-            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-retro-bg-darker ${
-              player.isOnline ? 'bg-green-400' : 'bg-gray-400'
+            {/* Enhanced Online Status Indicator */}
+            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-retro-bg-darker transition-all duration-300 ${
+              player.isOnline ? 'bg-green-400 animate-pulse shadow-lg shadow-green-400/50' : 'bg-gray-400'
             }`}></div>
           </div>
 
@@ -214,20 +322,25 @@ export default function PlayerInteractionPanel({
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={handleFollow}
-            className="bg-retro-purple/20 hover:bg-retro-purple/30 text-white py-2 px-3 rounded-lg transition-all duration-200 text-xs font-medium hover:scale-105 active:scale-95"
+            disabled={isPlayerLoading}
+            className="bg-retro-purple/20 hover:bg-retro-purple/30 text-white py-2 px-3 rounded-lg transition-all duration-300 text-xs font-medium hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-retro-purple/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
           >
-            <span className="block">👥</span>
+            <span className="block group-hover:animate-bounce">👥</span>
             <span>关注</span>
           </button>
           <button
             onClick={handleViewProfile}
-            className="bg-retro-pink/20 hover:bg-retro-pink/30 text-white py-2 px-3 rounded-lg transition-all duration-200 text-xs font-medium hover:scale-105 active:scale-95"
+            disabled={isPlayerLoading}
+            className="bg-retro-pink/20 hover:bg-retro-pink/30 text-white py-2 px-3 rounded-lg transition-all duration-300 text-xs font-medium hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-retro-pink/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
           >
-            <span className="block">👁️</span>
+            <span className="block group-hover:animate-bounce">👁️</span>
             <span>详情</span>
           </button>
-          <button className="bg-blue-500/20 hover:bg-blue-500/30 text-white py-2 px-3 rounded-lg transition-all duration-200 text-xs font-medium hover:scale-105 active:scale-95">
-            <span className="block">🎮</span>
+          <button 
+            disabled={isPlayerLoading}
+            className="bg-blue-500/20 hover:bg-blue-500/30 text-white py-2 px-3 rounded-lg transition-all duration-300 text-xs font-medium hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
+          >
+            <span className="block group-hover:animate-bounce">🎮</span>
             <span>邀请</span>
           </button>
         </div>
@@ -256,23 +369,47 @@ export default function PlayerInteractionPanel({
             chatMessages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.senderId === 'current-user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.senderId === 'current-user' ? 'justify-end' : 'justify-start'} animate-slide-in-up`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
+                  className={`max-w-[80%] p-3 rounded-lg relative transition-all duration-300 ${
                     message.senderId === 'current-user'
-                      ? 'bg-gradient-to-r from-retro-purple to-retro-pink text-white'
-                      : 'bg-retro-border/30 text-retro-text'
+                      ? 'bg-gradient-to-r from-retro-purple to-retro-pink text-white shadow-lg'
+                      : 'bg-retro-border/30 text-retro-text hover:bg-retro-border/40'
+                  } ${
+                    message.status === 'sending' ? 'opacity-70 animate-pulse' : 'opacity-100'
                   }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
-                  <p className={`text-xs mt-1 ${
-                    message.senderId === 'current-user' 
-                      ? 'text-white/70' 
-                      : 'text-retro-textMuted'
-                  }`}>
-                    {formatTimestamp(message.timestamp)}
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className={`text-xs ${
+                      message.senderId === 'current-user' 
+                        ? 'text-white/70' 
+                        : 'text-retro-textMuted'
+                    }`}>
+                      {formatTimestamp(message.timestamp)}
+                    </p>
+                    
+                    {/* Message status indicator */}
+                    {message.senderId === 'current-user' && message.status && (
+                      <div className="flex items-center space-x-1">
+                        {message.status === 'sending' && (
+                          <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse"></div>
+                        )}
+                        {message.status === 'sent' && (
+                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        )}
+                        {message.status === 'failed' && (
+                          <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Sending animation overlay */}
+                  {message.status === 'sending' && messageSendingId === message.id && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer rounded-lg"></div>
+                  )}
                 </div>
               </div>
             ))

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click Interaction Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #16213e;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #0f3460;
+        }
+        .event-log {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event-item {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .collision-event {
+            background: rgba(255, 105, 180, 0.2);
+            border-left: 3px solid #ff69b4;
+        }
+        .click-event {
+            background: rgba(0, 191, 255, 0.2);
+            border-left: 3px solid #00bfff;
+        }
+        .tab-event {
+            background: rgba(138, 43, 226, 0.2);
+            border-left: 3px solid #8a2be2;
+        }
+        button {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.active {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+        .status.inactive {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Click Interaction Priority Test</h1>
+        <p>This test verifies that click interactions work correctly and have proper priority handling with collision events.</p>
+        
+        <div class="test-section">
+            <h2>Event Bus Status</h2>
+            <div id="eventBusStatus" class="status inactive">Event Bus: Not Loaded</div>
+            <div id="currentInteraction" class="status inactive">Current Interaction: None</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="simulatePlayerClick()">Simulate Player Click</button>
+            <button onclick="simulateCollisionStart()">Simulate Collision Start</button>
+            <button onclick="simulateCollisionEnd()">Simulate Collision End</button>
+            <button onclick="testPriorityLogic()">Test Priority Logic</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Event Log</h2>
+            <div id="eventLog" class="event-log">
+                <div class="event-item">Waiting for events...</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Expected Behavior</h2>
+            <ul>
+                <li><strong>Player Click:</strong> Should trigger blue visual feedback and switch to player interaction tab</li>
+                <li><strong>Collision Start:</strong> Should trigger pink visual feedback and switch to player interaction tab</li>
+                <li><strong>Priority Logic:</strong> Collision events should take priority over click events</li>
+                <li><strong>Tab Switching:</strong> Should show different visual indicators for click vs collision</li>
+                <li><strong>Auto-clear:</strong> Click interactions should auto-clear after 10 seconds</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the EventBus
+        import { EventBus } from './lib/eventBus.js';
+        
+        // Make EventBus available globally for testing
+        window.gameEventBus = EventBus;
+        window.EventBus = EventBus;
+        
+        // Test data
+        const mockPlayer = {
+            id: 'test-player-1',
+            name: 'Test Player',
+            avatar: null,
+            currentStatus: {
+                type: 'working',
+                status: '工作中',
+                emoji: '💻',
+                message: 'Focused on coding',
+                timestamp: new Date().toISOString()
+            },
+            isOnline: true,
+            lastSeen: null
+        };
+
+        let currentInteractionType = null;
+        let eventCounter = 0;
+
+        // Update status displays
+        function updateStatus() {
+            const eventBusStatus = document.getElementById('eventBusStatus');
+            const currentInteraction = document.getElementById('currentInteraction');
+            
+            if (window.gameEventBus) {
+                eventBusStatus.textContent = 'Event Bus: Loaded ✓';
+                eventBusStatus.className = 'status active';
+            } else {
+                eventBusStatus.textContent = 'Event Bus: Not Loaded ✗';
+                eventBusStatus.className = 'status inactive';
+            }
+            
+            if (currentInteractionType) {
+                currentInteraction.textContent = `Current Interaction: ${currentInteractionType}`;
+                currentInteraction.className = 'status active';
+            } else {
+                currentInteraction.textContent = 'Current Interaction: None';
+                currentInteraction.className = 'status inactive';
+            }
+        }
+
+        // Log events
+        function logEvent(type, message, data = null) {
+            const eventLog = document.getElementById('eventLog');
+            const eventItem = document.createElement('div');
+            eventItem.className = `event-item ${type}-event`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            eventItem.innerHTML = `
+                <strong>[${timestamp}] ${type.toUpperCase()}:</strong> ${message}
+                ${data ? `<br><small>${JSON.stringify(data, null, 2)}</small>` : ''}
+            `;
+            
+            eventLog.appendChild(eventItem);
+            eventLog.scrollTop = eventLog.scrollHeight;
+            eventCounter++;
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            if (!window.gameEventBus) {
+                setTimeout(setupEventListeners, 100);
+                return;
+            }
+
+            // Listen for collision events
+            window.gameEventBus.on('player:collision:start', (event) => {
+                currentInteractionType = 'collision';
+                logEvent('collision', 'Collision started', event);
+                updateStatus();
+            });
+
+            window.gameEventBus.on('player:collision:end', (event) => {
+                currentInteractionType = null;
+                logEvent('collision', 'Collision ended', event);
+                updateStatus();
+            });
+
+            // Listen for click events
+            window.gameEventBus.on('player:click', (event) => {
+                if (currentInteractionType === 'collision') {
+                    logEvent('click', 'Click ignored (collision priority)', event);
+                } else {
+                    currentInteractionType = 'click';
+                    logEvent('click', 'Click interaction started', event);
+                    
+                    // Auto-clear after 10 seconds
+                    setTimeout(() => {
+                        if (currentInteractionType === 'click') {
+                            currentInteractionType = null;
+                            logEvent('click', 'Click interaction auto-cleared');
+                            updateStatus();
+                        }
+                    }, 10000);
+                }
+                updateStatus();
+            });
+
+            // Listen for tab switch events
+            window.gameEventBus.on('tab:switch', (event) => {
+                logEvent('tab', `Tab switched: ${event.fromTab} → ${event.toTab} (${event.trigger})`, event);
+            });
+
+            updateStatus();
+            logEvent('system', 'Event listeners initialized');
+        }
+
+        // Test functions
+        window.simulatePlayerClick = function() {
+            const clickEvent = {
+                type: 'player_click',
+                targetPlayer: mockPlayer,
+                timestamp: Date.now(),
+                position: { x: 100, y: 100 },
+                trigger: 'click'
+            };
+            
+            window.gameEventBus.emit('player:click', clickEvent);
+            logEvent('system', 'Simulated player click event');
+        };
+
+        window.simulateCollisionStart = function() {
+            const collisionEvent = {
+                type: 'collision_start',
+                mainPlayer: { id: 'main-player', name: 'Main Player' },
+                targetPlayer: mockPlayer,
+                timestamp: Date.now(),
+                position: { x: 150, y: 150 }
+            };
+            
+            window.gameEventBus.emit('player:collision:start', collisionEvent);
+            logEvent('system', 'Simulated collision start event');
+        };
+
+        window.simulateCollisionEnd = function() {
+            const collisionEvent = {
+                type: 'collision_end',
+                mainPlayer: { id: 'main-player', name: 'Main Player' },
+                targetPlayer: mockPlayer,
+                timestamp: Date.now(),
+                duration: 5000,
+                position: { x: 150, y: 150 }
+            };
+            
+            window.gameEventBus.emit('player:collision:end', collisionEvent);
+            logEvent('system', 'Simulated collision end event');
+        };
+
+        window.testPriorityLogic = function() {
+            logEvent('system', 'Testing priority logic...');
+            
+            // First, simulate a collision
+            setTimeout(() => {
+                window.simulateCollisionStart();
+            }, 100);
+            
+            // Then try to click while collision is active
+            setTimeout(() => {
+                window.simulatePlayerClick();
+                logEvent('system', 'Click should be ignored due to collision priority');
+            }, 500);
+            
+            // End collision
+            setTimeout(() => {
+                window.simulateCollisionEnd();
+            }, 1000);
+            
+            // Now click should work
+            setTimeout(() => {
+                window.simulatePlayerClick();
+                logEvent('system', 'Click should work now that collision ended');
+            }, 1500);
+        };
+
+        window.clearLog = function() {
+            const eventLog = document.getElementById('eventLog');
+            eventLog.innerHTML = '<div class="event-item">Log cleared...</div>';
+            eventCounter = 0;
+        };
+
+        // Initialize
+        setupEventListeners();
+        updateStatus();
+    </script>
+</body>
+</html>

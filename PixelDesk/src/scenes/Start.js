@@ -3,6 +3,9 @@ import { Player } from "../entities/Player.js"
 import { WashroomManager } from "../logic/WashroomManager.js"
 import { ZoomControl } from "../components/ZoomControl.js"
 import { WorkstationBindingUI } from "../components/WorkstationBindingUI.js"
+import { CollisionOptimizer } from "../logic/CollisionOptimizer.js"
+import { PlayerInfoDebouncer } from "../logic/PlayerInfoDebouncer.js"
+import { MultiPlayerCollisionManager } from "../logic/MultiPlayerCollisionManager.js"
 
 export class Start extends Phaser.Scene {
   constructor() {
@@ -17,6 +20,11 @@ export class Start extends Phaser.Scene {
     this.bindingUI = null
     this.otherPlayers = new Map() // 存储其他玩家
     this.myStatus = null // 我的状态
+    
+    // Performance optimization systems
+    this.collisionOptimizer = null
+    this.playerInfoDebouncer = null
+    this.multiPlayerCollisionManager = null
   }
 
   preload() {
@@ -71,6 +79,13 @@ export class Start extends Phaser.Scene {
       window.getCurrentCollisions = this.getCurrentCollisions.bind(this)
       window.getCollisionHistory = this.getCollisionHistory.bind(this)
       window.setCollisionSensitivity = this.setCollisionSensitivity.bind(this)
+      
+      // 添加性能优化相关的全局函数
+      window.getCollisionStats = this.getCollisionStats.bind(this)
+      window.getPlayerInfoStats = this.getPlayerInfoStats.bind(this)
+      window.forcePlayerInfoUpdate = this.forcePlayerInfoUpdate.bind(this)
+      window.clearAllCollisions = this.clearAllCollisions.bind(this)
+      window.setMaxSimultaneousCollisions = this.setMaxSimultaneousCollisions.bind(this)
 
       // 添加测试函数
       window.testCollisionSystem = this.testCollisionSystem.bind(this)
@@ -90,6 +105,9 @@ export class Start extends Phaser.Scene {
     this.collisionHistory = [] // 碰撞历史记录
     this.collisionDebounceTime = 100 // 防抖时间（毫秒）
     this.lastCollisionCheck = 0
+    
+    // Initialize performance optimization systems
+    this.initializeOptimizationSystems()
 
     // 获取用户数据（从场景参数或本地存储）
     const sceneData = this.scene.settings.data || {}
@@ -233,8 +251,82 @@ export class Start extends Phaser.Scene {
       this.handleTeleportKeyPress()
     }
 
-    // 更新碰撞检测
-    this.updateCollisionDetection()
+    // 使用优化的碰撞检测系统
+    this.updateOptimizedCollisionDetection()
+  }
+
+  // ===== 性能优化系统初始化 =====
+  initializeOptimizationSystems() {
+    try {
+      // Initialize collision optimizer
+      this.collisionOptimizer = new CollisionOptimizer(this)
+      
+      // Initialize player info debouncer
+      this.playerInfoDebouncer = new PlayerInfoDebouncer(this)
+      
+      // Initialize multi-player collision manager
+      this.multiPlayerCollisionManager = new MultiPlayerCollisionManager(this)
+      
+      console.log('[Start] Performance optimization systems initialized')
+      
+    } catch (error) {
+      console.error('[Start] Error initializing optimization systems:', error)
+      // Fallback to original collision detection if optimization fails
+      this.useOptimizedCollision = false
+    }
+  }
+
+  // ===== 优化的碰撞检测更新 =====
+  updateOptimizedCollisionDetection() {
+    try {
+      if (!this.collisionOptimizer || !this.player) {
+        // Fallback to original collision detection
+        this.updateCollisionDetection()
+        return
+      }
+
+      // Get all other players for collision detection
+      const otherPlayers = this.getAllOtherPlayers()
+      
+      // Use optimized collision detection
+      this.collisionOptimizer.updateCollisionDetection(this.player, otherPlayers)
+      
+    } catch (error) {
+      console.error('[Start] Error in optimized collision detection:', error)
+      // Fallback to original collision detection
+      this.updateCollisionDetection()
+    }
+  }
+
+  // ===== 获取所有其他玩家 =====
+  getAllOtherPlayers() {
+    const allPlayers = []
+    
+    try {
+      // Add players from otherPlayers map
+      for (const [id, player] of this.otherPlayers) {
+        if (player && player.isOtherPlayer) {
+          allPlayers.push(player)
+        }
+      }
+      
+      // Add workstation characters
+      if (this.workstationManager) {
+        const workstations = this.workstationManager.getAllWorkstations()
+        workstations.forEach(workstation => {
+          if (workstation.characterSprite && 
+              workstation.characterSprite.isOtherPlayer &&
+              workstation.characterSprite !== this.player) {
+            allPlayers.push(workstation.characterSprite)
+          }
+        })
+      }
+      
+    } catch (error) {
+      console.error('[Start] Error getting other players:', error)
+    }
+    
+    return allPlayers
   }
 
   // ===== 玩家相关方法 =====
@@ -1764,7 +1856,7 @@ export class Start extends Phaser.Scene {
   // 清理碰撞管理器
   // ===== 碰撞检测系统 =====
 
-  // 更新碰撞检测
+  // 更新碰撞检测 (原始版本，作为备用)
   updateCollisionDetection() {
     if (!this.player || !this.player.body) return
 
@@ -1779,6 +1871,124 @@ export class Start extends Phaser.Scene {
 
     // 检查与其他玩家的碰撞
     this.checkPlayerCollisions()
+  }
+
+  // ===== 性能优化相关的全局函数 =====
+  
+  /**
+   * 获取碰撞统计信息
+   */
+  getCollisionStats() {
+    const stats = {
+      optimizerStats: null,
+      multiPlayerStats: null,
+      currentCollisions: this.currentCollisions.size,
+      collisionHistory: this.collisionHistory.length
+    }
+    
+    if (this.collisionOptimizer) {
+      stats.optimizerStats = this.collisionOptimizer.getCollisionStats()
+    }
+    
+    if (this.multiPlayerCollisionManager) {
+      stats.multiPlayerStats = this.multiPlayerCollisionManager.getCollisionStats()
+    }
+    
+    return stats
+  }
+
+  /**
+   * 获取玩家信息更新统计
+   */
+  getPlayerInfoStats() {
+    if (this.playerInfoDebouncer) {
+      return this.playerInfoDebouncer.getStats()
+    }
+    return { error: 'PlayerInfoDebouncer not initialized' }
+  }
+
+  /**
+   * 强制更新玩家信息
+   */
+  forcePlayerInfoUpdate(playerId) {
+    if (this.playerInfoDebouncer && playerId) {
+      this.playerInfoDebouncer.forceUpdate(playerId)
+      return true
+    }
+    return false
+  }
+
+  /**
+   * 清除所有碰撞
+   */
+  clearAllCollisions() {
+    try {
+      // Clear optimized collision systems
+      if (this.collisionOptimizer) {
+        this.collisionOptimizer.cleanup()
+      }
+      
+      if (this.multiPlayerCollisionManager) {
+        this.multiPlayerCollisionManager.clearAllCollisions()
+      }
+      
+      // Clear original collision tracking
+      this.currentCollisions.clear()
+      
+      console.log('[Start] All collisions cleared')
+      return true
+      
+    } catch (error) {
+      console.error('[Start] Error clearing collisions:', error)
+      return false
+    }
+  }
+
+  /**
+   * 设置最大同时碰撞数
+   */
+  setMaxSimultaneousCollisions(max) {
+    if (this.multiPlayerCollisionManager) {
+      this.multiPlayerCollisionManager.setMaxSimultaneousCollisions(max)
+      return true
+    }
+    return false
+  }
+
+  /**
+   * 设置碰撞敏感度 (增强版本)
+   */
+  setCollisionSensitivity(radius) {
+    try {
+      // Update original collision sensitivity
+      if (radius > 0 && radius <= 200) {
+        this.collisionSensitivity = radius
+        
+        // Update optimized collision system
+        if (this.collisionOptimizer) {
+          this.collisionOptimizer.setCollisionSensitivity(radius)
+        }
+        
+        console.log(`[Start] Collision sensitivity set to ${radius}px`)
+        return true
+      } else {
+        console.warn('[Start] Invalid collision sensitivity value')
+        return false
+      }
+    } catch (error) {
+      console.error('[Start] Error setting collision sensitivity:', error)
+      return false
+    }
+  }
+
+  /**
+   * 队列玩家信息更新
+   */
+  queuePlayerInfoUpdate(playerId, updateData, priority = 'normal') {
+    if (this.playerInfoDebouncer) {
+      return this.playerInfoDebouncer.queuePlayerUpdate(playerId, updateData, priority)
+    }
+    return false
   }
 
   // 检查玩家碰撞
@@ -1875,10 +2085,50 @@ export class Start extends Phaser.Scene {
     }
   }
 
-  // 处理碰撞开始
+  // 处理碰撞开始 (增强版本)
   handleCollisionStart(otherPlayer) {
-    this.currentCollisions.add(otherPlayer.playerData.id)
-    otherPlayer.handleCollisionStart(this.player)
+    const playerId = otherPlayer.playerData.id
+    
+    try {
+      // Use multi-player collision manager if available
+      if (this.multiPlayerCollisionManager) {
+        const success = this.multiPlayerCollisionManager.handleCollisionStart(
+          this.player, 
+          otherPlayer, 
+          { timestamp: Date.now() }
+        )
+        
+        if (success) {
+          // Queue player info update with high priority
+          this.queuePlayerInfoUpdate(playerId, {
+            collision: { isColliding: true },
+            triggerUIUpdate: true
+          }, 'high')
+          
+          // Add to current collisions for backward compatibility
+          this.currentCollisions.add(playerId)
+        }
+        
+        return success
+      }
+      
+      // Fallback to original collision handling
+      this.currentCollisions.add(playerId)
+      otherPlayer.handleCollisionStart(this.player)
+      
+      return true
+      
+    } catch (error) {
+      console.error('[Start] Error handling collision start:', error)
+      
+      // Fallback to basic collision handling
+      this.currentCollisions.add(playerId)
+      if (otherPlayer.handleCollisionStart) {
+        otherPlayer.handleCollisionStart(this.player)
+      }
+      
+      return false
+    }
 
     // 记录碰撞历史
     const collisionRecord = {
@@ -1915,10 +2165,46 @@ export class Start extends Phaser.Scene {
     )
   }
 
-  // 处理碰撞结束
+  // 处理碰撞结束 (增强版本)
   handleCollisionEnd(otherPlayer) {
-    this.currentCollisions.delete(otherPlayer.playerData.id)
-    otherPlayer.handleCollisionEnd(this.player)
+    const playerId = otherPlayer.playerData.id
+    
+    try {
+      // Use multi-player collision manager if available
+      if (this.multiPlayerCollisionManager) {
+        const success = this.multiPlayerCollisionManager.handleCollisionEnd(playerId, otherPlayer)
+        
+        if (success) {
+          // Queue player info update
+          this.queuePlayerInfoUpdate(playerId, {
+            collision: { isColliding: false },
+            triggerUIUpdate: true
+          }, 'normal')
+          
+          // Remove from current collisions for backward compatibility
+          this.currentCollisions.delete(playerId)
+        }
+        
+        return success
+      }
+      
+      // Fallback to original collision handling
+      this.currentCollisions.delete(playerId)
+      otherPlayer.handleCollisionEnd(this.player)
+      
+      return true
+      
+    } catch (error) {
+      console.error('[Start] Error handling collision end:', error)
+      
+      // Fallback to basic collision handling
+      this.currentCollisions.delete(playerId)
+      if (otherPlayer.handleCollisionEnd) {
+        otherPlayer.handleCollisionEnd(this.player)
+      }
+      
+      return false
+    }
 
     // 更新碰撞历史记录
     const collisionRecord = this.collisionHistory
@@ -2249,6 +2535,34 @@ export class Start extends Phaser.Scene {
     console.log(`📢 [通知] ${message}`)
   }
 
+  // ===== 清理性能优化系统 =====
+  cleanupOptimizationSystems() {
+    try {
+      // Cleanup collision optimizer
+      if (this.collisionOptimizer) {
+        this.collisionOptimizer.cleanup()
+        this.collisionOptimizer = null
+      }
+      
+      // Cleanup player info debouncer
+      if (this.playerInfoDebouncer) {
+        this.playerInfoDebouncer.cleanup()
+        this.playerInfoDebouncer = null
+      }
+      
+      // Cleanup multi-player collision manager
+      if (this.multiPlayerCollisionManager) {
+        this.multiPlayerCollisionManager.cleanup()
+        this.multiPlayerCollisionManager = null
+      }
+      
+      console.log('[Start] Performance optimization systems cleaned up')
+      
+    } catch (error) {
+      console.error('[Start] Error cleaning up optimization systems:', error)
+    }
+  }
+
   cleanupCollisionManager() {
     if (this.collisionManager) {
       // 清理所有防抖计时器
@@ -2306,6 +2620,9 @@ export class Start extends Phaser.Scene {
   // ===== 清理方法 =====
 
   shutdown() {
+    // 清理性能优化系统
+    this.cleanupOptimizationSystems()
+    
     // 清理碰撞管理器
     this.cleanupCollisionManager()
 
