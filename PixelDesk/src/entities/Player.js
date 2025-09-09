@@ -655,13 +655,16 @@ export class Player extends Phaser.GameObjects.Container {
         // 设置朝向
         this.setDirectionFrame(direction);
         
+        // 确保移动功能启用
+        this.enableMovement = true;
+        
         // 保存状态
         this.saveState();
         
         // 添加传送特效
         this.addTeleportEffect();
         
-        console.log(`玩家传送到位置: (${x}, ${y}), 朝向: ${direction}`);
+        console.log(`玩家传送到位置: (${x}, ${y}), 朝向: ${direction}, 移动功能已启用`);
         return true;
     }
 
