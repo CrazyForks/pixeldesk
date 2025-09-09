@@ -781,7 +781,6 @@ export class Start extends Phaser.Scene {
 
   renderTilesetObject(obj, adjustedY) {
     const imageKey = obj.name || "desk_image"
-    console.log("render object", obj.name)
     if (!imageKey) return null
 
     const sprite = this.add.image(obj.x, adjustedY, imageKey)
@@ -829,7 +828,6 @@ export class Start extends Phaser.Scene {
 
   // ===== 辅助方法 =====
   isDeskObject(obj) {
-    console.log("is desk object", obj)
     // 修改为同时识别desk和bookcase对象
     return (
       obj.name === "desk" ||

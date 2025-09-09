@@ -232,12 +232,7 @@ export class PlayerInfoDebouncer {
             if (collisionData.isColliding !== undefined) {
                 player.isColliding = collisionData.isColliding;
                 
-                // Update collision visual effects
-                if (collisionData.isColliding && !player.collisionRing) {
-                    player.addCollisionAnimation();
-                } else if (!collisionData.isColliding && player.collisionRing) {
-                    player.clearCollisionAnimation();
-                }
+                // Collision visual effects removed to prevent unwanted animations
             }
         } catch (error) {
             this.handleError(error, 'updatePlayerCollision', player.playerData?.id);

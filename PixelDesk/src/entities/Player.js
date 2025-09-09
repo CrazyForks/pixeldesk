@@ -571,9 +571,6 @@ export class Player extends Phaser.GameObjects.Container {
                 window.onPlayerCollisionStart(collisionEvent);
             }
             
-            // 添加碰撞视觉效果 - 粉色光环区别于点击的蓝色
-            this.addCollisionAnimation();
-            
             console.log('碰撞开始:', this.playerData.name, 'at', new Date(this.collisionStartTime).toLocaleTimeString());
         }
     }

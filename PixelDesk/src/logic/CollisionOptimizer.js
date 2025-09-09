@@ -23,6 +23,10 @@ export class CollisionOptimizer {
         this.debounceDelay = 150; // 150ms debounce delay
         this.collisionStates = new Map(); // Track collision states
         
+        // Collision cooldown system - integrate with MultiPlayerCollisionManager
+        this.collisionCooldowns = new Map(); // playerId -> cooldownEndTime
+        this.cooldownDuration = 1000; // 1 second cooldown after collision ends
+        
         // Performance monitoring
         this.performanceMetrics = {
             checksPerSecond: 0,
@@ -216,7 +220,22 @@ export class CollisionOptimizer {
     }
     
     /**
-     * Handle collision start with debouncing
+     * Check if player is on collision cooldown
+     */
+    isPlayerOnCooldown(playerId) {
+        const cooldownEnd = this.collisionCooldowns.get(playerId);
+        return cooldownEnd && Date.now() < cooldownEnd;
+    }
+
+    /**
+     * Set collision cooldown for player
+     */
+    setPlayerCooldown(playerId) {
+        this.collisionCooldowns.set(playerId, Date.now() + this.cooldownDuration);
+    }
+
+    /**
+     * Handle collision start with debouncing and cooldown checking
      */
     handleCollisionStart(playerId, mainPlayer, otherPlayer) {
         // Clear any existing end timer for this player
@@ -230,6 +249,11 @@ export class CollisionOptimizer {
             return;
         }
         
+        // Check if player is on cooldown from previous collision
+        if (this.isPlayerOnCooldown(playerId)) {
+            return;
+        }
+        
         // Set collision state immediately to prevent duplicate events
         this.collisionStates.set(playerId, {
             startTime: Date.now(),
@@ -239,8 +263,8 @@ export class CollisionOptimizer {
         // Debounce collision start to avoid rapid triggering
         const startTimer = this.scene.time.delayedCall(50, () => {
             try {
-                // Verify collision is still active
-                if (this.collisionStates.has(playerId)) {
+                // Verify collision is still active and not on cooldown
+                if (this.collisionStates.has(playerId) && !this.isPlayerOnCooldown(playerId)) {
                     otherPlayer.handleCollisionStart(mainPlayer);
                     
                     // Add to scene's collision tracking
@@ -259,7 +283,7 @@ export class CollisionOptimizer {
     }
     
     /**
-     * Handle collision end with debouncing
+     * Handle collision end with debouncing and cooldown setting
      */
     handleCollisionEnd(playerId, mainPlayer, otherPlayer) {
         // Clear any existing start timer for this player
@@ -275,6 +299,9 @@ export class CollisionOptimizer {
                 if (this.verifyCollisionEnded(mainPlayer, otherPlayer)) {
                     // Remove from collision state
                     this.collisionStates.delete(playerId);
+                    
+                    // Set cooldown to prevent immediate re-collision
+                    this.setPlayerCooldown(playerId);
                     
                     // Trigger collision end event
                     otherPlayer.handleCollisionEnd(mainPlayer);
@@ -424,6 +451,9 @@ export class CollisionOptimizer {
             // Remove from collision states
             this.collisionStates.delete(playerId);
             
+            // Remove from cooldown states
+            this.collisionCooldowns.delete(playerId);
+            
             // Clear any pending timers for this player
             [`start_${playerId}`, `end_${playerId}`].forEach(timerKey => {
                 if (this.debounceTimers.has(timerKey)) {
@@ -464,6 +494,7 @@ export class CollisionOptimizer {
     getCollisionStats() {
         return {
             activeCollisions: this.collisionStates.size,
+            playersOnCooldown: this.collisionCooldowns.size,
             spatialGridCells: this.spatialGrid.size,
             debounceTimers: this.debounceTimers.size,
             performanceMetrics: { ...this.performanceMetrics },
@@ -500,6 +531,9 @@ export class CollisionOptimizer {
         
         // Clear collision states
         this.collisionStates.clear();
+        
+        // Clear cooldown states
+        this.collisionCooldowns.clear();
         
         // Clear spatial grid
         this.spatialGrid.clear();
