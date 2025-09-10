@@ -1,0 +1,268 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { ChatWebSocketClient, getChatWebSocketClient } from '@/lib/websocketClient';
+
+interface UseChatWebSocketOptions {
+  userId: string;
+  autoConnect?: boolean;
+  onConnected?: () => void;
+  onDisconnected?: (data: { code: number; reason: string }) => void;
+  onError?: (error: any) => void;
+  onUserOnline?: (data: { userId: string; isOnline: boolean }) => void;
+  onMessageReceived?: (data: any) => void;
+  onMessageSent?: (data: any) => void;
+  onUserTyping?: (data: any) => void;
+  onRateLimitExceeded?: (data: any) => void;
+  onUnauthorized?: (data: any) => void;
+}
+
+interface UseChatWebSocketReturn {
+  client: ChatWebSocketClient | null;
+  isConnected: boolean;
+  isConnecting: boolean;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  send: (type: string, data?: any) => boolean;
+  sendMessage: (conversationId: string, content: string, type?: string) => boolean;
+  startTyping: (conversationId: string) => boolean;
+  stopTyping: (conversationId: string) => boolean;
+  markAsRead: (conversationId: string, messageId: string) => boolean;
+  joinRoom: (conversationId: string) => boolean;
+  leaveRoom: (conversationId: string) => boolean;
+}
+
+export function useChatWebSocket(options: UseChatWebSocketOptions): UseChatWebSocketReturn {
+  const {
+    userId,
+    autoConnect = true,
+    onConnected,
+    onDisconnected,
+    onError,
+    onUserOnline,
+    onMessageReceived,
+    onMessageSent,
+    onUserTyping,
+    onRateLimitExceeded,
+    onUnauthorized
+  } = options;
+
+  const [client, setClient] = useState<ChatWebSocketClient | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  
+  const clientRef = useRef<ChatWebSocketClient | null>(null);
+
+  // Generate WebSocket token
+  const generateToken = useCallback(async () => {
+    try {
+      const response = await fetch('/api/chat/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate WebSocket token');
+      }
+
+      const data = await response.json();
+      return data.token;
+    } catch (error) {
+      console.error('Error generating WebSocket token:', error);
+      throw error;
+    }
+  }, [userId]);
+
+  // Initialize client
+  useEffect(() => {
+    if (!userId) return;
+
+    const initializeClient = async () => {
+      try {
+        const wsToken = await generateToken();
+        setToken(wsToken);
+        
+        const wsClient = getChatWebSocketClient(wsToken);
+        if (wsClient) {
+          setClient(wsClient);
+          clientRef.current = wsClient;
+
+          // Set up event handlers
+          wsClient.on('connected', () => {
+            setIsConnected(true);
+            setIsConnecting(false);
+            onConnected?.();
+          });
+
+          wsClient.on('disconnected', (data) => {
+            setIsConnected(false);
+            setIsConnecting(false);
+            onDisconnected?.(data);
+          });
+
+          wsClient.on('error', (error) => {
+            setIsConnecting(false);
+            onError?.(error);
+          });
+
+          wsClient.on('reconnecting', () => {
+            setIsConnecting(true);
+          });
+
+          wsClient.on('user_online', (data) => {
+            onUserOnline?.(data);
+          });
+
+          wsClient.on('message_received', (data) => {
+            onMessageReceived?.(data);
+          });
+
+          wsClient.on('message_sent', (data) => {
+            onMessageSent?.(data);
+          });
+
+          wsClient.on('user_typing', (data) => {
+            onUserTyping?.(data);
+          });
+
+          wsClient.on('rate_limit_exceeded', (data) => {
+            onRateLimitExceeded?.(data);
+          });
+
+          wsClient.on('unauthorized', (data) => {
+            onUnauthorized?.(data);
+          });
+
+          wsClient.on('message_retry_failed', (data) => {
+            console.warn('Message retry failed:', data);
+          });
+
+          wsClient.on('message_queued', (data) => {
+            console.log('Message queued:', data);
+          });
+
+          // Auto-connect if enabled
+          if (autoConnect) {
+            setIsConnecting(true);
+            await wsClient.connect();
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing WebSocket client:', error);
+        setIsConnecting(false);
+        onError?.(error);
+      }
+    };
+
+    initializeClient();
+
+    // Cleanup on unmount
+    return () => {
+      if (clientRef.current) {
+        clientRef.current.disconnect();
+        clientRef.current = null;
+      }
+      setClient(null);
+      setIsConnected(false);
+      setIsConnecting(false);
+    };
+  }, [userId, autoConnect, generateToken, onConnected, onDisconnected, onError, onUserOnline, onMessageReceived, onMessageSent, onUserTyping, onRateLimitExceeded, onUnauthorized]);
+
+  // Connect function
+  const connect = useCallback(async () => {
+    if (!client) {
+      throw new Error('WebSocket client not initialized');
+    }
+
+    if (isConnected || isConnecting) {
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      await client.connect();
+    } catch (error) {
+      setIsConnecting(false);
+      throw error;
+    }
+  }, [client, isConnected, isConnecting]);
+
+  // Disconnect function
+  const disconnect = useCallback(() => {
+    if (client) {
+      client.disconnect();
+    }
+  }, [client]);
+
+  // Send message function
+  const send = useCallback((type: string, data?: any) => {
+    if (!client) {
+      console.warn('WebSocket client not available');
+      return false;
+    }
+    return client.send(type, data);
+  }, [client]);
+
+  // Join room function
+  const joinRoom = useCallback((conversationId: string) => {
+    return send('join_room', { conversationId });
+  }, [send]);
+
+  // Leave room function
+  const leaveRoom = useCallback((conversationId: string) => {
+    return send('leave_room', { conversationId });
+  }, [send]);
+
+  // Send message function
+  const sendMessage = useCallback((conversationId: string, content: string, type: string = 'text') => {
+    if (!client) {
+      console.warn('WebSocket client not available');
+      return false;
+    }
+    return client.sendMessage(conversationId, content, type);
+  }, [client]);
+
+  // Start typing function
+  const startTyping = useCallback((conversationId: string) => {
+    if (!client) {
+      console.warn('WebSocket client not available');
+      return false;
+    }
+    return client.startTyping(conversationId);
+  }, [client]);
+
+  // Stop typing function
+  const stopTyping = useCallback((conversationId: string) => {
+    if (!client) {
+      console.warn('WebSocket client not available');
+      return false;
+    }
+    return client.stopTyping(conversationId);
+  }, [client]);
+
+  // Mark as read function
+  const markAsRead = useCallback((conversationId: string, messageId: string) => {
+    if (!client) {
+      console.warn('WebSocket client not available');
+      return false;
+    }
+    return client.markAsRead(conversationId, messageId);
+  }, [client]);
+
+  return {
+    client,
+    isConnected,
+    isConnecting,
+    connect,
+    disconnect,
+    send,
+    sendMessage,
+    startTyping,
+    stopTyping,
+    markAsRead,
+    joinRoom,
+    leaveRoom
+  };
+}

@@ -361,16 +361,24 @@ export default function Home() {
       setCollisionPlayer(event.targetPlayer)
     }
 
-    // Subscribe to collision and click events
+    const handleChatConversationOpened = (event: any) => {
+      console.log('[HomePage] Chat conversation opened:', event)
+      // Handle chat conversation opening - this could trigger UI updates
+      // For now, we'll let the ChatManager handle the conversation display
+    }
+
+    // Subscribe to collision, click, and chat events
     EventBus.on('player:collision:start', handleCollisionStart)
     EventBus.on('player:collision:end', handleCollisionEnd)
     EventBus.on('player:click', handlePlayerClickEvent)
+    EventBus.on('chat:conversation:opened', handleChatConversationOpened)
 
     // Cleanup on unmount
     return () => {
       EventBus.off('player:collision:start', handleCollisionStart)
       EventBus.off('player:collision:end', handleCollisionEnd)
       EventBus.off('player:click', handlePlayerClickEvent)
+      EventBus.off('chat:conversation:opened', handleChatConversationOpened)
     }
   }, [])
 

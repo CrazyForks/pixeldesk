@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
 import { EventBus } from '../lib/eventBus'
+import { chatEventBridge } from '../lib/chatEventBridge'
 
 interface PlayerData {
   id: string
@@ -43,6 +44,7 @@ interface PlayerInteractionPanelProps {
   onSendMessage?: (message: string) => void
   onFollow?: (playerId: string) => void
   onViewProfile?: (playerId: string) => void
+  onStartChat?: (playerId: string) => void
   className?: string
   isMobile?: boolean
   isTablet?: boolean
@@ -53,6 +55,7 @@ export default function PlayerInteractionPanel({
   onSendMessage,
   onFollow,
   onViewProfile,
+  onStartChat,
   className = '',
   isMobile = false,
   isTablet = false
@@ -191,6 +194,33 @@ export default function PlayerInteractionPanel({
     }, 600)
   }
 
+  const handleStartChat = () => {
+    setActionFeedback({ type: 'info', message: '正在打开聊天窗口...' })
+    
+    // Emit conversation opened event through EventBus
+    if (chatEventBridge.initialized && player.currentStatus) {
+      chatEventBridge.emitConversationOpened('temp-conversation-id', player as any)
+    }
+    
+    // Call external handler if provided
+    if (onStartChat) {
+      onStartChat(player.id)
+    }
+    
+    // Emit EventBus event for chat conversation opening
+    EventBus.emit('chat:conversation:opened', {
+      type: 'chat:conversation:opened',
+      timestamp: Date.now(),
+      conversationId: `conversation-${player.id}`,
+      participant: player
+    })
+    
+    // Success feedback
+    setTimeout(() => {
+      setActionFeedback({ type: 'success', message: `已打开与 ${player.name} 的聊天` })
+    }, 600)
+  }
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -319,7 +349,15 @@ export default function PlayerInteractionPanel({
       {/* Quick Actions */}
       <div className="p-4 border-b border-retro-border">
         <h4 className="text-white font-medium mb-3 text-sm">快速操作</h4>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <button
+            onClick={handleStartChat}
+            disabled={isPlayerLoading}
+            className="bg-green-500/20 hover:bg-green-500/30 text-white py-2 px-3 rounded-lg transition-all duration-300 text-xs font-medium hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
+          >
+            <span className="block group-hover:animate-bounce">💬</span>
+            <span>开始聊天</span>
+          </button>
           <button
             onClick={handleFollow}
             disabled={isPlayerLoading}
@@ -328,6 +366,8 @@ export default function PlayerInteractionPanel({
             <span className="block group-hover:animate-bounce">👥</span>
             <span>关注</span>
           </button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={handleViewProfile}
             disabled={isPlayerLoading}

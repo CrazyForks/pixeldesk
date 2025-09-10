@@ -4,6 +4,7 @@ import { ReactNode } from 'react'
 import TabManager, { TabType } from './TabManager'
 import StatusInfoTab from './tabs/StatusInfoTab'
 import PlayerInteractionTab from './tabs/PlayerInteractionTab'
+import ChatTab from './tabs/ChatTab'
 
 interface InfoPanelProps {
   children: ReactNode
@@ -51,6 +52,14 @@ export default function InfoPanel({
       component: PlayerInteractionTab,
       autoSwitch: true,
       priority: 2
+    },
+    {
+      id: 'chat',
+      label: '聊天',
+      icon: '💬',
+      component: ChatTab,
+      badge: 0, // This will be updated by chat events
+      priority: 3
     }
   ]
 
