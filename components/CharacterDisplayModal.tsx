@@ -62,13 +62,11 @@ export default function CharacterDisplayModal({
   }, [userId])
 
   const fetchRealStatusData = async () => {
+    console.log('🚫 [CharacterDisplayModal] API调用已临时禁用以修复性能问题')
     setIsLoading(true)
     try {
-      // 同时获取用户信息和状态历史
-      const [userResponse, statusHistoryResponse] = await Promise.all([
-        fetch(`/api/users?userId=${userId}`),
-        fetch(`/api/status-history?userId=${userId}`)
-      ])
+      // 只获取用户信息，禁用状态历史API调用以修复性能问题
+      const userResponse = await fetch(`/api/users?userId=${userId}`)
 
       if (userResponse.ok) {
         const userData = await userResponse.json()
@@ -81,29 +79,13 @@ export default function CharacterDisplayModal({
         }
       }
 
-      if (statusHistoryResponse.ok) {
-        const historyData = await statusHistoryResponse.json()
-        if (historyData.success) {
-          setRealStatusHistory(historyData.data)
-          
-          // 如果有状态历史，设置最新的状态为当前状态
-          if (historyData.data && historyData.data.length > 0) {
-            const latestStatus = historyData.data[0]
-            setUserInfoState(prev => ({
-              ...prev,
-              currentStatus: {
-                type: latestStatus.type,
-                status: latestStatus.status,
-                emoji: latestStatus.emoji,
-                message: latestStatus.message,
-                timestamp: latestStatus.timestamp
-              }
-            }))
-          }
-        }
-      }
+      // 禁用状态历史API调用，使用空数组作为默认值
+      console.log('🚫 [CharacterDisplayModal] 状态历史API调用已禁用，使用空数据')
+      setRealStatusHistory([])
+      
+      // 不设置当前状态，使用传入的userInfo中的状态信息
     } catch (error) {
-      console.error('获取状态数据时出错:', error)
+      console.error('获取用户数据时出错:', error)
     } finally {
       setIsLoading(false)
     }

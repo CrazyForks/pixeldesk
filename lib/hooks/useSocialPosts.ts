@@ -176,7 +176,7 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
     if (pagination.hasNextPage && !isRefreshing) {
       await fetchPosts(pagination.page + 1, 'latest')
     }
-  }, [fetchPosts, pagination.hasNextPage, pagination.page, isRefreshing])
+  }, [pagination.hasNextPage, pagination.page, isRefreshing]) // 移除fetchPosts依赖以避免过度更新
 
   // 初始化获取帖子
   useEffect(() => {
@@ -191,32 +191,37 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
       }
       fetchPosts()
     }
-  }, [autoFetch, userId, fetchPosts, filterByAuthor, options.filterByAuthor]) // 添加filterByAuthor依赖
+  }, [autoFetch, userId, filterByAuthor]) // 移除fetchPosts和options.filterByAuthor以避免循环
 
-  // 定时刷新
+  // 定时刷新 - 临时禁用以修复性能问题
   useEffect(() => {
-    if (!refreshInterval || !userId) return
-
-    const interval = setInterval(() => {
-      // 静默刷新，检查是否有新帖子
-      fetch(`/api/posts?page=1&limit=1&sortBy=latest`)
-        .then(response => response.json())
-        .then((data: PostsResponse) => {
-          if (data.success && data.data && data.data.posts.length > 0) {
-            const latestPost = data.data.posts[0]
-            // 如果最新帖子不在当前列表中，刷新列表
-            if (posts.length === 0 || posts[0].id !== latestPost.id) {
-              refreshPosts()
-            }
-          }
-        })
-        .catch(err => {
-          console.error('Background refresh failed:', err)
-        })
-    }, refreshInterval)
-
-    return () => clearInterval(interval)
-  }, [refreshInterval, userId, posts, refreshPosts])
+    console.log('🚫 [useSocialPosts] 定时刷新已临时禁用以修复性能问题')
+    // if (!refreshInterval || !userId) return
+    //
+    // const interval = setInterval(() => {
+    //   // 静默刷新，检查是否有新帖子
+    //   fetch(`/api/posts?page=1&limit=1&sortBy=latest`)
+    //     .then(response => response.json())
+    //     .then((data: PostsResponse) => {
+    //       if (data.success && data.data && data.data.posts.length > 0) {
+    //         const latestPost = data.data.posts[0]
+    //         // 使用ref来避免依赖posts状态
+    //         setPosts(currentPosts => {
+    //           if (currentPosts.length === 0 || currentPosts[0].id !== latestPost.id) {
+    //             // 触发刷新，但不依赖refreshPosts函数
+    //             fetchPosts(1, 'latest')
+    //           }
+    //           return currentPosts
+    //         })
+    //       }
+    //     })
+    //     .catch(err => {
+    //       console.error('Background refresh failed:', err)
+    //     })
+    // }, refreshInterval)
+    //
+    // return () => clearInterval(interval)
+  }, [refreshInterval, userId, fetchPosts]) // 移除posts和refreshPosts依赖
 
   return {
     posts,

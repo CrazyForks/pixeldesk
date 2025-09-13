@@ -530,7 +530,7 @@ export default function Home() {
     />
   ), [handlePlayerCollision, handleWorkstationBinding, handlePlayerClick])
 
-  // 优化：使用 memo 避免 myStatus 变化导致 PostStatus 不必要重新渲染
+  // 优化：使用 memo 避免 PostStatus 不必要重新渲染，特别是避免userId频繁变化
   const memoizedPostStatus = useMemo(() => (
     <PostStatus 
       onStatusUpdate={handleStatusUpdate} 
@@ -542,7 +542,7 @@ export default function Home() {
         workstationId: currentUser?.workstationId
       }}
     />
-  ), [handleStatusUpdate, myStatus, currentUser?.id, currentUser?.username, currentUser?.points, currentUser?.workstationId])
+  ), [handleStatusUpdate, myStatus, currentUser?.id]) // 移除频繁变化的points/workstationId/username依赖
 
   // 优化：使用 memo 避免 selectedPlayer 变化导致 SocialFeed 不必要重新渲染
   const memoizedSocialFeed = useMemo(() => (

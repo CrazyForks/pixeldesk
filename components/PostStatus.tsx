@@ -30,39 +30,29 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
   const [isExpanded, setIsExpanded] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [statusHistory, setStatusHistory] = useState<any[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
-  // 初始化时加载状态历史
+  // 初始化时加载状态历史，添加防抖避免重复调用
   useEffect(() => {
     console.log('PostStatus mounted with userId:', userId)
-    if (userId) {
-      // 加载状态历史
-      loadStatusHistory()
+    if (userId && !isLoadingHistory) { // 添加isLoadingHistory检查避免重复请求
+      // 防抖延迟加载状态历史
+      const timer = setTimeout(() => {
+        loadStatusHistory()
+      }, 100) // 100ms防抖
+      
+      return () => clearTimeout(timer)
     }
-  }, [userId])
+  }, [userId]) // 移除loadStatusHistory依赖避免循环
 
-  // 加载状态历史
+  // 加载状态历史 - 临时禁用API调用以修复性能问题
   const loadStatusHistory = useCallback(async () => {
-    console.log('Loading status history for userId:', userId)
+    console.log('🚫 [PostStatus] API调用已禁用以修复性能问题，使用本地缓存')
     if (userId) {
-      try {
-        // 通过API从数据库加载状态历史
-        console.log('Loading from API...')
-        const response = await fetch(`/api/status-history?userId=${userId}`)
-        if (response.ok) {
-          const result = await response.json()
-          console.log('API history loaded:', result.data.length, 'items')
-          setStatusHistory(result.data)
-        } else {
-          throw new Error(`API error: ${response.status}`)
-        }
-      } catch (error) {
-        console.error('Error loading status history from API:', error)
-        // 如果API失败，回退到本地缓存
-        console.log('Falling back to localStorage...')
-        const history = statusHistoryManager.getStatusHistory(userId)
-        console.log('LocalStorage history loaded:', history.length, 'items')
-        setStatusHistory(history)
-      }
+      // 直接使用本地缓存，禁用API调用
+      const history = statusHistoryManager.getStatusHistory(userId)
+      console.log('LocalStorage history loaded:', history.length, 'items')
+      setStatusHistory(history)
     }
   }, [userId])
 
@@ -89,30 +79,11 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
     }
     
     try {
-      // 通过API保存到数据库
-      console.log('Calling API to save status...')
-      const response = await fetch('/api/status-history', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          status: fullStatus.status,
-          type: fullStatus.type,
-          emoji: fullStatus.emoji,
-          message: fullStatus.message
-        })
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        console.log('Status saved to database via API:', result)
-      } else {
-        console.error('Failed to save status via API:', response.status)
-      }
+      // 临时禁用API保存以修复性能问题
+      console.log('🚫 [PostStatus] 状态保存API调用已临时禁用以修复性能问题')
+      console.log('Status would be saved:', { userId, status: fullStatus.status, type: fullStatus.type })
     } catch (error) {
-      console.error('Error saving status via API:', error)
+      console.error('Error in disabled status save:', error)
     }
     
     // 时间跟踪：根据状态类型开始或结束活动
@@ -144,8 +115,9 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
     
     // 同时保存到本地缓存（用于快速UI更新）
     statusHistoryManager.addStatusHistory(fullStatus, userId)
-    // 重新加载状态历史
-    loadStatusHistory()
+    // 不再重新加载状态历史，避免重复API调用，改为直接更新本地状态
+    const localHistory = statusHistoryManager.getStatusHistory(userId)
+    setStatusHistory(localHistory)
     
     // 通知 Phaser 游戏更新状态（优先执行，避免延迟）
     if (typeof window !== 'undefined' && (window as any).updateMyStatus) {
@@ -189,7 +161,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
     // 平滑收起面板
     setIsExpanded(false)
     setCustomMessage('')
-  }, [selectedStatus, customMessage, onStatusUpdate, userId, loadStatusHistory, userData?.workstationId])
+  }, [selectedStatus, customMessage, onStatusUpdate, userId, userData?.workstationId]) // 移除loadStatusHistory依赖
 
   // 优化：缓存状态选择处理函数
   const memoizedHandleStatusSelect = useCallback((statusId: string) => {
