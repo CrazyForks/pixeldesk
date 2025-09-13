@@ -501,31 +501,72 @@ export class WorkstationManager {
     }
     
     async syncWorkstationBindings() {
-        // 同步工位绑定状态：先清空本地，然后加载服务器数据
-        console.log('开始同步工位绑定状态...');
-        
-        // 清理现有绑定
-        this.clearAllBindings();
+        // 差异化同步工位绑定状态：只更新有变化的工位，避免界面闪烁
+        console.log('开始差异化同步工位绑定状态...');
         
         // 从服务器获取所有绑定
         const allBindings = await this.loadAllWorkstationBindings();
         
-        // 应用绑定状态到本地工位
+        // 创建服务器绑定的映射表，便于快速查找
+        const serverBindingsMap = new Map();
+        const now = new Date();
+        
         allBindings.forEach(binding => {
-            const workstation = this.workstations.get(binding.workstationId);
+            // 计算是否过期
+            const boundAt = new Date(binding.boundAt);
+            const expiresAt = new Date(boundAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+            
+            if (now <= expiresAt) {
+                serverBindingsMap.set(binding.workstationId, {
+                    ...binding,
+                    expiresAt: expiresAt.toISOString(),
+                    remainingDays: Math.ceil((expiresAt - now) / (24 * 60 * 60 * 1000))
+                });
+            } else {
+                console.log(`工位 ${binding.workstationId} 已过期，跳过`);
+            }
+        });
+        
+        // 获取当前本地绑定状态
+        const currentBindings = new Set(this.userBindings.keys());
+        const serverBindings = new Set(serverBindingsMap.keys());
+        
+        // 找出需要解绑的工位（本地有但服务器没有）
+        const workstationsToUnbind = [...currentBindings].filter(id => !serverBindings.has(id));
+        
+        // 找出需要绑定的工位（服务器有但本地没有）
+        const workstationsToBind = [...serverBindings].filter(id => !currentBindings.has(id));
+        
+        // 找出需要更新的工位（两边都有但信息可能不同）
+        const workstationsToUpdate = [...currentBindings].filter(id => {
+            if (!serverBindings.has(id)) return false;
+            
+            const localWorkstation = this.workstations.get(id);
+            const serverBinding = serverBindingsMap.get(id);
+            
+            // 检查用户信息或剩余天数是否有变化
+            return (localWorkstation?.userId !== serverBinding.userId || 
+                    localWorkstation?.remainingDays !== serverBinding.remainingDays);
+        });
+        
+        let changesCount = 0;
+        
+        // 处理需要解绑的工位
+        workstationsToUnbind.forEach(workstationId => {
+            console.log(`差异化同步：解绑工位 ${workstationId}`);
+            this.unbindUserFromWorkstation(workstationId);
+            changesCount++;
+        });
+        
+        // 处理需要新绑定的工位
+        workstationsToBind.forEach(workstationId => {
+            const binding = serverBindingsMap.get(workstationId);
+            const workstation = this.workstations.get(workstationId);
+            
             if (workstation) {
-                // 计算剩余天数（30天有效期）
-                const boundAt = new Date(binding.boundAt);
-                const expiresAt = new Date(boundAt.getTime() + 30 * 24 * 60 * 60 * 1000);
-                const now = new Date();
+                console.log(`差异化同步：绑定工位 ${workstationId} 到用户 ${binding.userId}`);
                 
-                // 检查是否过期
-                if (now > expiresAt) {
-                    console.log(`工位 ${binding.workstationId} 已过期，跳过`);
-                    return;
-                }
-                
-                // 应用绑定状态
+                // 应用绑定状态（不调用完整的绑定方法，避免API调用）
                 workstation.isOccupied = true;
                 workstation.userId = binding.userId;
                 workstation.userInfo = {
@@ -536,10 +577,10 @@ export class WorkstationManager {
                     points: binding.user?.points
                 };
                 workstation.boundAt = binding.boundAt;
-                workstation.expiresAt = expiresAt.toISOString();
-                workstation.remainingDays = Math.ceil((expiresAt - now) / (24 * 60 * 60 * 1000));
+                workstation.expiresAt = binding.expiresAt;
+                workstation.remainingDays = binding.remainingDays;
                 
-                this.userBindings.set(binding.workstationId, binding.userId);
+                this.userBindings.set(workstationId, binding.userId);
                 
                 // 更新视觉效果
                 if (workstation.sprite) {
@@ -556,12 +597,40 @@ export class WorkstationManager {
                     avatar: binding.user?.avatar || binding.user?.character || 'Premade_Character_48x48_01'
                 });
                 
-                console.log(`同步工位 ${binding.workstationId} 绑定状态: 用户 ${binding.userId}`);
+                changesCount++;
             }
         });
         
-        console.log(`工位绑定状态同步完成，共同步 ${allBindings.length} 个绑定`);
-        this.printStatistics();
+        // 处理需要更新的工位（只更新数据，不重新创建视觉元素）
+        workstationsToUpdate.forEach(workstationId => {
+            const binding = serverBindingsMap.get(workstationId);
+            const workstation = this.workstations.get(workstationId);
+            
+            if (workstation) {
+                console.log(`差异化同步：更新工位 ${workstationId} 信息`);
+                
+                // 只更新数据，保持视觉元素不变
+                workstation.userInfo = {
+                    name: binding.user?.name,
+                    username: binding.user?.username,
+                    avatar: binding.user?.avatar,
+                    character: binding.user?.character,
+                    points: binding.user?.points
+                };
+                workstation.boundAt = binding.boundAt;
+                workstation.expiresAt = binding.expiresAt;
+                workstation.remainingDays = binding.remainingDays;
+                
+                changesCount++;
+            }
+        });
+        
+        if (changesCount > 0) {
+            console.log(`差异化同步完成，共处理 ${changesCount} 个变化：解绑 ${workstationsToUnbind.length} 个，新绑定 ${workstationsToBind.length} 个，更新 ${workstationsToUpdate.length} 个`);
+            this.printStatistics();
+        } else {
+            console.log('差异化同步完成，没有发现变化');
+        }
     }
     
     // 手动刷新工位状态
@@ -1268,8 +1337,8 @@ export class WorkstationManager {
 
     // ===== 清理方法 =====
     clearAllBindings() {
-        // 清理所有工位绑定
-        console.log('清理所有工位绑定...');
+        // 清理所有工位绑定（仅在必要时使用，避免界面闪烁）
+        console.log('强制清理所有工位绑定...');
         const results = this.unbindAllUsers();
         console.log(`已清理 ${results.length} 个工位绑定`);
         
@@ -1281,6 +1350,27 @@ export class WorkstationManager {
         });
         
         console.log('所有工位绑定和交互图标已清理');
+    }
+    
+    // 新增：优雅清理方法，用于场景切换等情况
+    gracefulClearBindings() {
+        // 优雅地清理绑定，避免视觉闪烁
+        console.log('优雅清理工位绑定...');
+        
+        // 逐个清理，给每个清理操作一些延迟
+        const workstationIds = Array.from(this.userBindings.keys());
+        let clearCount = 0;
+        
+        workstationIds.forEach((workstationId, index) => {
+            setTimeout(() => {
+                this.unbindUserFromWorkstation(workstationId);
+                clearCount++;
+                
+                if (clearCount === workstationIds.length) {
+                    console.log(`优雅清理完成，共清理 ${clearCount} 个工位绑定`);
+                }
+            }, index * 50); // 每个清理操作间隔50ms
+        });
     }
     
     destroy() {
