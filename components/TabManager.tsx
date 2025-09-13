@@ -420,25 +420,6 @@ export default function TabManager({
           </div>
         )}
         
-        {/* Interaction detection visual feedback */}
-        {(currentCollisionPlayer || collisionPlayer) && tabState.activeTabId === 'player-interaction' && (
-          <div className="absolute top-4 right-4 z-10">
-            <div className={`flex items-center space-x-2 backdrop-blur-sm border rounded-lg px-3 py-2 ${
-              tabState.lastSwitchTrigger === 'collision' 
-                ? 'bg-gradient-to-r from-retro-pink/20 to-retro-purple/20 border-retro-pink/30'
-                : 'bg-gradient-to-r from-retro-blue/20 to-retro-cyan/20 border-retro-blue/30'
-            }`}>
-              <div className={`w-2 h-2 rounded-full animate-pulse ${
-                tabState.lastSwitchTrigger === 'collision' ? 'bg-retro-pink' : 'bg-retro-blue'
-              }`}></div>
-              <span className={`text-xs font-medium ${
-                tabState.lastSwitchTrigger === 'collision' ? 'text-retro-pink' : 'text-retro-blue'
-              }`}>
-                {tabState.lastSwitchTrigger === 'collision' ? '碰撞检测激活' : '点击交互激活'}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

@@ -1,0 +1,168 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+
+// 获取帖子列表
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const sortBy = searchParams.get('sortBy') || 'latest' // latest, popular, trending
+    const authorId = searchParams.get('authorId')
+    
+    const skip = (page - 1) * limit
+
+    // 构建查询条件
+    const where: any = {
+      isPublic: true
+    }
+    
+    if (authorId) {
+      where.authorId = authorId
+    }
+
+    // 构建排序条件
+    let orderBy: any = {}
+    switch (sortBy) {
+      case 'popular':
+        orderBy = { likeCount: 'desc' }
+        break
+      case 'trending':
+        orderBy = [
+          { likeCount: 'desc' },
+          { replyCount: 'desc' },
+          { createdAt: 'desc' }
+        ]
+        break
+      case 'latest':
+      default:
+        orderBy = { createdAt: 'desc' }
+        break
+    }
+
+    const [posts, totalCount] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true
+            }
+          },
+          _count: {
+            select: {
+              replies: true,
+              likes: true
+            }
+          }
+        }
+      }),
+      prisma.post.count({ where })
+    ])
+
+    const totalPages = Math.ceil(totalCount / limit)
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        posts,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      }
+    })
+
+  } catch (error) {
+    console.error('Error fetching posts:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch posts' },
+      { status: 500 }
+    )
+  }
+}
+
+// 创建新帖子
+export async function POST(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID required' },
+        { status: 400 }
+      )
+    }
+
+    const body = await request.json()
+    const { title, content, type = 'TEXT', imageUrl } = body
+
+    if (!content || content.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Content is required' },
+        { status: 400 }
+      )
+    }
+
+    if (content.length > 2000) {
+      return NextResponse.json(
+        { error: 'Content too long (max 2000 characters)' },
+        { status: 400 }
+      )
+    }
+
+    // 验证用户存在
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    const post = await prisma.post.create({
+      data: {
+        title: title?.trim() || null,
+        content: content.trim(),
+        type,
+        imageUrl: imageUrl || null,
+        authorId: userId
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: post
+    })
+
+  } catch (error) {
+    console.error('Error creating post:', error)
+    return NextResponse.json(
+      { error: 'Failed to create post' },
+      { status: 500 }
+    )
+  }
+}

@@ -157,6 +157,35 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
       onStatusUpdate(fullStatus)
     })
     
+    // 同步生成社交帖子
+    try {
+      const statusEmoji = statusOptions.find(s => s.id === selectedStatus)?.emoji || '📝'
+      const postContent = customMessage || `${statusEmoji} ${statusOptions.find(s => s.id === selectedStatus)?.label || selectedStatus}`
+      
+      console.log('🎯 [PostStatus] 同步生成社交帖子:', { postContent, userId })
+      
+      const postResponse = await fetch(`/api/posts?userId=${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: null,
+          content: postContent,
+          type: 'TEXT'
+        })
+      })
+      
+      if (postResponse.ok) {
+        const postResult = await postResponse.json()
+        console.log('✅ [PostStatus] 状态同步帖子创建成功:', postResult)
+      } else {
+        console.error('❌ [PostStatus] 状态同步帖子创建失败:', postResponse.status)
+      }
+    } catch (error) {
+      console.error('Error creating status sync post:', error)
+    }
+    
     // 平滑收起面板
     setIsExpanded(false)
     setCustomMessage('')
