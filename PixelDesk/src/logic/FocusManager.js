@@ -26,6 +26,9 @@ export class FocusManager {
         this.setupMouseOverDetection();
         this.setupCanvasFocusDetection();
         
+        // 初始化时设置键盘捕获
+        this.updatePhaserKeyboardCapture(this.keyboardEnabled);
+        
         console.log('🎯 FocusManager initialized');
     }
     
@@ -210,11 +213,22 @@ export class FocusManager {
         
         if (this.keyboardEnabled !== shouldEnable) {
             this.keyboardEnabled = shouldEnable;
+            
+            // 动态控制Phaser的键盘捕获
+            this.updatePhaserKeyboardCapture(shouldEnable);
+            
             console.log(`⌨️ Keyboard input ${shouldEnable ? 'ENABLED' : 'DISABLED'} for game`);
             console.log(`   - Game focused: ${this.isGameFocused}`);
             console.log(`   - Input focused: ${this.isInputFocused}`);
             console.log(`   - Mouse over UI: ${this.isMouseOverUI}`);
         }
+    }
+    
+    // 动态控制Phaser键盘捕获 - 简化版本，不再需要addCapture/removeCapture
+    updatePhaserKeyboardCapture(shouldEnable) {
+        // 现在通过handlePlayerMovement中的shouldHandleKeyboard()检查来控制
+        // 不需要动态添加/移除键盘捕获，因为我们改为手动检查键盘状态
+        console.log(`⌨️ Keyboard input ${shouldEnable ? 'ENABLED' : 'DISABLED'} for game (via movement check)`);
     }
     
     // ===== 回调管理 =====

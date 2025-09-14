@@ -446,8 +446,24 @@ export class Start extends Phaser.Scene {
       return;
     }
 
+    // 手动检查键盘状态，不使用addKey避免键盘捕获
+    const keyboard = this.input.keyboard;
+    const cursors = {
+      left: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.LEFT]?.isDown || false },
+      right: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.RIGHT]?.isDown || false },
+      up: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.UP]?.isDown || false },
+      down: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.DOWN]?.isDown || false }
+    };
+
+    const wasdKeys = {
+      W: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.W]?.isDown || false },
+      A: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.A]?.isDown || false },
+      S: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.S]?.isDown || false },
+      D: { isDown: keyboard.keys[Phaser.Input.Keyboard.KeyCodes.D]?.isDown || false }
+    };
+
     // 将移动处理委托给Player类
-    this.player.handleMovement(this.cursors, this.wasdKeys)
+    this.player.handleMovement(cursors, wasdKeys)
   }
 
   // ===== 工位事件处理 =====
@@ -1019,16 +1035,8 @@ export class Start extends Phaser.Scene {
 
   // ===== 输入设置方法 =====
   setupInput() {
-    // 键盘输入
-    this.cursors = this.input.keyboard.createCursorKeys()
-
-    // WASD 键盘输入
-    this.wasdKeys = this.input.keyboard.addKeys({
-      W: Phaser.Input.Keyboard.KeyCodes.W,
-      A: Phaser.Input.Keyboard.KeyCodes.A,
-      S: Phaser.Input.Keyboard.KeyCodes.S,
-      D: Phaser.Input.Keyboard.KeyCodes.D,
-    })
+    // 不再使用 createCursorKeys() 和 addKeys() 避免自动键盘捕获
+    // 改为手动检查键盘状态，只有在FocusManager允许时才处理
 
     // 添加鼠标滚轮事件监听，用于缩放控制
     this.input.on("wheel", (pointer, currentlyOver, deltaX, deltaY, deltaZ) => {
@@ -1041,7 +1049,7 @@ export class Start extends Phaser.Scene {
       }
     })
 
-    // 添加键盘快捷键：T键快速回到工位
+    // T键快速回到工位 - 仍然需要注册，但会通过FocusManager检查
     this.teleportKey = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.T
     )
