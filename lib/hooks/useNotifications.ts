@@ -31,7 +31,7 @@ export interface UseNotificationsReturn {
 }
 
 export function useNotifications(options: UseNotificationsOptions = {}): UseNotificationsReturn {
-  const { autoSync = true, syncInterval = 30000 } = options
+  const { autoSync = false, syncInterval = 300000 } = options // 默认禁用自动同步，间隔改为5分钟
   
   const [state, setState] = useState<NotificationState>(() => notificationManager.getState())
   const [isLoading, setIsLoading] = useState(false)

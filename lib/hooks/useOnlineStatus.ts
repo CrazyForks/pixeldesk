@@ -17,8 +17,8 @@ interface UseOnlineStatusReturn {
 
 export function useOnlineStatus({
   userIds,
-  refreshInterval = 30000, // 30 seconds default
-  autoRefresh = true
+  refreshInterval = 300000, // 5分钟默认间隔，减少轮询频率
+  autoRefresh = false // 默认禁用自动刷新
 }: UseOnlineStatusOptions): UseOnlineStatusReturn {
   const [statuses, setStatuses] = useState<Map<string, UserOnlineStatus>>(new Map())
   const [isLoading, setIsLoading] = useState(false)
@@ -123,8 +123,8 @@ export function useOnlineStatus({
 export function useSingleUserOnlineStatus(userId: string | null) {
   const { statuses, isLoading, error, refresh, getStatus } = useOnlineStatus({
     userIds: userId ? [userId] : [],
-    refreshInterval: 30000,
-    autoRefresh: true
+    refreshInterval: 300000, // 5分钟间隔
+    autoRefresh: false // 禁用自动刷新
   })
 
   return {

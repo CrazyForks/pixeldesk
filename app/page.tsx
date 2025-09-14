@@ -168,8 +168,10 @@ export default function Home() {
     }
   }, [])
 
-  // 检测移动设备和加载用户数据
+  // 检测移动设备和加载用户数据 - 优化resize处理
   useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout
+    
     const checkDeviceType = () => {
       const width = window.innerWidth
       if (width < 640) {
@@ -185,6 +187,12 @@ export default function Home() {
         setIsMobile(false)
         setIsTablet(false)
       }
+    }
+    
+    // 防抖版本的resize处理器，避免高频触发
+    const debouncedCheckDeviceType = () => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(checkDeviceType, 250) // 250ms防抖
     }
     
     // 加载当前用户数据
@@ -252,8 +260,11 @@ export default function Home() {
     loadCurrentUser()
     loadWorkstationStats()
     loadUserWorkstationBinding()
-    window.addEventListener('resize', checkDeviceType)
-    return () => window.removeEventListener('resize', checkDeviceType)
+    window.addEventListener('resize', debouncedCheckDeviceType)
+    return () => {
+      window.removeEventListener('resize', debouncedCheckDeviceType)
+      clearTimeout(resizeTimeout)
+    }
   }, [])
 
   // 监听积分更新事件

@@ -74,7 +74,7 @@ export default function NotificationContainer({
       })
     }
 
-    const interval = setInterval(cleanup, 60000) // Clean up every minute
+    const interval = setInterval(cleanup, 600000) // 每10分钟清理一次，减少不必要的高频操作
     return () => clearInterval(interval)
   }, [notifications])
 

@@ -53,18 +53,29 @@ export default function TabManager({
   const [switchingAnimation, setSwitchingAnimation] = useState(false)
   const [screenSize, setScreenSize] = useState({ width: 0, height: 0 })
 
-  // Detect screen size changes for responsive tab behavior
+  // Detect screen size changes for responsive tab behavior - 优化防抖
   useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout
+    
     const updateScreenSize = () => {
       setScreenSize({
         width: window.innerWidth,
         height: window.innerHeight
       })
     }
+    
+    // 防抖版本的resize处理器
+    const debouncedUpdateScreenSize = () => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(updateScreenSize, 300) // 300ms防抖
+    }
 
     updateScreenSize()
-    window.addEventListener('resize', updateScreenSize)
-    return () => window.removeEventListener('resize', updateScreenSize)
+    window.addEventListener('resize', debouncedUpdateScreenSize)
+    return () => {
+      window.removeEventListener('resize', debouncedUpdateScreenSize)
+      clearTimeout(resizeTimeout)
+    }
   }, [])
 
   // Handle tab switching with animation

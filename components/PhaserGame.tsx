@@ -66,11 +66,11 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
           batchSize: 2000,
           maxTextures: 1
         },
-        // 设置合理的FPS限制以节省CPU
+        // 设置较低的FPS限制以大幅节省CPU - 对于这种类型的游戏30FPS已经足够流畅
         fps: {
-          target: 60,
-          min: 30,
-          forceSetTimeOut: false
+          target: 30, // 降低到30FPS
+          min: 20,
+          forceSetTimeOut: true // 强制使用setTimeout而不是requestAnimationFrame，更节省CPU
         }
       }
 
@@ -128,8 +128,10 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
     }
   }, [onPlayerCollision, onWorkstationBinding, onPlayerClick])
 
-  // 处理窗口大小变化
+  // 处理窗口大小变化 - 优化防抖
   useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout
+    
     const handleResize = () => {
       if (gameRef.current && gameContainerRef.current) {
         const width = gameContainerRef.current.clientWidth
@@ -137,9 +139,18 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
         gameRef.current.scale.resize(width, height)
       }
     }
+    
+    // 防抖版本resize处理器，避免频繁调用
+    const debouncedHandleResize = () => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(handleResize, 300) // 300ms防抖
+    }
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    window.addEventListener('resize', debouncedHandleResize)
+    return () => {
+      window.removeEventListener('resize', debouncedHandleResize)
+      clearTimeout(resizeTimeout)
+    }
   }, [])
 
   return (

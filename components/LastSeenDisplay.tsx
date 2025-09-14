@@ -14,21 +14,24 @@ export default function LastSeenDisplay({
   lastSeen,
   isOnline,
   format = 'smart',
-  updateInterval = 60, // Update every minute by default
+  updateInterval = 300, // 每5分钟更新而不是每分钟，减少CPU使用
   className = ''
 }: LastSeenDisplayProps) {
   const [currentTime, setCurrentTime] = useState(new Date())
 
-  // Update current time periodically for relative timestamps
+  // Update current time periodically for relative timestamps - 优化为只在需要时更新
   useEffect(() => {
     if (format === 'relative' || format === 'smart') {
-      const interval = setInterval(() => {
-        setCurrentTime(new Date())
-      }, updateInterval * 1000)
+      // 只有在用户不在线时才需要定期更新时间
+      if (!isOnline && lastSeen) {
+        const interval = setInterval(() => {
+          setCurrentTime(new Date())
+        }, updateInterval * 1000)
 
-      return () => clearInterval(interval)
+        return () => clearInterval(interval)
+      }
     }
-  }, [format, updateInterval])
+  }, [format, updateInterval, isOnline, lastSeen])
 
   const formattedTime = useMemo(() => {
     if (isOnline) {

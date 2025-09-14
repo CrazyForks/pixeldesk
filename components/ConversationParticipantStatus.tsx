@@ -81,9 +81,9 @@ export default function ConversationParticipantStatus({
 
     fetchOnlineStatus()
 
-    // Refresh online status every 30 seconds
-    const interval = setInterval(fetchOnlineStatus, 30000)
-    return () => clearInterval(interval)
+    // 禁用高频轮询，只在用户手动刷新时更新
+    // const interval = setInterval(fetchOnlineStatus, 30000)
+    // return () => clearInterval(interval)
   }, [otherParticipants])
 
   const getParticipantStatus = (participant: ConversationParticipant) => {

@@ -31,7 +31,7 @@ interface UseSocialNotificationsReturn {
 }
 
 export function useSocialNotifications(options: UseSocialNotificationsOptions): UseSocialNotificationsReturn {
-  const { userId, autoFetch = true, refreshInterval = 0, unreadOnly = false } = options
+  const { userId, autoFetch = true, refreshInterval = 0, unreadOnly = false } = options // 保持refreshInterval=0默认禁用轮询
   
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(false)
