@@ -81,6 +81,7 @@ export default function CreateReplyForm({
               rows={isMobile ? 2 : 3}
               maxLength={1000}
               disabled={finalIsSubmitting}
+              data-input-container="true"
             />
             
             {/* 字符计数和错误显示 */}

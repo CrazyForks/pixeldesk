@@ -45,6 +45,12 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
             gravity: { x: 0, y: 0 },
             debug: false
           }
+        },
+        input: {
+          keyboard: {
+            target: null, // 不自动绑定到window，由场景控制
+            capture: [] // 不预先捕获任何按键，避免与输入框冲突
+          }
         }
       }
 

@@ -81,6 +81,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
               className="relative w-full bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border-2 border-retro-border focus:border-retro-blue rounded-xl px-4 py-3 text-white placeholder-retro-textMuted focus:outline-none backdrop-blur-md transition-all duration-300 font-retro text-sm focus:shadow-lg focus:shadow-retro-blue/20"
               maxLength={100}
               disabled={isSubmitting}
+              data-input-container="true"
             />
           </div>
 
@@ -95,6 +96,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
               rows={isMobile ? 3 : 4}
               maxLength={2000}
               disabled={isSubmitting}
+              data-input-container="true"
             />
             
             {/* 字符计数和错误显示 - 像素化信息栏 */}
