@@ -99,15 +99,23 @@ export class FocusManager {
         return false;
     }
     
-    // ===== 鼠标位置检测 =====
+    // ===== 鼠标位置检测 ===== 
     setupMouseOverDetection() {
-        // 检测鼠标是否在UI区域
+        // 添加防抖以减少mousemove事件的处理频率
+        let mouseMoveTimeout = null;
+        
+        // 检测鼠标是否在UI区域 - 使用防抖优化性能
         document.addEventListener('mousemove', (event) => {
-            const isOverUI = this.isMouseOverUIElement(event.target);
+            if (mouseMoveTimeout) return; // 跳过过于频繁的事件
             
-            if (isOverUI !== this.isMouseOverUI) {
-                this.setMouseOverUI(isOverUI);
-            }
+            mouseMoveTimeout = setTimeout(() => {
+                const isOverUI = this.isMouseOverUIElement(event.target);
+                
+                if (isOverUI !== this.isMouseOverUI) {
+                    this.setMouseOverUI(isOverUI);
+                }
+                mouseMoveTimeout = null;
+            }, 50); // 50ms防抖，减少高频率的检查
         });
         
         // 检测鼠标离开窗口

@@ -297,53 +297,56 @@ export class Player extends Phaser.GameObjects.Container {
         });
     }
     
-    // 初始化浮动动画
+    // 初始化浮动动画 - 使用Tween而不是每帧更新
     initFloatingAnimation() {
         if (!this.statusLabel) return;
         
         // 浮动动画参数
         this.floatingAmplitude = 3; // 浮动幅度
-        this.floatingSpeed = 0.002; // 浮动速度
-        this.floatingOffset = 0; // 当前浮动偏移
         
         // 初始Y位置
         this.baseY = this.statusLabel.y;
         
-        // 启动浮动动画
-        this.scene.events.on('update', this.updateFloatingAnimation, this);
+        // 使用Tween创建循环浮动动画，比每帧更新更高效
+        this.floatingTween = this.scene.tweens.add({
+            targets: this.statusLabel,
+            y: this.baseY - this.floatingAmplitude,
+            duration: 1500 + Math.random() * 500, // 随机化持续时间避免同步
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            paused: !this.isVisible // 只有可见时才开始动画
+        });
     }
     
-    // 更新浮动动画
-    updateFloatingAnimation() {
-        if (!this.statusLabel || !this.isVisible) return;
-        
-        // 计算浮动偏移
-        this.floatingOffset += this.floatingSpeed;
-        const floatY = Math.sin(this.floatingOffset) * this.floatingAmplitude;
-        
-        // 应用浮动效果
-        this.statusLabel.y = this.baseY + floatY;
+    // 控制动画播放/暂停以优化性能
+    controlFloatingAnimation(shouldPlay) {
+        if (this.floatingTween) {
+            if (shouldPlay && this.floatingTween.paused) {
+                this.floatingTween.resume();
+            } else if (!shouldPlay && !this.floatingTween.paused) {
+                this.floatingTween.pause();
+            }
+        }
     }
     
-    // 初始化可视范围检测
+    // 初始化可视范围检测 - 使用定时器而不是每帧检查
     initVisibilityCheck() {
         this.isVisible = true;
-        this.lastCheckTime = 0;
-        this.checkInterval = 200; // 每200ms检查一次可视性
         this.visibilityDebounceTimer = null; // 防抖计时器
         
-        // 监听相机移动事件
-        this.scene.events.on('update', this.checkVisibility, this);
+        // 使用定时器而不是每帧检查，大幅减少CPU使用
+        this.visibilityTimer = this.scene.time.addEvent({
+            delay: 500, // 每500ms检查一次，比每帧检查效率高得多
+            callback: this.checkVisibility,
+            callbackScope: this,
+            loop: true
+        });
     }
     
-    // 检查可视范围
+    // 检查可视范围 - 优化后的版本
     checkVisibility() {
         if (!this.isOtherPlayer || !this.statusLabel) return;
-        
-        const currentTime = Date.now();
-        if (currentTime - this.lastCheckTime < this.checkInterval) return;
-        
-        this.lastCheckTime = currentTime;
         
         // 安全检查：确保scene和cameras存在
         if (!this.scene || !this.scene.cameras) return;
@@ -367,7 +370,7 @@ export class Player extends Phaser.GameObjects.Container {
             this.y <= cameraBottom + padding
         );
         
-        // 优化：只有在可视性发生变化时才更新，并且添加防抖
+        // 优化：只有在可视性发生变化时才更新
         if (wasVisible !== this.isVisible) {
             // 清除之前的防抖计时器
             if (this.visibilityDebounceTimer) {
@@ -378,10 +381,8 @@ export class Player extends Phaser.GameObjects.Container {
             this.visibilityDebounceTimer = this.scene.time.delayedCall(100, () => {
                 this.statusLabel.setVisible(this.isVisible);
                 
-                // 如果重新进入可视范围，重置浮动动画
-                if (this.isVisible && !wasVisible) {
-                    this.floatingOffset = 0;
-                }
+                // 控制浮动动画的播放/暂停以优化性能
+                this.controlFloatingAnimation(this.isVisible);
                 
                 this.visibilityDebounceTimer = null;
             });
@@ -705,15 +706,19 @@ export class Player extends Phaser.GameObjects.Container {
     }
     
     destroy() {
-        // 清理事件监听器
-        if (this.scene) {
-            this.scene.events.off('update', this.updateFloatingAnimation, this);
-            this.scene.events.off('update', this.checkVisibility, this);
-        }
-        
         // 清理浮动计时器
         if (this.floatTimer) {
             this.floatTimer.remove();
+        }
+        
+        // 清理可视性检查定时器
+        if (this.visibilityTimer) {
+            this.visibilityTimer.remove();
+        }
+        
+        // 清理浮动动画Tween
+        if (this.floatingTween) {
+            this.floatingTween.destroy();
         }
         
         // 清理防抖计时器

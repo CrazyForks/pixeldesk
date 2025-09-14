@@ -19,7 +19,7 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !gameRef.current) {
-      // 自定义 Phaser 配置
+      // 自定义 Phaser 配置 - 优化性能设置
       const config = {
         type: Phaser.WEBGL,
         title: 'PixelDesk Social',
@@ -43,7 +43,12 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
           default: "arcade",
           arcade: {
             gravity: { x: 0, y: 0 },
-            debug: false
+            debug: false,
+            // 优化物理引擎性能
+            overlapBias: 4,
+            tileBias: 16,
+            forceX: false,
+            skipQuadTree: false
           }
         },
         input: {
@@ -51,6 +56,21 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
             target: null, // 不自动绑定到window，由场景控制
             capture: [] // 不预先捕获任何按键，避免与输入框冲突
           }
+        },
+        // 添加性能优化配置
+        render: {
+          antialias: false, // 像素艺术不需要抗锯齿
+          pixelArt: true,
+          roundPixels: true,
+          // 启用批处理以提高渲染性能
+          batchSize: 2000,
+          maxTextures: 1
+        },
+        // 设置合理的FPS限制以节省CPU
+        fps: {
+          target: 60,
+          min: 30,
+          forceSetTimeOut: false
         }
       }
 

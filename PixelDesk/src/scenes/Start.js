@@ -164,6 +164,18 @@ export class Start extends Phaser.Scene {
     // 初始化工位绑定UI
     this.bindingUI = new WorkstationBindingUI(this)
 
+    // 为UI更新设置定时器而不是每帧更新
+    this.uiUpdateTimer = this.time.addEvent({
+      delay: 200, // 每200ms更新一次UI，比每帧更新效率高
+      callback: () => {
+        if (this.bindingUI) {
+          this.bindingUI.update()
+        }
+      },
+      callbackScope: this,
+      loop: true
+    })
+
     this.setupWorkstationEvents()
     this.setupUserEvents()
 
@@ -243,12 +255,8 @@ export class Start extends Phaser.Scene {
   }
 
   update() {
+    // 只处理需要每帧更新的核心逻辑
     this.handlePlayerMovement()
-
-    // 更新绑定UI
-    if (this.bindingUI) {
-      this.bindingUI.update()
-    }
 
     // 检查T键按下，快速回到工位（仅在游戏有焦点时）
     if (this.focusManager && this.focusManager.shouldHandleKeyboard() && 
@@ -256,8 +264,8 @@ export class Start extends Phaser.Scene {
       this.handleTeleportKeyPress()
     }
 
-    // 使用优化的碰撞检测系统
-    this.updateOptimizedCollisionDetection()
+    // 移除不必要的每帧UI更新和碰撞检测，改为定时执行
+    // bindingUI.update() 和 collision detection 现在使用定时器
   }
 
   // ===== 性能优化系统初始化 =====
@@ -1720,11 +1728,14 @@ export class Start extends Phaser.Scene {
     this.collisionManager.debounceTimers.set(playerId, timer)
   }
 
-  // 设置碰撞检测循环
+  // 设置碰撞检测循环 - 优化为定时检查而不是每帧检查
   setupCollisionDetectionLoop() {
-    // 每帧检查碰撞状态
-    this.events.on("update", () => {
-      this.updateCollisionDetection()
+    // 使用定时器而不是每帧检查，大幅减少CPU使用
+    this.collisionCheckTimer = this.time.addEvent({
+      delay: 100, // 每100ms检查一次碰撞，比每帧(16ms)检查要高效得多
+      callback: this.updateCollisionDetection,
+      callbackScope: this,
+      loop: true
     })
   }
 
@@ -2646,20 +2657,19 @@ export class Start extends Phaser.Scene {
     
     // 清理碰撞管理器
     this.cleanupCollisionManager()
-
-    // 清理全局函数
-    if (typeof window !== "undefined") {
-      delete window.onPlayerCollisionStart
-      delete window.onPlayerCollisionEnd
-      delete window.getCurrentCollisions
-      delete window.getCollisionHistory
-      delete window.setCollisionSensitivity
+    
+    // 清理新添加的定时器
+    if (this.collisionCheckTimer) {
+      this.collisionCheckTimer.remove()
+      this.collisionCheckTimer = null
     }
-
-    // 调用父类的shutdown方法
-    super.shutdown()
-  }
-  shutdown() {
+    
+    if (this.uiUpdateTimer) {
+      this.uiUpdateTimer.remove()
+      this.uiUpdateTimer = null
+    }
+    
+    // 清理工位和UI管理器
     if (this.workstationManager) {
       this.workstationManager.destroy()
     }
@@ -2671,6 +2681,16 @@ export class Start extends Phaser.Scene {
     this.otherPlayers.forEach((player) => player.destroy())
     this.otherPlayers.clear()
 
+    // 清理全局函数
+    if (typeof window !== "undefined") {
+      delete window.onPlayerCollisionStart
+      delete window.onPlayerCollisionEnd
+      delete window.getCurrentCollisions
+      delete window.getCollisionHistory
+      delete window.setCollisionSensitivity
+    }
+
+    // 调用父类的shutdown方法
     super.shutdown()
   }
 }
