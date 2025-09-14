@@ -105,13 +105,7 @@ export default function CreateReplyForm({
 
           {/* 操作按钮区域 */}
           <div className="flex items-center justify-between pt-2">
-            {/* 工具提示 */}
-            <div className="flex items-center gap-2 text-retro-textMuted">
-              <div className="w-4 h-4 bg-retro-blue/20 rounded flex items-center justify-center">
-                <span className="text-xs">💡</span>
-              </div>
-              <span className="text-xs font-retro">Be respectful and constructive</span>
-            </div>
+          
 
             {/* 主要操作按钮 */}
             <div className="flex items-center space-x-3">
