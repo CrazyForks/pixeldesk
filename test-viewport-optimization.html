@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视口优化功能测试</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #fff; 
+            margin: 20px; 
+            line-height: 1.6; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+        .section { 
+            background: #2a2a2a; 
+            padding: 20px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border: 1px solid #444; 
+        }
+        .stats { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 15px; 
+            margin-top: 15px; 
+        }
+        .stat-item { 
+            background: #3a3a3a; 
+            padding: 10px; 
+            border-radius: 4px; 
+            border-left: 3px solid #0066cc; 
+        }
+        .highlight { 
+            color: #00ff88; 
+            font-weight: bold; 
+        }
+        .warning { 
+            color: #ffaa00; 
+            font-weight: bold; 
+        }
+        .error { 
+            color: #ff4444; 
+            font-weight: bold; 
+        }
+        button { 
+            background: #0066cc; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+        }
+        button:hover { 
+            background: #0052a3; 
+        }
+        pre { 
+            background: #1a1a1a; 
+            padding: 10px; 
+            border-radius: 4px; 
+            overflow-x: auto; 
+            border: 1px solid #444; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 视口优化功能测试页面</h1>
+        
+        <div class="section">
+            <h2>📊 API接口测试</h2>
+            <button onclick="testVisibleBindingsAPI()">测试视口范围查询API</button>
+            <button onclick="testHealthCheck()">测试健康检查</button>
+            <div id="api-results"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🎮 Phaser游戏状态</h2>
+            <button onclick="checkGameStatus()">检查游戏状态</button>
+            <button onclick="getViewportStats()">获取视口优化统计</button>
+            <button onclick="getWorkstationStats()">获取工位统计</button>
+            <div id="game-results"></div>
+        </div>
+        
+        <div class="section">
+            <h2>⚡ 实时监控</h2>
+            <button onclick="startMonitoring()" id="monitor-btn">开始监控</button>
+            <button onclick="stopMonitoring()">停止监控</button>
+            <div id="monitoring-results"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🧪 性能对比测试</h2>
+            <button onclick="performanceTest()">执行性能对比</button>
+            <div id="performance-results"></div>
+        </div>
+    </div>
+
+    <script>
+        let monitoringInterval = null;
+        
+        // 格式化JSON显示
+        function formatJSON(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+        
+        // 显示结果
+        function showResult(elementId, title, result, isError = false) {
+            const element = document.getElementById(elementId);
+            const className = isError ? 'error' : 'highlight';
+            const time = new Date().toLocaleTimeString();
+            element.innerHTML = `
+                <h3 class="${className}">${title} [${time}]</h3>
+                <pre>${formatJSON(result)}</pre>
+            ` + element.innerHTML;
+        }
+        
+        // 测试视口范围查询API
+        async function testVisibleBindingsAPI() {
+            try {
+                const testData = {
+                    workstationIds: [1, 2, 3, 4, 5, 10, 15, 20],
+                    viewport: {
+                        x: 100,
+                        y: 100, 
+                        width: 800,
+                        height: 600,
+                        zoom: 1
+                    }
+                };
+                
+                const response = await fetch('/api/workstations/visible-bindings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                showResult('api-results', '✅ 视口范围查询API测试', result);
+                
+            } catch (error) {
+                showResult('api-results', '❌ API测试失败', { error: error.message }, true);
+            }
+        }
+        
+        // 测试健康检查
+        async function testHealthCheck() {
+            try {
+                const response = await fetch('/api/workstations/visible-bindings');
+                const result = await response.json();
+                showResult('api-results', '✅ 健康检查', result);
+            } catch (error) {
+                showResult('api-results', '❌ 健康检查失败', { error: error.message }, true);
+            }
+        }
+        
+        // 检查游戏状态
+        function checkGameStatus() {
+            const gameExists = typeof window.getViewportOptimizationStats === 'function';
+            const workstationStatsExists = typeof window.getGameWorkstationStats === 'function';
+            
+            const status = {
+                gameLoaded: gameExists,
+                viewportOptimizationAvailable: gameExists,
+                workstationStatsAvailable: workstationStatsExists,
+                phaserGameElement: document.getElementById('phaser-game') !== null
+            };
+            
+            showResult('game-results', gameExists ? '✅ 游戏状态检查' : '⚠️ 游戏状态检查', status, !gameExists);
+        }
+        
+        // 获取视口优化统计
+        function getViewportStats() {
+            if (typeof window.getViewportOptimizationStats === 'function') {
+                const stats = window.getViewportOptimizationStats();
+                showResult('game-results', '📊 视口优化统计', stats);
+            } else {
+                showResult('game-results', '❌ 视口优化不可用', 
+                    { error: '请先加载游戏页面' }, true);
+            }
+        }
+        
+        // 获取工位统计
+        function getWorkstationStats() {
+            if (typeof window.getGameWorkstationStats === 'function') {
+                const stats = window.getGameWorkstationStats();
+                showResult('game-results', '🏢 工位统计', stats);
+            } else {
+                showResult('game-results', '❌ 工位统计不可用', 
+                    { error: '请先加载游戏页面' }, true);
+            }
+        }
+        
+        // 开始实时监控
+        function startMonitoring() {
+            if (monitoringInterval) {
+                console.log('监控已在运行');
+                return;
+            }
+            
+            const button = document.getElementById('monitor-btn');
+            button.textContent = '监控中...';
+            button.disabled = true;
+            
+            monitoringInterval = setInterval(() => {
+                const timestamp = new Date().toLocaleTimeString();
+                let monitorData = { timestamp };
+                
+                // 获取视口优化统计
+                if (typeof window.getViewportOptimizationStats === 'function') {
+                    monitorData.viewport = window.getViewportOptimizationStats();
+                }
+                
+                // 获取工位统计  
+                if (typeof window.getGameWorkstationStats === 'function') {
+                    monitorData.workstations = window.getGameWorkstationStats();
+                }
+                
+                const element = document.getElementById('monitoring-results');
+                const isOptimized = monitorData.viewport?.enabled || false;
+                const className = isOptimized ? 'highlight' : 'warning';
+                
+                element.innerHTML = `
+                    <h4 class="${className}">📊 实时监控数据</h4>
+                    <pre>${formatJSON(monitorData)}</pre>
+                `;
+                
+            }, 2000); // 每2秒更新一次
+        }
+        
+        // 停止监控
+        function stopMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                
+                const button = document.getElementById('monitor-btn');
+                button.textContent = '开始监控';
+                button.disabled = false;
+            }
+        }
+        
+        // 性能对比测试
+        async function performanceTest() {
+            try {
+                console.log('开始性能对比测试...');
+                
+                // 测试不同数量工位的查询性能
+                const testSizes = [10, 50, 100, 500, 1000];
+                const results = [];
+                
+                for (const size of testSizes) {
+                    const workstationIds = Array.from({length: size}, (_, i) => i + 1);
+                    
+                    const startTime = performance.now();
+                    
+                    const response = await fetch('/api/workstations/visible-bindings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ workstationIds })
+                    });
+                    
+                    const result = await response.json();
+                    const endTime = performance.now();
+                    const clientTime = endTime - startTime;
+                    
+                    results.push({
+                        requestSize: size,
+                        serverTime: result.stats?.queryTime || 0,
+                        clientTime: Math.round(clientTime),
+                        totalTime: Math.round(clientTime),
+                        foundBindings: result.stats?.found || 0,
+                        efficiency: result.stats?.efficiency || '0%'
+                    });
+                    
+                    // 添加延迟避免过载
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                // 计算性能改进
+                const performanceSummary = {
+                    testResults: results,
+                    averageServerTime: (results.reduce((sum, r) => sum + r.serverTime, 0) / results.length).toFixed(1) + 'ms',
+                    averageClientTime: (results.reduce((sum, r) => sum + r.clientTime, 0) / results.length).toFixed(1) + 'ms',
+                    maxRequestSize: Math.max(...results.map(r => r.requestSize)),
+                    conclusion: results[results.length - 1].totalTime < 1000 ? 
+                        '✅ 优化效果良好，即使1000个工位查询也很快' : 
+                        '⚠️ 大规模查询仍需进一步优化'
+                };
+                
+                showResult('performance-results', '⚡ 性能对比测试结果', performanceSummary);
+                
+            } catch (error) {
+                showResult('performance-results', '❌ 性能测试失败', { error: error.message }, true);
+            }
+        }
+        
+        // 页面加载时自动检查状态
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkGameStatus();
+                testHealthCheck();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

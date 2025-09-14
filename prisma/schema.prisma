@@ -65,6 +65,9 @@ model UserWorkstation {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workstationId])
+  @@index([workstationId])    // 新增：优化基于workstationId的IN查询
+  @@index([boundAt])          // 新增：优化过期时间查询
+  @@index([userId, boundAt])  // 新增：用户的绑定历史查询
   @@map("user_workstations")
 }
 
