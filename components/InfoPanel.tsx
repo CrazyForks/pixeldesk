@@ -6,6 +6,7 @@ import StatusInfoTab from './tabs/StatusInfoTab'
 import PlayerInteractionTab from './tabs/PlayerInteractionTab'
 import MyPostsTab from './tabs/MyPostsTab'
 import NotificationsTab from './tabs/NotificationsTab'
+import AuthenticationHeader from './AuthenticationHeader'
 
 interface InfoPanelProps {
   children: ReactNode
@@ -74,14 +75,19 @@ export default function InfoPanel({
     <div className="h-full flex flex-col">
       {/* Top header */}
       <div className="p-6 border-b border-retro-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-retro-purple to-retro-pink rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">P</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-retro-purple to-retro-pink rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">P</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">PixelDesk</h1>
+              <p className="text-xs text-retro-textMuted">社交办公空间</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-white">PixelDesk</h1>
-            <p className="text-xs text-retro-textMuted">社交办公空间</p>
-          </div>
+          
+          {/* Authentication Header */}
+          <AuthenticationHeader />
         </div>
       </div>
       

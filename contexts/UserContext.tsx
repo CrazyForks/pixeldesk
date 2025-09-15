@@ -7,13 +7,17 @@ interface User {
   name: string
   email: string
   avatar?: string
+  points?: number
+  gold?: number
+  emailVerified?: boolean
 }
 
 interface UserContextType {
   user: User | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
-  logout: () => void
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
 
@@ -27,30 +31,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('authToken')
-        if (token) {
-          // Verify token and get user info
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-          
-          if (response.ok) {
-            const userData = await response.json()
-            setUser(userData)
-          } else {
-            // Don't log error for expected auth failures
-            if (response.status !== 401 && response.status !== 404) {
-              console.warn('Auth verification failed:', response.status)
-            }
-            localStorage.removeItem('authToken')
+        // Get user info from cookie-based session
+        const response = await fetch('/api/auth/settings', {
+          method: 'GET',
+          credentials: 'include', // Include cookies
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data) {
+            setUser(data.data)
+          }
+        } else {
+          // Don't log error for expected auth failures
+          if (response.status !== 401 && response.status !== 404) {
+            console.warn('Auth verification failed:', response.status)
           }
         }
       } catch (error) {
         // Silently handle auth errors to avoid noise
         console.warn('Auth check failed:', error)
-        localStorage.removeItem('authToken')
       } finally {
         setIsLoading(false)
       }
@@ -66,14 +66,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ email, password }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        localStorage.setItem('authToken', data.token)
-        setUser(data.user)
-        return true
+        if (data.success && data.data) {
+          setUser(data.data)
+          return true
+        }
       }
       return false
     } catch (error) {
@@ -82,24 +84,58 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
-    localStorage.removeItem('authToken')
-    setUser(null)
+  const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies
+        body: JSON.stringify({ name, email, password }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // Registration successful, user is automatically logged in
+        setUser(data.data)
+        return { success: true }
+      } else {
+        return { success: false, error: data.error || 'Registration failed' }
+      }
+    } catch (error) {
+      console.error('Registration failed:', error)
+      return { success: false, error: 'Network error occurred' }
+    }
+  }
+
+  const logout = async () => {
+    try {
+      // Call logout API to invalidate session
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include', // Include cookies
+      })
+    } catch (error) {
+      console.error('Logout API call failed:', error)
+    } finally {
+      // Always clear user state regardless of API success
+      setUser(null)
+    }
   }
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        const response = await fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        if (response.ok) {
-          const userData = await response.json()
-          setUser(userData)
+      const response = await fetch('/api/auth/settings', {
+        method: 'GET',
+        credentials: 'include', // Include cookies
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setUser(data.data)
         }
       }
     } catch (error) {
@@ -112,6 +148,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       user,
       isLoading,
       login,
+      register,
       logout,
       refreshUser
     }}>

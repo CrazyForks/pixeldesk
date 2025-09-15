@@ -13,9 +13,13 @@ model User {
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
   avatar                   String?
-  email                    String?                   @unique
+  email                    String?                   @unique  // 邮箱（兼容现有数据）
+  password                 String?                   // 密码字段（存储哈希后的密码，兼容现有数据）
   gold                     Int                       @default(50)
   name                     String
+  emailVerified            Boolean                   @default(false)  // 邮箱验证状态
+  lastLogin                DateTime?                 // 最后登录时间
+  isActive                 Boolean                   @default(true)   // 账户激活状态
   conversationParticipants ConversationParticipant[]
   sentMessages             Message[]
   statusHistory            StatusHistory[]
@@ -28,7 +32,10 @@ model User {
   postLikes                PostLike[]
   notifications            Notification[]
   relatedNotifications     Notification[] @relation("NotificationRelatedUser")
+  sessions                 UserSession[]
 
+  @@index([email])
+  @@index([isActive])
   @@map("users")
 }
 
@@ -244,4 +251,24 @@ enum NotificationType {
   POST_REPLY      // 有人回复了你的帖子
   POST_LIKE       // 有人点赞了你的帖子
   SYSTEM          // 系统通知
+}
+
+// 用户会话管理模型
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique  // JWT token或session token
+  device    String?  // 设备信息
+  ipAddress String?  // IP地址
+  userAgent String?  // 用户代理
+  isActive  Boolean  @default(true)
+  expiresAt DateTime // 过期时间
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("user_sessions")
 }
