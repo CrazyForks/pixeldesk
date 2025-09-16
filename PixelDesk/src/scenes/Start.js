@@ -328,9 +328,16 @@ export class Start extends Phaser.Scene {
     this.currentUser = sceneData.userData || this.getCurrentUserFromStorage()
 
     if (!this.currentUser) {
-      // 如果没有用户数据，跳转到注册场景
-      this.scene.start("RegisterScene")
-      return
+      // 在新的认证系统下，如果没有用户数据，创建默认临时数据
+      // React层面已经处理了认证和角色创建
+      console.log('⚠️ 没有找到用户数据，使用默认设置')
+      this.currentUser = {
+        id: 'temp_user',
+        username: 'Guest',
+        character: 'Premade_Character_48x48_01',
+        points: 50,
+        gold: 50
+      }
     }
 
     // 同步用户数据到数据库

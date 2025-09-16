@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { EventBus, CollisionEvent } from '@/lib/eventBus'
+import { useUser } from '@/contexts/UserContext'
+import CharacterCreationModal from '@/components/CharacterCreationModal'
+import { fetchPlayerData } from '@/lib/playerSync'
 
 // 声明全局函数的类型
 declare global {
@@ -85,7 +88,17 @@ const InfoPanel = dynamic(() => import('@/components/InfoPanel'), {
   ssr: false
 })
 
+// 认证模态框组件
+const AuthModal = dynamic(() => import('@/components/AuthModal'), {
+  ssr: false
+})
+
 export default function Home() {
+  // 认证相关状态
+  const { user, isLoading } = useUser()
+  const [playerExists, setPlayerExists] = useState<boolean | null>(null)
+  const [showCharacterCreation, setShowCharacterCreation] = useState(false)
+  
   const [isMobile, setIsMobile] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [collisionPlayer, setCollisionPlayer] = useState<any>(null)
@@ -134,12 +147,65 @@ export default function Home() {
   const [deviceType, setDeviceType] = useState<'mobile' | 'tablet' | 'desktop'>('desktop')
   const [isTablet, setIsTablet] = useState(false)
 
+  // 同步认证用户数据到currentUser状态
+  const syncAuthenticatedUser = useCallback(() => {
+    if (user) {
+      // 从localStorage获取游戏相关数据（如角色、积分等）
+      try {
+        const gameUserData = localStorage.getItem('pixelDeskUser')
+        if (gameUserData) {
+          const gameUser = JSON.parse(gameUserData)
+          // 合并认证用户数据和游戏数据
+          setCurrentUser({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar,
+            points: user.points || gameUser.points || 50,
+            gold: user.gold || gameUser.gold || 50,
+            // 保留游戏相关数据
+            username: gameUser.username || user.name,
+            character: gameUser.character,
+            workstationId: gameUser.workstationId,
+            workstations: gameUser.workstations || []
+          })
+        } else {
+          // 如果没有游戏数据，使用认证数据
+          setCurrentUser({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar,
+            points: user.points || 50,
+            gold: user.gold || 50,
+            username: user.name,
+            workstations: []
+          })
+        }
+      } catch (error) {
+        console.warn('Failed to load game user data:', error)
+        // 出错时使用认证数据作为后备
+        setCurrentUser({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+          points: user.points || 50,
+          gold: user.gold || 50,
+          username: user.name,
+          workstations: []
+        })
+      }
+    } else {
+      setCurrentUser(null)
+    }
+  }, [user])
+
   // 加载当前用户的工位绑定信息
   const loadUserWorkstationBinding = useCallback(async () => {
     try {
-      const userData = localStorage.getItem('pixelDeskUser')
-      if (userData) {
-        const user = JSON.parse(userData)
+      // 使用认证系统的用户数据
+      if (user?.id) {
         const response = await fetch(`/api/workstations/user-bindings?userId=${user.id}`)
         if (response.ok) {
           const data = await response.json()
@@ -166,7 +232,7 @@ export default function Home() {
     } catch (error) {
       console.warn('Failed to load user workstation binding:', error)
     }
-  }, [])
+  }, [user?.id])
 
   // 检测移动设备和加载用户数据 - 优化resize处理
   useEffect(() => {
@@ -193,19 +259,6 @@ export default function Home() {
     const debouncedCheckDeviceType = () => {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(checkDeviceType, 250) // 250ms防抖
-    }
-    
-    // 加载当前用户数据
-    const loadCurrentUser = () => {
-      try {
-        const userData = localStorage.getItem('pixelDeskUser')
-        if (userData) {
-          const user = JSON.parse(userData)
-          setCurrentUser(user)
-        }
-      } catch (error) {
-        console.warn('Failed to load user data:', error)
-      }
     }
     
     // 设置全局函数供Phaser调用
@@ -257,15 +310,22 @@ export default function Home() {
     }
     
     checkDeviceType()
-    loadCurrentUser()
     loadWorkstationStats()
-    loadUserWorkstationBinding()
     window.addEventListener('resize', debouncedCheckDeviceType)
     return () => {
       window.removeEventListener('resize', debouncedCheckDeviceType)
       clearTimeout(resizeTimeout)
     }
   }, [])
+
+  // 监听认证用户变化，同步currentUser状态
+  useEffect(() => {
+    syncAuthenticatedUser()
+    // 如果用户已登录，加载工位绑定信息
+    if (user) {
+      loadUserWorkstationBinding()
+    }
+  }, [user, loadUserWorkstationBinding])
 
   // 监听积分更新事件
   useEffect(() => {
@@ -513,6 +573,18 @@ export default function Home() {
     })
   }, [])
 
+  // 检查Player状态
+  useEffect(() => {
+    if (user && playerExists === null) {
+      fetchPlayerData().then(result => {
+        setPlayerExists(result.hasPlayer)
+        if (!result.hasPlayer) {
+          setShowCharacterCreation(true)
+        }
+      })
+    }
+  }, [user, playerExists])
+
   // 关闭玩家点击弹窗
   const handlePlayerClickModalClose = useCallback(() => {
     setPlayerClickModal({
@@ -593,7 +665,54 @@ export default function Home() {
     </InfoPanel>
   ), [selectedPlayer, collisionPlayer, currentUser, workstationStats, memoizedPostStatus, isMobile, isTablet])
 
-  // Use layout manager for both mobile and desktop
+  // 如果正在加载认证状态，显示加载界面
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 border-4 border-retro-purple border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-white text-lg">Loading PixelDesk...</p>
+        </div>
+      </div>
+    )
+  }
+
+
+  // 如果用户未登录，显示认证界面
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
+        <AuthModal isOpen={true} onClose={() => {}} />
+      </div>
+    )
+  }
+
+  // 如果用户已登录但没有Player，显示角色创建界面
+  if (user && playerExists === false) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
+        <CharacterCreationModal
+          isOpen={showCharacterCreation}
+          userName={user.name}
+          onComplete={async (playerData) => {
+            console.log('角色创建成功:', playerData)
+            // 角色创建成功后，初始化Player同步系统
+            const { initializePlayerSync } = await import('@/lib/playerSync')
+            await initializePlayerSync()
+            setPlayerExists(true)
+            setShowCharacterCreation(false)
+          }}
+          onSkip={() => {
+            console.log('跳过角色创建')
+            setShowCharacterCreation(false)
+            setPlayerExists(true) // 跳过后也允许进入游戏
+          }}
+        />
+      </div>
+    )
+  }
+
+  // 用户已登录，显示游戏界面
   return (
     <div>
       <LayoutManager

@@ -62,7 +62,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
       )
 
       if (result.success) {
-        // 注册成功，用户已自动登录
+        // 注册成功，用户已自动登录 - 主页面将处理角色创建
         onSuccess?.()
       } else {
         setErrors([result.error || '注册失败，请重试'])
@@ -83,6 +83,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
       setErrors([])
     }
   }
+
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center z-50 p-4">
@@ -189,6 +190,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
           </div>
         )}
       </div>
+
     </div>
   )
 }

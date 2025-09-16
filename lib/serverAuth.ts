@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { verifyToken } from './auth'
-import { prisma } from './db'
+import prisma from './prisma'
 
 export interface AuthenticatedUser {
   id: string
@@ -66,8 +66,8 @@ export async function verifyAuthFromRequest(request: NextRequest): Promise<AuthR
     const userData: AuthenticatedUser = {
       id: user.id,
       name: user.name,
-      email: user.email || '',
-      avatar: user.avatar,
+      email: user.email!,
+      avatar: user.avatar || undefined,
       points: user.points,
       gold: user.gold,
       emailVerified: user.emailVerified

@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { initializePlayerSync, clearPlayerFromLocalStorage } from '@/lib/playerSync'
 
 interface User {
   id: string
@@ -41,6 +42,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
           const data = await response.json()
           if (data.success && data.data) {
             setUser(data.data)
+            // Initialize player sync for authenticated user
+            await initializePlayerSync()
           }
         } else {
           // Don't log error for expected auth failures
@@ -74,6 +77,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const data = await response.json()
         if (data.success && data.data) {
           setUser(data.data)
+          // Initialize player sync after successful login
+          await initializePlayerSync()
           return true
         }
       }
@@ -100,6 +105,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (response.ok && data.success) {
         // Registration successful, user is automatically logged in
         setUser(data.data)
+        // Clear any existing player data from localStorage for new user
+        clearPlayerFromLocalStorage()
         return { success: true }
       } else {
         return { success: false, error: data.error || 'Registration failed' }
@@ -120,8 +127,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Logout API call failed:', error)
     } finally {
-      // Always clear user state regardless of API success
+      // Always clear user state and player data regardless of API success
       setUser(null)
+      await clearPlayerFromLocalStorage()
     }
   }
 

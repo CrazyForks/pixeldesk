@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import prisma from '@/lib/prisma'
 import { verifyToken, hashPassword, isValidPassword, isValidUsername } from '@/lib/auth'
 
 export async function PUT(request: NextRequest) {
