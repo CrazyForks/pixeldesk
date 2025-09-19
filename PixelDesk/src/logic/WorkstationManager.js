@@ -1,18 +1,21 @@
 import { Player } from '../entities/Player.js';
-import { WorkstationBindingCache, AdaptiveDebounce } from '../cache/WorkstationBindingCache.js';
+// 缓存系统已永久禁用 - 2025-09-19 修复缓存导致的玩家显示问题
+// 问题：复杂的缓存系统(WorkstationBindingCache, localStorage, Redis)导致数据不一致
+// 解决：完全禁用所有缓存，每次都从数据库获取最新数据
+// import { WorkstationBindingCache, AdaptiveDebounce } from '../cache/WorkstationBindingCache.js';
 
 export class WorkstationManager {
     constructor(scene) {
         this.scene = scene;
         this.workstations = new Map(); // 存储工位信息：id -> workstation对象
         this.userBindings = new Map();  // 存储用户绑定：workstationId -> userId
-        
-        // 视口优化相关属性
-        this.bindingCache = null;           // 工位绑定缓存实例
-        this.adaptiveDebounce = null;       // 自适应防抖实例
-        this.currentViewport = null;        // 当前视口信息
-        this.viewportUpdateDebounce = null; // 视口更新防抖定时器
-        this.isViewportOptimizationEnabled = false; // 视口优化开关
+
+        // 完全禁用视口优化和缓存系统
+        this.bindingCache = null;
+        this.adaptiveDebounce = null;
+        this.currentViewport = null;
+        this.viewportUpdateDebounce = null;
+        this.isViewportOptimizationEnabled = false; // 永久禁用
         
         this.config = {
             occupiedTint: 0x888888,    // 已占用工位的颜色 (灰色，避免反色)
@@ -230,7 +233,15 @@ export class WorkstationManager {
         this.addUserWorkstationHighlight(workstation);
         
         // 在工位上显示角色形象
+        console.log(`👤 [bindUserToWorkstation] 即将调用 addCharacterToWorkstation`);
         this.addCharacterToWorkstation(workstation, userId, userInfo);
+        console.log(`👤 [bindUserToWorkstation] addCharacterToWorkstation 调用完成:`, {
+            workstationHasCharacter: !!workstation.characterSprite,
+            characterKey: workstation.characterKey,
+            characterVisible: workstation.characterSprite?.visible,
+            characterPosition: workstation.characterSprite ?
+                { x: workstation.characterSprite.x, y: workstation.characterSprite.y } : null
+        });
 
         // 调用后端API保存绑定信息并扣除积分
         const saveResult = await this.saveWorkstationBinding(workstationId, {
@@ -271,19 +282,38 @@ export class WorkstationManager {
             }
         }
         
-        // 触发事件
+        // 触发事件（增强版本，包含更多信息）
+        console.log(`📢 [bindUserToWorkstation] 即将触发 user-bound 事件:`, {
+            workstationId,
+            userId,
+            userName: userInfo?.name,
+            remainingPoints: saveResult.remainingPoints,
+            workstationHasCharacterAfterBinding: !!workstation.characterSprite
+        });
+
         this.scene.events.emit('user-bound', {
             workstationId,
             userId,
             workstation,
             userInfo,
-            remainingPoints: saveResult.remainingPoints
+            remainingPoints: saveResult.remainingPoints,
+            characterCreated: !!workstation.characterSprite
         });
 
-        return { 
-            success: true, 
+        // 验证绑定状态
+        const finalBindingState = {
+            workstationOccupied: workstation.isOccupied,
+            workstationUserId: workstation.userId,
+            workstationHasCharacter: !!workstation.characterSprite,
+            userBindingExists: this.userBindings.has(workstationId)
+        };
+        console.log(`🔍 [bindUserToWorkstation] 结束时的绑定状态:`, finalBindingState);
+
+        return {
+            success: true,
             workstation,
-            remainingPoints: saveResult.remainingPoints 
+            remainingPoints: saveResult.remainingPoints,
+            bindingState: finalBindingState
         };
     }
 
@@ -308,12 +338,7 @@ export class WorkstationManager {
         workstation.unboundAt = Date.now();
         this.userBindings.delete(workstationId);
 
-        // 清除本地存储的绑定信息
-        const savedBindings = JSON.parse(localStorage.getItem('pixelDeskWorkstationBindings') || '{}');
-        if (savedBindings[workstationId]) {
-            delete savedBindings[workstationId];
-            localStorage.setItem('pixelDeskWorkstationBindings', JSON.stringify(savedBindings));
-        }
+        // 不再使用localStorage缓存，避免缓存问题
 
         // 恢复视觉效果
         if (workstation.sprite) {
@@ -515,28 +540,27 @@ export class WorkstationManager {
     }
     
     async syncWorkstationBindings() {
-        // 暂时禁用视口优化缓存系统，直接使用简单的API调用
-        console.log('🔄 使用简化的工位同步方法（无缓存）');
-
-        // 获取实际要处理的工位ID（包括已知绑定的工位）
-        const actualBindingIds = [219, 220, 221, 446, 655, 656, 671, 924];
+        // 完全禁用缓存系统，每次都重新获取最新数据
+        console.log('🔄 使用无缓存的工位同步方法');
 
         try {
-            // 直接请求这些工位的绑定信息
-            const bindings = await this.loadWorkstationBindingsByIds(actualBindingIds);
-            console.log(`📦 收到 ${bindings.length} 个工位绑定:`, bindings.map(b => ({ workstationId: b.workstationId, userId: b.userId, userName: b.user?.name })));
+            // 每次都重新获取所有绑定数据，不使用任何缓存
+            const allBindings = await this.loadAllWorkstationBindings();
+            console.log(`📦 收到 ${allBindings.length} 个工位绑定:`, allBindings.map(b => ({
+                workstationId: b.workstationId,
+                userId: b.userId,
+                userName: b.user?.name
+            })));
 
-            // 直接应用绑定，不使用缓存
-            this.applyBindingsDirectly(bindings);
+            // 直接应用绑定，完全不使用缓存
+            this.applyBindingsDirectly(allBindings);
 
-            console.log('✅ 工位同步完成');
+            console.log('✅ 工位同步完成（无缓存）');
             return;
         } catch (error) {
             console.error('❌ 工位同步失败:', error);
+            throw error;
         }
-
-        // 如果上面的方法失败，回退到传统方法
-        console.log('⚠️ 回退到传统全量同步方法');
     }
 
     // 直接应用绑定数据，不使用缓存
@@ -622,45 +646,10 @@ export class WorkstationManager {
         return { success: true, message: '工位状态已刷新' };
     }
 
-    loadSavedBindings() {
-        const savedBindings = JSON.parse(localStorage.getItem('pixelDeskWorkstationBindings') || '{}');
-        const now = new Date();
-        
-        Object.entries(savedBindings).forEach(([workstationId, bindingData]) => {
-            const workstation = this.workstations.get(parseInt(workstationId));
-            if (workstation) {
-                // 检查是否过期
-                const expiresAt = new Date(bindingData.expiresAt);
-                if (now > expiresAt) {
-                    // 已过期，删除保存的绑定信息
-                    delete savedBindings[workstationId];
-                    localStorage.setItem('pixelDeskWorkstationBindings', JSON.stringify(savedBindings));
-                    return;
-                }
-                
-                // 恢复工位绑定状态
-                workstation.isOccupied = true;
-                workstation.userId = bindingData.userId;
-                workstation.userInfo = bindingData.userInfo;
-                workstation.boundAt = bindingData.boundAt;
-                workstation.expiresAt = bindingData.expiresAt;
-                workstation.remainingDays = Math.ceil((expiresAt - now) / (24 * 60 * 60 * 1000));
-                
-                this.userBindings.set(parseInt(workstationId), bindingData.userId);
-                
-                // 更新视觉效果
-                if (workstation.sprite) {
-                    workstation.sprite.setTint(this.config.occupiedTint);
-                }
-                
-                // 移除交互图标，添加占用图标
-                this.removeInteractionIcon(workstation);
-                this.addOccupiedIcon(workstation);
-                
-                console.log(`恢复工位 ${workstationId} 的绑定状态`);
-            }
-        });
-    }
+    // 完全删除localStorage缓存功能，避免缓存导致的数据不一致问题
+    // loadSavedBindings() {
+    //     // 这个方法已被永久禁用，不再使用localStorage缓存
+    // }
     
     // 高亮当前用户的工位
     highlightUserWorkstation(currentUserId) {
@@ -676,14 +665,23 @@ export class WorkstationManager {
         if (workstation.userHighlight) {
             return; // 已有高亮
         }
-        
+
         // 检查 scene 是否存在且有效
         if (!this.isSceneValid()) {
             console.warn('Scene is not available or not active, skipping addUserWorkstationHighlight');
             return;
         }
-        
-        // 创建金色边框效果
+
+        // 根据到期状态选择边框颜色
+        let borderColor = 0xffd700; // 默认金色
+        let animationDuration = 1000;
+
+        if (workstation.isExpiringSoon) {
+            borderColor = 0xff6b00; // 橙色，表示即将过期
+            animationDuration = 500; // 更快的闪烁频率
+        }
+
+        // 创建高亮边框效果
         const highlight = this.scene.add.rectangle(
             workstation.position.x + workstation.size.width / 2,
             workstation.position.y + workstation.size.height / 2,
@@ -692,24 +690,82 @@ export class WorkstationManager {
             null,
             0
         );
-        highlight.setStrokeStyle(3, 0xffd700); // 金色边框
+        highlight.setStrokeStyle(3, borderColor);
         highlight.setOrigin(0.5, 0.5);
         highlight.setScrollFactor(1);
         highlight.setDepth(1003); // 在最上层
-        
+
         workstation.userHighlight = highlight;
-        
+
         // 添加闪烁效果
         this.scene.tweens.add({
             targets: highlight,
-            alpha: 0.3,
-            duration: 1000,
+            alpha: workstation.isExpiringSoon ? 0.2 : 0.3,
+            duration: animationDuration,
             ease: 'Sine.easeInOut',
             yoyo: true,
             repeat: -1
         });
+
+        // 如果即将过期，添加倒计时文本
+        if (workstation.isExpiringSoon && workstation.remainingDays !== undefined) {
+            this.addExpiryCountdown(workstation);
+        }
     }
     
+    // 添加到期倒计时文本
+    addExpiryCountdown(workstation) {
+        if (workstation.countdownText) {
+            return; // 已有倒计时文本
+        }
+
+        // 检查 scene 是否存在且有效
+        if (!this.isSceneValid()) {
+            console.warn('Scene is not available or not active, skipping addExpiryCountdown');
+            return;
+        }
+
+        const countdownText = this.scene.add.text(
+            workstation.position.x + workstation.size.width / 2,
+            workstation.position.y - 25, // 在工位上方显示
+            `${workstation.remainingDays}天`,
+            {
+                fontSize: '12px',
+                fill: workstation.remainingDays <= 1 ? '#ff0000' : '#ff6b00', // 最后一天红色，否则橙色
+                backgroundColor: '#000000',
+                padding: { x: 3, y: 2 },
+                fontFamily: 'monospace',
+                fontStyle: 'bold'
+            }
+        );
+        countdownText.setOrigin(0.5, 0.5);
+        countdownText.setScrollFactor(1);
+        countdownText.setDepth(1004); // 在高亮上方
+
+        workstation.countdownText = countdownText;
+
+        // 如果是最后一天，添加闪烁效果
+        if (workstation.remainingDays <= 1) {
+            this.scene.tweens.add({
+                targets: countdownText,
+                alpha: 0.3,
+                duration: 300,
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1
+            });
+        }
+    }
+
+    // 移除到期倒计时文本
+    removeExpiryCountdown(workstation) {
+        if (workstation.countdownText) {
+            this.scene.tweens.killTweensOf(workstation.countdownText);
+            workstation.countdownText.destroy();
+            workstation.countdownText = null;
+        }
+    }
+
     removeUserWorkstationHighlight(workstation) {
         if (workstation.userHighlight) {
             // 停止闪烁动画
@@ -718,10 +774,13 @@ export class WorkstationManager {
             workstation.userHighlight.destroy();
             workstation.userHighlight = null;
         }
+
+        // 同时移除倒计时文本
+        this.removeExpiryCountdown(workstation);
     }
     
     async saveWorkstationBinding(workstationId, bindingData) {
-        // 调用后端API保存工位绑定信息
+        // 只调用后端API，完全不使用localStorage缓存
         try {
             const response = await fetch('/api/workstations/bindings', {
                 method: 'POST',
@@ -736,13 +795,8 @@ export class WorkstationManager {
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
-                // 同时保存到 localStorage 作为缓存
-                const savedBindings = JSON.parse(localStorage.getItem('pixelDeskWorkstationBindings') || '{}');
-                savedBindings[workstationId] = bindingData;
-                localStorage.setItem('pixelDeskWorkstationBindings', JSON.stringify(savedBindings));
-                
                 console.log('工位绑定信息已保存到服务器:', result.data);
                 return { success: true, remainingPoints: result.data.remainingPoints };
             } else {
@@ -751,18 +805,12 @@ export class WorkstationManager {
             }
         } catch (error) {
             console.error('调用工位绑定API失败:', error);
-            // API失败时回退到本地存储
-            const savedBindings = JSON.parse(localStorage.getItem('pixelDeskWorkstationBindings') || '{}');
-            savedBindings[workstationId] = bindingData;
-            localStorage.setItem('pixelDeskWorkstationBindings', JSON.stringify(savedBindings));
-            
-            console.log('工位绑定信息已保存到本地:', bindingData);
-            return { success: true, fallback: true };
+            return { success: false, error: error.message };
         }
     }
 
     async updateUserPoints(userId, pointsChange) {
-        // 调用后端API更新用户积分
+        // 只调用后端API，不使用localStorage缓存
         try {
             const response = await fetch('/api/users', {
                 method: 'PUT',
@@ -777,14 +825,8 @@ export class WorkstationManager {
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
-                // 更新本地存储的用户数据
-                const userData = JSON.parse(localStorage.getItem('pixelDeskUser') || '{}');
-                userData.points = result.data.points;
-                userData.gold = result.data.points;
-                localStorage.setItem('pixelDeskUser', JSON.stringify(userData));
-                
                 console.log(`用户 ${userId} 积分已更新到服务器: ${pointsChange > 0 ? '+' : ''}${pointsChange}, 新积分: ${result.data.points}`);
                 return { success: true, newPoints: result.data.points };
             } else {
@@ -793,17 +835,7 @@ export class WorkstationManager {
             }
         } catch (error) {
             console.error('调用更新用户积分API失败:', error);
-            // API失败时回退到本地存储
-            const userData = JSON.parse(localStorage.getItem('pixelDeskUser') || '{}');
-            const currentPoints = userData.points || userData.gold || 0;
-            const newPoints = Math.max(0, currentPoints + pointsChange);
-            
-            userData.points = newPoints;
-            userData.gold = newPoints;
-            localStorage.setItem('pixelDeskUser', JSON.stringify(userData));
-            
-            console.log(`用户 ${userId} 积分已更新到本地: ${pointsChange > 0 ? '+' : ''}${pointsChange}, 新积分: ${newPoints}`);
-            return { success: true, newPoints, fallback: true };
+            return { success: false, error: error.message };
         }
     }
 
@@ -878,7 +910,16 @@ export class WorkstationManager {
             userId,
             userInfo,
             hasExistingCharacter: !!workstation.characterSprite,
-            sceneValid: this.isSceneValid()
+            sceneValid: this.isSceneValid(),
+            workstationPosition: workstation.position,
+            workstationDirection: workstation.direction,
+            sceneState: {
+                hasScene: !!this.scene,
+                hasAdd: !!this.scene?.add,
+                hasTextures: !!this.scene?.textures,
+                hasLoad: !!this.scene?.load,
+                sceneActive: this.scene?.scene?.isActive()
+            }
         });
 
         if (workstation.characterSprite) {
@@ -892,18 +933,32 @@ export class WorkstationManager {
             return;
         }
 
-        // 如果是当前用户绑定的工位，则不显示角色形象
+        // 调试：检查当前用户信息
         const currentUser = this.scene.currentUser;
-        if (currentUser && workstation.userId === currentUser.id) {
-            console.log(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 是当前用户 ${currentUser.id} 的工位，不显示角色`);
-            return;
-        }
+        console.log(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 调试信息:`, {
+            currentUserId: currentUser?.id,
+            workstationUserId: workstation.userId,
+            isCurrentUser: currentUser && workstation.userId === currentUser.id,
+            willShowCharacter: true // 暂时总是显示角色
+        });
 
-        console.log(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 当前用户: ${currentUser?.id}，工位用户: ${workstation.userId}，可以显示角色`);
+        // 暂时注释掉不显示当前用户角色的逻辑，调试角色显示问题
+        // if (currentUser && workstation.userId === currentUser.id) {
+        //     console.log(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 是当前用户 ${currentUser.id} 的工位，不显示角色`);
+        //     return;
+        // }
+
+        console.log(`🎯 [addCharacterToWorkstation] 强制显示所有角色以进行调试`);
 
         
         // 根据工位方向计算角色位置
         const { x: charX, y: charY, direction: characterDirection } = this.calculateCharacterPosition(workstation);
+        console.log(`📐 [addCharacterToWorkstation] 计算角色位置:`, {
+            charX, charY, characterDirection,
+            workstationPos: workstation.position,
+            workstationSize: workstation.size,
+            workstationDirection: workstation.direction
+        });
         
         // 确定角色图片 - 使用用户选择的角色形象
         let characterKey = 'Premade_Character_48x48_01'; // 默认角色
@@ -911,31 +966,50 @@ export class WorkstationManager {
             // 优先使用用户选择的角色形象
             characterKey = userInfo.character || userInfo.avatar;
         }
+        console.log(`🎨 [addCharacterToWorkstation] 角色图片选择:`, {
+            characterKey,
+            userInfoCharacter: userInfo?.character,
+            userInfoAvatar: userInfo?.avatar,
+            finalKey: characterKey
+        });
         
         // 尝试加载角色图片
         try {
+            console.log(`🔍 [addCharacterToWorkstation] 检查场景纹理管理器:`, {
+                hasScene: !!this.scene,
+                hasTextures: !!this.scene?.textures,
+                hasLoad: !!this.scene?.load,
+                texturesExists: this.scene?.textures?.exists(characterKey)
+            });
+
             // 检查 scene 是否有纹理管理器
             if (!this.scene || !this.scene.textures || !this.scene.load) {
-                console.warn('Scene textures or loader not available, using default character');
+                console.warn('⚠️ [addCharacterToWorkstation] Scene textures or loader not available, using default character');
                 this.createCharacterSprite(workstation, charX, charY, 'Premade_Character_48x48_01', userId, characterDirection);
                 return;
             }
             
             // 如果图片还没加载，先加载
             if (!this.scene.textures.exists(characterKey)) {
+                console.log(`📥 [addCharacterToWorkstation] 加载角色纹理: ${characterKey}`);
                 this.scene.load.image(characterKey, `/assets/characters/${characterKey}.png`);
                 this.scene.load.once(`complete`, () => {
+                    console.log(`✅ [addCharacterToWorkstation] 纹理加载完成: ${characterKey}`);
                     this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
                 });
                 this.scene.load.start();
             } else {
+                console.log(`✅ [addCharacterToWorkstation] 纹理已存在: ${characterKey}`);
                 this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
             }
         } catch (error) {
-            console.warn('无法加载角色图片:', characterKey, error);
+            console.error('❌ [addCharacterToWorkstation] 无法加载角色图片:', characterKey, error);
             // 使用默认角色
             if (characterKey !== 'Premade_Character_48x48_01') {
+                console.log(`🔄 [addCharacterToWorkstation] 回退到默认角色`);
                 this.createCharacterSprite(workstation, charX, charY, 'Premade_Character_48x48_01', userId, characterDirection);
+            } else {
+                console.error(`❌ [addCharacterToWorkstation] 连默认角色都无法创建`);
             }
         }
     }
@@ -971,54 +1045,116 @@ export class WorkstationManager {
         console.log(`👤 [createCharacterSprite] 创建Player实例，数据:`, playerData);
 
         try {
+            console.log(`🚀 [createCharacterSprite] 开始创建 Player 实例:`, {
+                scene: !!this.scene,
+                position: { x, y },
+                characterKey,
+                playerData,
+                PlayerClass: typeof Player
+            });
+
             // 创建Player实例（禁用移动和状态保存，标记为其他玩家）
             const character = new Player(this.scene, x, y, characterKey, false, false, true, playerData);
-            console.log(`✅ [createCharacterSprite] Player实例创建成功:`, character);
+            console.log(`✅ [createCharacterSprite] Player实例创建成功:`, {
+                character: !!character,
+                characterId: character?.playerData?.id,
+                characterName: character?.playerData?.name,
+                characterPosition: { x: character?.x, y: character?.y },
+                characterTexture: character?.texture?.key,
+                characterVisible: character?.visible,
+                characterActive: character?.active
+            });
 
             // 设置角色朝向
-            character.setDirectionFrame(characterDirection);
-            console.log(`🧭 [createCharacterSprite] 角色朝向设置完成: ${characterDirection}`);
+            if (typeof character.setDirectionFrame === 'function') {
+                character.setDirectionFrame(characterDirection);
+                console.log(`🧭 [createCharacterSprite] 角色朝向设置完成: ${characterDirection}`);
+            } else {
+                console.warn(`⚠️ [createCharacterSprite] character.setDirectionFrame 不是一个函数`);
+            }
 
             // 设置缩放（稍微缩小一点）
             character.setScale(0.8);
+            console.log(`🔍 [createCharacterSprite] 角色缩放设置完成: 0.8`);
 
             // 设置深度
             character.setDepth(1000); // 在工位上方
+            console.log(`🔍 [createCharacterSprite] 角色深度设置完成: 1000`);
 
             // 添加点击事件
-            character.setInteractive(new Phaser.Geom.Rectangle(-20, -30, 40, 60), Phaser.Geom.Rectangle.Contains);
-            character.on('pointerdown', () => {
-                this.onCharacterClick(userId, workstation);
-            });
+            try {
+                character.setInteractive(new Phaser.Geom.Rectangle(-20, -30, 40, 60), Phaser.Geom.Rectangle.Contains);
+                character.on('pointerdown', () => {
+                    this.onCharacterClick(userId, workstation);
+                });
+                console.log(`🔧 [createCharacterSprite] 角色交互设置完成`);
+            } catch (interactiveError) {
+                console.warn(`⚠️ [createCharacterSprite] 设置交互失败:`, interactiveError);
+            }
 
             // 添加悬停效果
-            character.on('pointerover', () => {
-                character.setScale(0.88); // 稍微放大
-                if (this.scene && this.scene.input) {
-                    this.scene.input.setDefaultCursor('pointer');
-                }
-            });
+            try {
+                character.on('pointerover', () => {
+                    character.setScale(0.88); // 稍微放大
+                    if (this.scene && this.scene.input) {
+                        this.scene.input.setDefaultCursor('pointer');
+                    }
+                });
 
-            character.on('pointerout', () => {
-                character.setScale(0.8); // 恢复原大小
-                if (this.scene && this.scene.input) {
-                    this.scene.input.setDefaultCursor('default');
-                }
-            });
+                character.on('pointerout', () => {
+                    character.setScale(0.8); // 恢复原大小
+                    if (this.scene && this.scene.input) {
+                        this.scene.input.setDefaultCursor('default');
+                    }
+                });
+                console.log(`🔧 [createCharacterSprite] 角色悬停效果设置完成`);
+            } catch (hoverError) {
+                console.warn(`⚠️ [createCharacterSprite] 设置悬停效果失败:`, hoverError);
+            }
 
             // 添加到场景
-            this.scene.add.existing(character);
-            console.log(`🎬 [createCharacterSprite] 角色已添加到场景`);
+            try {
+                this.scene.add.existing(character);
+                console.log(`🎬 [createCharacterSprite] 角色已添加到场景`);
+
+                // 验证角色是否正确添加到场景
+                const sceneChildren = this.scene.children.list;
+                const isInScene = sceneChildren.includes(character);
+                console.log(`🔍 [createCharacterSprite] 角色在场景中验证:`, {
+                    isInScene,
+                    sceneChildrenCount: sceneChildren.length,
+                    characterInList: isInScene,
+                    characterPosition: { x: character.x, y: character.y },
+                    characterVisible: character.visible
+                });
+            } catch (addError) {
+                console.error(`❌ [createCharacterSprite] 添加角色到场景失败:`, addError);
+                return; // 如果添加失败，直接返回
+            }
 
             // 保存引用
             workstation.characterSprite = character;
             workstation.characterKey = characterKey;
             workstation.characterDirection = characterDirection;
 
-            console.log(`🎯 [createCharacterSprite] 工位 ${workstation.id} 角色创建完成: ${characterKey}, 位置: (${x}, ${y}), 方向: ${characterDirection}`);
+            console.log(`✅ [createCharacterSprite] 工位 ${workstation.id} 角色创建完成:`, {
+                characterKey,
+                position: { x, y },
+                direction: characterDirection,
+                workstationHasCharacterSprite: !!workstation.characterSprite,
+                characterSpriteId: workstation.characterSprite?.playerData?.id,
+                finalCharacterVisible: character.visible,
+                finalCharacterActive: character.active
+            });
 
         } catch (error) {
-            console.error(`❌ [createCharacterSprite] 工位 ${workstation.id} 角色创建失败:`, error);
+            console.error(`❌ [createCharacterSprite] 工位 ${workstation.id} 角色创建失败:`, {
+                error: error.message,
+                stack: error.stack,
+                characterKey,
+                position: { x, y },
+                playerData
+            });
         }
     }
     
@@ -1364,381 +1500,121 @@ export class WorkstationManager {
     gracefulClearBindings() {
         // 优雅地清理绑定，避免视觉闪烁
         console.log('优雅清理工位绑定...');
-        
+
         // 逐个清理，给每个清理操作一些延迟
         const workstationIds = Array.from(this.userBindings.keys());
         let clearCount = 0;
-        
+
         workstationIds.forEach((workstationId, index) => {
             setTimeout(() => {
                 this.unbindUserFromWorkstation(workstationId);
                 clearCount++;
-                
+
                 if (clearCount === workstationIds.length) {
                     console.log(`优雅清理完成，共清理 ${clearCount} 个工位绑定`);
                 }
             }, index * 50); // 每个清理操作间隔50ms
         });
     }
+
+    // 强制重新同步所有工位绑定的方法
+    async forceRefreshAllBindings() {
+        console.log('🔄 强制重新同步所有工位绑定...');
+
+        try {
+            // 1. 清理当前所有绑定状态（不调用API，只清理本地状态）
+            this.workstations.forEach((workstation, workstationId) => {
+                if (workstation.isOccupied) {
+                    // 恢复为未绑定状态
+                    workstation.isOccupied = false;
+                    workstation.userId = null;
+                    workstation.userInfo = null;
+                    this.userBindings.delete(workstationId);
+
+                    // 清理视觉效果
+                    if (workstation.sprite) {
+                        workstation.sprite.clearTint();
+                    }
+                    this.removeOccupiedIcon(workstation);
+                    this.removeCharacterFromWorkstation(workstation);
+                    this.removeUserWorkstationHighlight(workstation);
+                    this.addInteractionIcon(workstation);
+                }
+            });
+
+            // 2. 重新获取所有绑定数据
+            const allBindings = await this.loadAllWorkstationBindings();
+            console.log(`📦 获取到 ${allBindings.length} 个工位绑定数据:`, allBindings.map(b => ({
+                workstationId: b.workstationId,
+                userId: b.userId,
+                userName: b.user?.name
+            })));
+
+            // 3. 应用所有绑定
+            let appliedCount = 0;
+            allBindings.forEach(binding => {
+                const workstation = this.workstations.get(parseInt(binding.workstationId));
+                if (workstation) {
+                    console.log(`✅ 应用工位 ${binding.workstationId} 绑定: ${binding.user?.name}`);
+                    this.applyBindingToWorkstation(workstation, binding);
+                    appliedCount++;
+                } else {
+                    console.warn(`⚠️ 工位 ${binding.workstationId} 在地图中不存在`);
+                }
+            });
+
+            console.log(`✅ 强制同步完成: ${appliedCount}/${allBindings.length} 个绑定已应用`);
+            return { success: true, applied: appliedCount, total: allBindings.length };
+
+        } catch (error) {
+            console.error('❌ 强制同步失败:', error);
+            return { success: false, error: error.message };
+        }
+    }
     
-    // ===== 视口优化系统 =====
-    
+    // ===== 视口优化系统已永久禁用 =====
+
     /**
-     * 启用视口优化功能
+     * 视口优化功能已永久禁用，避免缓存问题
      */
     enableViewportOptimization() {
-        if (this.isViewportOptimizationEnabled) {
-            console.log('🔄 视口优化已经启用');
-            return;
-        }
-        
-        // 初始化缓存和防抖
-        this.bindingCache = new WorkstationBindingCache({
-            itemExpiry: 30000,     // 30秒缓存
-            regionExpiry: 60000,   // 60秒区域缓存
-            maxItems: 2000,        // 适应大地图
-            maxRegions: 50,
-            gridSize: 500          // 500像素网格
-        });
-        
-        this.adaptiveDebounce = new AdaptiveDebounce(
-            this.config.debounceDelay,  // 基础延迟
-            2000                        // 最大延迟
-        );
-        
-        // 设置视口监听
-        this.setupViewportListeners();
-        
-        // 定期清理缓存
-        this.cacheCleanupInterval = setInterval(() => {
-            if (this.bindingCache) {
-                this.bindingCache.cleanup();
-            }
-        }, 60000); // 每分钟清理一次
-        
-        // 替换原有的同步方法
-        this.originalSyncMethod = this.syncWorkstationBindings;
-        this.syncWorkstationBindings = this.syncVisibleWorkstationBindings.bind(this);
-        
-        this.isViewportOptimizationEnabled = true;
-        console.log('🚀 工位视口优化已启用');
+        console.log('🚫 视口优化已永久禁用，避免缓存问题');
+        return;
     }
     
     /**
-     * 禁用视口优化功能
+     * 视口优化功能已永久禁用
      */
     disableViewportOptimization() {
-        if (!this.isViewportOptimizationEnabled) return;
-        
-        // 清理防抖定时器
-        if (this.viewportUpdateDebounce) {
-            clearTimeout(this.viewportUpdateDebounce);
-            this.viewportUpdateDebounce = null;
-        }
-        
-        // 清理缓存清理定时器
-        if (this.cacheCleanupInterval) {
-            clearInterval(this.cacheCleanupInterval);
-            this.cacheCleanupInterval = null;
-        }
-        
-        // 恢复原有的同步方法
-        if (this.originalSyncMethod) {
-            this.syncWorkstationBindings = this.originalSyncMethod;
-        }
-        
-        // 清理缓存
-        if (this.bindingCache) {
-            this.bindingCache.clear();
-            this.bindingCache = null;
-        }
-        
-        this.adaptiveDebounce = null;
-        this.currentViewport = null;
-        this.isViewportOptimizationEnabled = false;
-        
-        console.log('🛑 工位视口优化已禁用');
+        console.log('🚫 视口优化已永久禁用');
+        return;
     }
     
-    /**
-     * 设置视口变化监听器
-     */
-    setupViewportListeners() {
-        if (!this.scene.cameras?.main) {
-            console.warn('⚠️ 相机不可用，跳过视口监听设置');
-            return;
-        }
-        
-        const camera = this.scene.cameras.main;
-        
-        // 监听相机移动
-        camera.on('cameramove', () => {
-            this.onViewportChange('move');
-        });
-        
-        // 监听相机缩放
-        camera.on('camerazoom', () => {
-            this.onViewportChange('zoom');
-        });
-        
-        // 监听场景resize事件
-        this.scene.scale.on('resize', () => {
-            this.onViewportChange('resize');
-        });
-        
-        console.log('👀 视口变化监听器已设置');
-    }
+    // 所有视口优化相关方法已永久禁用
+    setupViewportListeners() { /* 已禁用 */ }
+    onViewportChange() { /* 已禁用 */ }
     
-    /**
-     * 处理视口变化事件
-     */
-    onViewportChange(trigger) {
-        if (!this.isViewportOptimizationEnabled) return;
-        
-        // 记录移动事件用于自适应防抖
-        if (this.adaptiveDebounce) {
-            this.adaptiveDebounce.recordMove();
-        }
-        
-        // 清除之前的防抖定时器
-        if (this.viewportUpdateDebounce) {
-            clearTimeout(this.viewportUpdateDebounce);
-        }
-        
-        // 获取最优防抖延迟
-        const delay = this.adaptiveDebounce ? 
-            this.adaptiveDebounce.getOptimalDelay() : 
-            this.config.debounceDelay;
-        
-        // 设置防抖更新
-        this.viewportUpdateDebounce = setTimeout(() => {
-            this.updateVisibleWorkstations(trigger);
-        }, delay);
-    }
+    // 所有视口优化相关方法已永久禁用，避免缓存问题
+    async updateVisibleWorkstations() { /* 已禁用 */ }
+    getCurrentViewport() { return { x: 0, y: 0, width: 800, height: 600, zoom: 1 }; }
+    shouldUpdateViewport() { return false; }
+    getWorkstationsInViewport() { return []; }
     
-    /**
-     * 更新可视范围内的工位绑定
-     */
-    async updateVisibleWorkstations(trigger) {
-        if (!this.isViewportOptimizationEnabled) return;
-        
-        const newViewport = this.getCurrentViewport();
-        
-        // 检查是否需要更新
-        if (!this.shouldUpdateViewport(newViewport, trigger)) {
-            console.log(`🚫 跳过视口更新: ${trigger}, 移动距离不足`);
-            return;
-        }
-        
-        console.log(`🔄 视口变化触发工位更新: ${trigger}, 范围: ${JSON.stringify(newViewport)}`);
-        
-        // 执行优化的同步
-        await this.syncVisibleWorkstationBindings();
-        
-        // 更新当前视口
-        this.currentViewport = newViewport;
-    }
-    
-    /**
-     * 获取当前视口信息
-     */
-    getCurrentViewport() {
-        if (!this.scene.cameras?.main) {
-            console.warn('⚠️ 相机不可用');
-            return { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
-        }
-        
-        const camera = this.scene.cameras.main;
-        const buffer = this.config.viewportBuffer;
-        
-        return {
-            x: Math.floor(camera.scrollX - buffer),
-            y: Math.floor(camera.scrollY - buffer),
-            width: Math.ceil(camera.width + buffer * 2),
-            height: Math.ceil(camera.height + buffer * 2),
-            zoom: camera.zoom
-        };
-    }
-    
-    /**
-     * 判断是否需要更新视口
-     */
-    shouldUpdateViewport(newViewport, trigger) {
-        if (!this.currentViewport) return true;
-        
-        // 缩放和窗口变化总是更新
-        if (trigger === 'zoom' || trigger === 'resize') return true;
-        
-        // 移动距离检查
-        const dx = Math.abs(newViewport.x - this.currentViewport.x);
-        const dy = Math.abs(newViewport.y - this.currentViewport.y);
-        const moveDistance = Math.sqrt(dx * dx + dy * dy);
-        
-        return moveDistance >= this.config.minMoveDistance;
-    }
-    
-    /**
-     * 获取视口范围内的工位ID列表
-     */
-    getWorkstationsInViewport(viewport) {
-        return this.findWorkstationsInArea(
-            viewport.x,
-            viewport.y,
-            viewport.width,
-            viewport.height
-        ).map(w => w.id);
-    }
-    
-    /**
-     * 基于视口的优化同步方法
-     */
+    // 视口优化同步方法已永久禁用
     async syncVisibleWorkstationBindings() {
-        if (!this.isViewportOptimizationEnabled || !this.bindingCache) {
-            // 回退到原有方法
-            console.log('🔄 回退到原有同步方法');
-            return await this.originalSyncMethod?.call(this) || this.loadAllWorkstationBindings();
-        }
-        
-        const viewport = this.getCurrentViewport();
-
-        // 检查区域缓存 - 暂时禁用以调试问题
-        const isRegionCached = this.bindingCache.isRegionCached(viewport);
-        console.log(`🔍 [syncVisibleWorkstationBindings] 区域缓存检查:`, {
-            isRegionCached,
-            viewport,
-            regionCacheSize: this.bindingCache.regionCache.size
-        });
-
-        if (false && isRegionCached) { // 暂时禁用区域缓存
-            console.log('💾 使用缓存的区域数据，跳过网络请求');
-            return;
-        }
-        
-        // 获取可视范围内的工位ID
-        const visibleIds = this.getWorkstationsInViewport(viewport);
-
-        // 获取实际要处理的工位ID（包括已知绑定的工位）
-        const actualBindingIds = [219, 220, 221, 446, 655, 656, 671, 924];
-        const extendedIds = [...new Set([...visibleIds, ...actualBindingIds])];
-
-        if (extendedIds.length === 0) {
-            console.log('👁️ 当前视口内没有工位');
-            return;
-        }
-
-        console.log(`🔍 [syncVisibleWorkstationBindings] 扩展工位范围: 原始${visibleIds.length}个 + 已知绑定${actualBindingIds.length}个 = 总计${extendedIds.length}个`);
-
-        // 检查缓存命中情况 - 使用扩展的工位ID列表
-        const { cached, uncached } = this.bindingCache.getCachedBindings(extendedIds);
-
-        console.log(`📊 视口同步统计: 总计 ${extendedIds.length} 个工位, ${Object.keys(cached).length} 个缓存命中, ${uncached.length} 个需要请求`);
-
-        // 只请求未缓存的工位
-        if (uncached.length > 0) {
-            console.log(`🌐 [syncVisibleWorkstationBindings] 请求未缓存的工位:`, uncached);
-            const newBindings = await this.loadWorkstationBindingsByIds(uncached);
-            console.log(`📦 [syncVisibleWorkstationBindings] 收到 ${newBindings.length} 个新绑定:`, newBindings.map(b => ({ workstationId: b.workstationId, userId: b.userId, userName: b.user?.name })));
-
-            // 缓存新的绑定数据
-            this.bindingCache.cacheBindings(newBindings);
-            console.log(`💾 [syncVisibleWorkstationBindings] 新绑定已缓存`);
-        }
-
-        // 缓存这个区域的查询 - 包括扩展的工位
-        this.bindingCache.cacheRegion(viewport, extendedIds);
-
-        // 应用所有绑定状态 - 包括扩展范围的工位
-        this.applyVisibleBindings(extendedIds);
-
-        // 清理不可见区域的渲染元素
-        this.cleanupInvisibleBindings(visibleIds);
+        console.log('🚫 视口优化同步已永久禁用，使用标准同步');
+        return await this.syncWorkstationBindings();
     }
     
-    /**
-     * 请求指定工位的绑定信息
-     */
-    async loadWorkstationBindingsByIds(workstationIds) {
-        try {
-            // 临时修复：添加已知绑定的工位ID，确保登录用户也能看到其他玩家
-            const actualBindingIds = [219, 220, 221, 446, 655, 656, 671, 924]
-            const extendedIds = [...new Set([...workstationIds, ...actualBindingIds])]
-
-            console.log(`🌐 请求 ${extendedIds.length} 个工位的绑定信息 (包含已知绑定: ${actualBindingIds.length} 个)`);
-
-            const response = await fetch('/api/workstations/visible-bindings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    workstationIds: extendedIds,
-                    viewport: this.getCurrentViewport()
-                })
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                console.log(`✅ 成功获取 ${result.data.length} 个工位绑定, 查询耗时: ${result.stats.queryTime}ms`);
-                return result.data;
-            } else {
-                console.error('❌ 获取工位绑定失败:', result.error);
-                return [];
-            }
-        } catch (error) {
-            console.error('❌ 请求工位绑定时出错:', error);
-            return [];
-        }
+    // 这个方法已不再需要，因为我们直接使用loadAllWorkstationBindings
+    async loadWorkstationBindingsByIds() {
+        console.log('🚫 loadWorkstationBindingsByIds已禁用，使用loadAllWorkstationBindings');
+        return await this.loadAllWorkstationBindings();
     }
     
-    /**
-     * 应用可视范围内的工位绑定状态
-     */
-    applyVisibleBindings(visibleWorkstationIds) {
-        console.log(`🔄 [applyVisibleBindings] 开始应用 ${visibleWorkstationIds.length} 个工位的绑定状态:`, visibleWorkstationIds);
-
-        let appliedCount = 0;
-        let cachedCount = 0;
-        let unboundCount = 0;
-
-        visibleWorkstationIds.forEach(workstationId => {
-            const workstation = this.workstations.get(workstationId);
-            if (!workstation) {
-                console.warn(`⚠️ [applyVisibleBindings] 工位 ${workstationId} 不存在于workstations Map中`);
-                return;
-            }
-
-            // 尝试获取缓存绑定 - 确保工位ID类型一致
-            const cachedBinding = this.bindingCache.getCachedBinding(parseInt(workstationId));
-
-            console.log(`🔍 [applyVisibleBindings] 工位 ${workstationId} 缓存查询:`, {
-                workstationIdType: typeof workstationId,
-                parsedId: parseInt(workstationId),
-                hasCachedBinding: !!cachedBinding,
-                cacheSize: this.bindingCache.cache.size
-            });
-
-            if (cachedBinding) {
-                console.log(`✅ [applyVisibleBindings] 工位 ${workstationId} 有缓存绑定:`, {
-                    userId: cachedBinding.userId,
-                    userName: cachedBinding.user?.name,
-                    boundAt: cachedBinding.boundAt
-                });
-                this.applyBindingToWorkstation(workstation, cachedBinding);
-                appliedCount++;
-                cachedCount++;
-            } else {
-                console.log(`❌ [applyVisibleBindings] 工位 ${workstationId} 无缓存绑定，设为未绑定状态`);
-                this.ensureWorkstationUnbound(workstation);
-                unboundCount++;
-            }
-        });
-
-        console.log(`📊 [applyVisibleBindings] 完成: ${appliedCount} 个应用绑定, ${cachedCount} 个来自缓存, ${unboundCount} 个设为未绑定`);
-
-        // 输出当前缓存状态用于调试
-        console.log(`🗄️ [applyVisibleBindings] 当前缓存状态:`, {
-            cacheSize: this.bindingCache.cache.size,
-            cachedKeys: Array.from(this.bindingCache.cache.keys())
-        });
+    // 视口绑定应用方法已禁用
+    applyVisibleBindings() {
+        console.log('🚫 applyVisibleBindings已禁用');
     }
     
     /**
@@ -1748,6 +1624,8 @@ export class WorkstationManager {
         console.log(`🎯 [applyBindingToWorkstation] 开始应用工位 ${workstation.id} 的绑定:`, {
             userId: binding.userId,
             userName: binding.user?.name,
+            remainingDays: binding.remainingDays,
+            isExpiringSoon: binding.isExpiringSoon,
             workstationSprite: !!workstation.sprite,
             currentlyOccupied: workstation.isOccupied,
             hasCharacterSprite: !!workstation.characterSprite
@@ -1762,9 +1640,12 @@ export class WorkstationManager {
             points: binding.user?.points
         };
         workstation.boundAt = binding.boundAt;
+        workstation.expiresAt = binding.expiresAt;
+        workstation.remainingDays = binding.remainingDays || 30;
+        workstation.isExpiringSoon = binding.isExpiringSoon || false;
 
         this.userBindings.set(parseInt(workstation.id), binding.userId);
-        console.log(`✅ [applyBindingToWorkstation] 工位 ${workstation.id} 状态已更新: isOccupied=${workstation.isOccupied}, userId=${workstation.userId}`);
+        console.log(`✅ [applyBindingToWorkstation] 工位 ${workstation.id} 状态已更新: isOccupied=${workstation.isOccupied}, userId=${workstation.userId}, remainingDays=${workstation.remainingDays}`);
 
         // 更新视觉效果
         if (workstation.sprite) {
@@ -1779,13 +1660,18 @@ export class WorkstationManager {
         this.addOccupiedIcon(workstation);
         console.log(`🏷️ [applyBindingToWorkstation] 工位 ${workstation.id} 图标已更新`);
 
+        // 添加用户工位高亮（如果即将过期，使用警告颜色）
+        this.addUserWorkstationHighlight(workstation);
+
         // 添加角色显示
         console.log(`👤 [applyBindingToWorkstation] 开始为工位 ${workstation.id} 添加角色显示`);
         this.addCharacterToWorkstation(workstation, binding.userId, workstation.userInfo);
 
         console.log(`🎯 [applyBindingToWorkstation] 工位 ${workstation.id} 绑定应用完成`, {
             hasCharacterAfter: !!workstation.characterSprite,
-            characterKey: workstation.characterKey
+            characterKey: workstation.characterKey,
+            remainingDays: workstation.remainingDays,
+            isExpiringSoon: workstation.isExpiringSoon
         });
     }
     
@@ -1810,60 +1696,10 @@ export class WorkstationManager {
         this.addInteractionIcon(workstation);
     }
     
-    /**
-     * 清理不可见区域的渲染元素
-     */
-    cleanupInvisibleBindings(visibleWorkstationIds) {
-        const visibleSet = new Set(visibleWorkstationIds);
-        let cleanedCount = 0;
-        
-        this.workstations.forEach((workstation, id) => {
-            if (!visibleSet.has(id)) {
-                // 移除不可见工位的渲染元素，节省性能
-                this.removeCharacterFromWorkstation(workstation);
-                this.removeInteractionIcon(workstation);
-                this.removeOccupiedIcon(workstation);
-                cleanedCount++;
-            }
-        });
-        
-        if (cleanedCount > 0) {
-            console.log(`🧹 清理了 ${cleanedCount} 个不可见工位的渲染元素`);
-        }
-    }
-    
-    /**
-     * 获取视口优化统计信息
-     */
-    getViewportStats() {
-        if (!this.isViewportOptimizationEnabled) {
-            return { enabled: false };
-        }
-        
-        const viewport = this.getCurrentViewport();
-        const visibleIds = this.getWorkstationsInViewport(viewport);
-        
-        return {
-            enabled: true,
-            viewport,
-            workstations: {
-                total: this.workstations.size,
-                visible: visibleIds.length,
-                efficiency: ((visibleIds.length / this.workstations.size) * 100).toFixed(1) + '%'
-            },
-            cache: this.bindingCache ? this.bindingCache.getStats() : null,
-            debounce: this.adaptiveDebounce ? this.adaptiveDebounce.getStats() : null
-        };
-    }
-    
-    /**
-     * 手动工位绑定变更时的缓存失效
-     */
-    invalidateWorkstationBinding(workstationId) {
-        if (this.bindingCache) {
-            this.bindingCache.invalidateWorkstation(workstationId);
-        }
-    }
+    // 所有视口优化相关方法已永久禁用
+    cleanupInvisibleBindings() { /* 已禁用 */ }
+    getViewportStats() { return { enabled: false, message: '视口优化已永久禁用' }; }
+    invalidateWorkstationBinding() { /* 已禁用 */ }
     
     destroy() {
         // 清理视口优化相关资源

@@ -122,6 +122,50 @@ export class Start extends Phaser.Scene {
         return { error: 'FocusManager not initialized' }
       }
 
+      // 添加强制刷新工位绑定的调试函数
+      window.forceRefreshWorkstations = async () => {
+        if (this.workstationManager) {
+          console.log('🔄 用户手动触发工位强制刷新...');
+          const result = await this.workstationManager.forceRefreshAllBindings();
+          console.log('🔄 强制刷新结果:', result);
+          return result;
+        }
+        return { error: 'WorkstationManager not initialized' };
+      }
+
+      // 添加工位调试信息函数
+      window.debugWorkstations = () => {
+        if (this.workstationManager) {
+          const stats = this.workstationManager.getStatistics();
+          const allWorkstations = this.workstationManager.getAllWorkstations();
+          const occupiedWorkstations = allWorkstations.filter(w => w.isOccupied);
+
+          console.log('=== 工位调试信息 ===');
+          console.log('总工位数:', stats.total);
+          console.log('已占用:', stats.occupied);
+          console.log('占用率:', stats.occupancyRate);
+          console.log('已占用工位详情:', occupiedWorkstations.map(w => ({
+            id: w.id,
+            userId: w.userId,
+            userName: w.userInfo?.name,
+            hasCharacter: !!w.characterSprite,
+            position: w.position
+          })));
+
+          return {
+            stats,
+            occupiedWorkstations: occupiedWorkstations.map(w => ({
+              id: w.id,
+              userId: w.userId,
+              userName: w.userInfo?.name,
+              hasCharacter: !!w.characterSprite,
+              position: w.position
+            }))
+          };
+        }
+        return { error: 'WorkstationManager not initialized' };
+      }
+
       // 添加简单的键盘控制接口
       window.disableGameKeyboard = () => {
         console.log('🔒 游戏键盘输入已禁用');
@@ -474,7 +518,10 @@ export class Start extends Phaser.Scene {
         this.player.enableMovement()
         console.log("Start.js: 游戏初始化完成，调用enableMovement()方法")
       }
-      
+
+      // 保存游戏场景引用到全局变量，供工位绑定使用
+      this.saveGameScene()
+
       // 添加定期检查和恢复玩家移动的机制，防止被意外禁用
       this.movementCheckTimer = this.time.addEvent({
         delay: 2000, // 每2秒检查一次
@@ -495,6 +542,9 @@ export class Start extends Phaser.Scene {
 
     // 发送用户数据到UI
     this.sendUserDataToUI()
+
+    // 保存游戏场景引用，确保工位绑定功能可用
+    this.saveGameScene()
   }
 
   update() {
@@ -1324,6 +1374,9 @@ export class Start extends Phaser.Scene {
   saveGameScene() {
     // 保存游戏场景引用的全局函数
     console.log("Game scene saved globally")
+    if (typeof window !== "undefined") {
+      window.gameScene = this
+    }
   }
 
   // 处理T键按下事件
@@ -1581,7 +1634,6 @@ export class Start extends Phaser.Scene {
         body: JSON.stringify({
           id: this.currentUser.id,
           name: this.currentUser.username,
-          avatar: this.currentUser.character,
           points: this.currentUser.points || 50,
           gold: this.currentUser.gold || 50,
         }),
@@ -1619,7 +1671,23 @@ export class Start extends Phaser.Scene {
 
     // 监听工位绑定事件
     this.events.on("user-bound", (data) => {
+      console.log('🔄 [user-bound事件] 收到工位绑定事件:', {
+        workstationId: data.workstationId,
+        userId: data.userId,
+        userName: data.userInfo?.name,
+        remainingPoints: data.remainingPoints,
+        characterCreated: data.characterCreated,
+        workstationHasCharacter: !!data.workstation?.characterSprite
+      })
+      console.log('🔍 [user-bound事件] 当前用户对比:', {
+        currentUserId: this.currentUser?.id,
+        eventUserId: data.userId,
+        isMatch: this.currentUser && this.currentUser.id === data.userId
+      })
+
       if (this.currentUser && this.currentUser.id === data.userId) {
+        console.log('✅ [user-bound事件] 匹配到当前用户，开始更新状态')
+
         // 更新用户的工位列表
         if (!this.currentUser.workstations) {
           this.currentUser.workstations = []
@@ -1635,9 +1703,25 @@ export class Start extends Phaser.Scene {
 
         this.currentUser.workstations.push(workstationInfo)
         this.saveCurrentUser()
+        console.log('💾 [user-bound事件] 用户数据已保存到localStorage')
 
-        // 更新UI显示工位ID
+        // 立即更新UI显示工位ID
+        console.log('🔄 [user-bound事件] 立即调用sendUserDataToUI')
         this.sendUserDataToUI()
+
+        // 延迟调用确保工位管理器状态同步完成
+        setTimeout(() => {
+          console.log('🔄 [user-bound事件] 延迟调用sendUserDataToUI确保状态同步')
+          this.sendUserDataToUI()
+        }, 100)
+
+        // 再次延迟调用确保React状态更新
+        setTimeout(() => {
+          console.log('🔄 [user-bound事件] 最终调用sendUserDataToUI确保React状态更新')
+          this.sendUserDataToUI()
+        }, 500)
+      } else {
+        console.log('⚠️ [user-bound事件] 不匹配当前用户，跳过状态更新')
       }
     })
   }
@@ -1707,6 +1791,27 @@ export class Start extends Phaser.Scene {
         workstationId: workstationId,
         deskCount: this.userData.deskCount,
       })
+
+      // 触发工位绑定状态更新事件给React组件（确保状态同步）
+      if (typeof window !== "undefined") {
+        console.log('🔄 [sendUserDataToUI] 触发工位绑定状态更新事件:', {
+          userId: this.currentUser.id,
+          workstationId: workstationId,
+          hasWorkstationId: !!workstationId,
+          eventWillBeFired: true
+        })
+
+        // 无论是否有workstationId都触发事件，让React重新检查状态
+        window.dispatchEvent(new CustomEvent('workstation-binding-updated', {
+          detail: {
+            userId: this.currentUser.id,
+            workstationId: workstationId,
+            timestamp: Date.now(),
+            userPoints: userPoints,
+            forceReload: true // 强制重新加载状态
+          }
+        }))
+      }
 
       // 触发工位统计更新事件给Next.js
       if (typeof window !== "undefined") {

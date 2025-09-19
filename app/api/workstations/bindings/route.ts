@@ -66,26 +66,26 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // 计算30天后的到期时间
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 30)
+
       // 创建工位绑定
       const userWorkstation = await tx.userWorkstation.create({
         data: {
           userId,
           workstationId: workstationIdNum,
           cost,
-          boundAt: new Date()
+          boundAt: new Date(),
+          expiresAt
         },
         })
 
       return { user: updatedUser, binding: userWorkstation }
     })
 
-    // 更新Redis缓存（如果Redis可用）
-    try {
-      const redis = require('@/lib/redis').redis
-      await redis.setJSON(`user:${userId}`, result.user, 3600)
-    } catch (redisError) {
-      console.warn('Redis缓存更新失败，但绑定操作已成功:', redisError)
-    }
+    // Redis缓存已永久禁用，避免缓存导致的数据不一致问题
+    // 不再使用Redis缓存
 
     return NextResponse.json({ 
       success: true, 

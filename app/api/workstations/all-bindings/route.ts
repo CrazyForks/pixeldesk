@@ -3,15 +3,33 @@ import { prisma } from '@/lib/db'
 
 export async function GET() {
   try {
-    // 获取所有工位绑定信息
+    const now = new Date()
+
+    // 先清理过期的工位绑定
+    await prisma.userWorkstation.deleteMany({
+      where: {
+        expiresAt: {
+          lt: now
+        }
+      }
+    })
+
+    // 获取所有有效的工位绑定信息
     const allBindings = await prisma.userWorkstation.findMany({
+      where: {
+        OR: [
+          { expiresAt: null }, // 兼容旧数据
+          { expiresAt: { gte: now } } // 未过期的绑定
+        ]
+      },
       include: {
         user: {
           select: {
             id: true,
             name: true,
             email: true,
-            avatar: true
+            avatar: true,
+            points: true
           }
         }
       },
@@ -20,7 +38,24 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ success: true, data: allBindings })
+    // 计算剩余天数和即将过期状态
+    const bindingsWithDays = allBindings.map(binding => {
+      const remainingDays = binding.expiresAt
+        ? Math.max(0, Math.ceil((binding.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+        : 30 // 默认值，兼容旧数据
+
+      const isExpiringSoon = binding.expiresAt
+        ? (binding.expiresAt.getTime() - now.getTime()) <= (3 * 24 * 60 * 60 * 1000) // 3天内过期
+        : false
+
+      return {
+        ...binding,
+        remainingDays,
+        isExpiringSoon
+      }
+    })
+
+    return NextResponse.json({ success: true, data: bindingsWithDays })
   } catch (error) {
     console.error('Error fetching all workstation bindings:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
