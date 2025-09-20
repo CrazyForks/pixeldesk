@@ -90,22 +90,39 @@ const WorkstationBindingModal = memo(({
   const canAfford = userPoints >= 5
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* 现代像素风格背景 */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* 深色背景蒙板 */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/70"
         onClick={handleClose}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
       />
-      
+
       {/* 模态框容器 - 现代像素艺术设计 */}
-      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 w-full max-w-md shadow-2xl shadow-retro-blue/20 animate-slide-in-up">
+      <div
+        className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 w-full max-w-md shadow-2xl shadow-retro-blue/20 animate-slide-in-up"
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* 装饰性光效 */}
         <div className="absolute inset-0 bg-gradient-to-br from-retro-blue/5 via-retro-purple/8 to-retro-cyan/5 rounded-2xl"></div>
         <div className="absolute inset-0 border border-retro-blue/20 rounded-2xl"></div>
         
         {/* 关闭按钮 - 像素化设计 */}
         <button
-          onClick={handleClose}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleClose()
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
           disabled={isProcessing}
           className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 disabled:from-retro-textMuted/20 disabled:to-retro-border/20 text-white/80 hover:text-white disabled:text-retro-textMuted rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50 disabled:border-retro-textMuted/20 transition-all duration-200 flex items-center justify-center shadow-lg group disabled:cursor-not-allowed"
         >
@@ -275,7 +292,12 @@ const WorkstationBindingModal = memo(({
           
           {/* 确认绑定按钮 */}
           <button
-            onClick={handleConfirm}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleConfirm()
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
             disabled={isProcessing || !canAfford}
             className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-blue via-retro-purple to-retro-cyan hover:from-retro-cyan hover:via-retro-blue hover:to-retro-green disabled:from-retro-textMuted/60 disabled:to-retro-border/60 text-white font-bold py-4 px-6 rounded-xl border-2 border-white/20 hover:border-white/40 disabled:border-retro-textMuted/20 transition-all duration-300 shadow-lg hover:shadow-2xl disabled:shadow-none transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 backdrop-blur-sm disabled:cursor-not-allowed"
           >
@@ -304,7 +326,12 @@ const WorkstationBindingModal = memo(({
           
           {/* 取消按钮 */}
           <button
-            onClick={handleCancel}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleCancel()
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
             disabled={isProcessing}
             className="relative flex-1 group overflow-hidden bg-retro-bg-dark/80 hover:bg-retro-border/80 disabled:bg-retro-textMuted/60 text-white font-medium py-4 px-6 rounded-xl border-2 border-retro-border hover:border-retro-red/60 disabled:border-retro-textMuted/20 transition-all duration-300 shadow-lg hover:shadow-xl disabled:shadow-none backdrop-blur-sm disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100"
           >

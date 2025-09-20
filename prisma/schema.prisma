@@ -65,16 +65,18 @@ model Workstation {
 }
 
 model UserWorkstation {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   userId        String
   workstationId Int
-  boundAt       DateTime @default(now())
-  cost          Int      @default(0)
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  boundAt       DateTime  @default(now())
+  expiresAt     DateTime?
+  cost          Int       @default(0)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workstationId])
   @@index([workstationId])
   @@index([boundAt])
+  @@index([expiresAt])
   @@index([userId, boundAt])
   @@map("user_workstations")
 }

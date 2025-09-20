@@ -1,8 +1,8 @@
 {
     "activeFile": "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json",
     "expandedProjectPaths": [
-        ".",
-        "templates"
+        "templates",
+        "."
     ],
     "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
@@ -39,11 +39,14 @@
             "scaleInDock": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json": {
-            "scale": 0.0625,
-            "selectedLayer": 6,
+            "expandedGroupLayers": [
+                11
+            ],
+            "scale": 0.125,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 1072,
-                "y": 2680
+                "x": 5608,
+                "y": 2088
             }
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#bathroom": {
@@ -55,6 +58,7 @@
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#grassgrand": {
             "dynamicWrapping": false,
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#ice_creem_floor": {
@@ -67,10 +71,15 @@
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#park": {
             "dynamicWrapping": false,
+            "scaleInDock": 0.5,
             "scaleInEditor": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#park_obj": {
-            "dynamicWrapping": false
+            "dynamicWrapping": false,
+            "scaleInDock": 0.25
+        },
+        "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#road": {
+            "scaleInDock": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#room_floor_tileset": {
             "dynamicWrapping": false,

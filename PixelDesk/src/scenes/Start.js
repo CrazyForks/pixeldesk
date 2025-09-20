@@ -431,16 +431,17 @@ export class Start extends Phaser.Scene {
     this.bindingUI = new WorkstationBindingUI(this)
 
     // 为UI更新设置定时器而不是每帧更新
-    this.uiUpdateTimer = this.time.addEvent({
-      delay: 200, // 每200ms更新一次UI，比每帧更新效率高
-      callback: () => {
-        if (this.bindingUI) {
-          this.bindingUI.update()
-        }
-      },
-      callbackScope: this,
-      loop: true
-    })
+    // 暂时禁用UI更新定时器以排查CPU占用问题
+    // this.uiUpdateTimer = this.time.addEvent({
+    //   delay: 1000, // 改为每秒更新一次
+    //   callback: () => {
+    //     if (this.bindingUI) {
+    //       this.bindingUI.update()
+    //     }
+    //   },
+    //   callbackScope: this,
+    //   loop: true
+    // })
 
     this.setupWorkstationEvents()
     this.setupUserEvents()
@@ -1734,19 +1735,19 @@ export class Start extends Phaser.Scene {
   // 设置工位状态定时同步
   setupWorkstationSync() {
     // 每30秒同步一次工位状态
-    this.time.addEvent({
-      delay: 30000, // 30秒
-      callback: async () => {
-        try {
-          console.log("定时同步工位状态...")
-          await this.workstationManager.syncWorkstationBindings()
-        } catch (error) {
-          console.error('定时同步工位状态失败，跳过此次同步:', error)
-        }
-      },
-      callbackScope: this,
-      loop: true, // 循环执行
-    })
+    // 暂时禁用定时同步以排查CPU占用问题
+    // this.time.addEvent({
+    //   delay: 60000, // 改为60秒
+    //   callback: async () => {
+    //     try {
+    //       await this.workstationManager.syncWorkstationBindings()
+    //     } catch (error) {
+    //       console.error('定时同步工位状态失败，跳过此次同步:', error)
+    //     }
+    //   },
+    //   callbackScope: this,
+    //   loop: true,
+    // })
 
     console.log("工位状态定时同步已设置（每30秒）")
   }
@@ -2126,15 +2127,14 @@ export class Start extends Phaser.Scene {
   setupCollisionDetectionLoop() {
     console.log('🎯 设置碰撞检测循环...')
     
-    // 使用定时器而不是每帧检查，大幅减少CPU使用
-    this.collisionCheckTimer = this.time.addEvent({
-      delay: 100, // 每100ms检查一次碰撞，比每帧(16ms)检查要高效得多
-      callback: this.updateCollisionDetection,
-      callbackScope: this,
-      loop: true
-    })
-    
-    console.log('🎯 碰撞检测循环已设置，每100ms检查一次')
+    // 临时禁用碰撞检测定时器以修复CPU占用过高问题
+    console.log('⚠️ 碰撞检测定时器已暂时禁用以解决CPU占用问题')
+    // this.collisionCheckTimer = this.time.addEvent({
+    //   delay: 500, // 改为每500ms检查一次，进一步减少CPU使用
+    //   callback: this.updateCollisionDetection,
+    //   callbackScope: this,
+    //   loop: true
+    // })
   }
 
   // 更新碰撞检测

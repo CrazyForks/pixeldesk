@@ -491,17 +491,9 @@ export default function Home() {
     const handleWorkstationBindingUpdated = (event: CustomEvent) => {
       const { userId, workstationId } = event.detail
 
-      console.log('🔄 [handleWorkstationBindingUpdated] 工位绑定状态更新事件触发:', { userId, workstationId })
-      console.log('🔍 [handleWorkstationBindingUpdated] 当前用户状态:', {
-        currentUserId: currentUser?.id,
-        userAuthId: user?.id,
-        eventUserId: userId
-      })
-
       // 修复：无条件重新加载工位绑定信息，确保状态同步
       // 这解决了临时用户转正式用户时ID不匹配的问题
       if (user?.id || currentUser?.id) {
-        console.log('🔄 [handleWorkstationBindingUpdated] 重新加载用户工位绑定信息')
         // 直接更新currentUser的workstationId，立即反映绑定状态
         setCurrentUser((prev: any) => ({
           ...prev,
@@ -517,7 +509,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('workstation-binding-updated', handleWorkstationBindingUpdated as EventListener)
     }
-  }, [currentUser, user, loadWorkstationStats])
+  }, [user?.id, loadWorkstationStats]) // 移除currentUser依赖，避免无限循环
 
   // 处理玩家碰撞事件 - 优化避免不必要重新渲染
   const handlePlayerCollision = useCallback((playerData: any) => {
@@ -527,11 +519,9 @@ export default function Home() {
   // Set up event bus listeners for collision and click events
   useEffect(() => {
     const handleCollisionStart = (event: CollisionEvent) => {
-      console.log('[HomePage] Collision start:', event)
       // Only update if it's a different player to avoid unnecessary re-renders
       setCollisionPlayer((prevPlayer: any) => {
         if (prevPlayer?.id === event.targetPlayer?.id) {
-          console.log('[HomePage] Same player collision, skipping update')
           return prevPlayer
         }
         return event.targetPlayer
@@ -539,26 +529,21 @@ export default function Home() {
     }
 
     const handleCollisionEnd = (event: CollisionEvent) => {
-      console.log('[HomePage] Collision end:', event)
       // Only clear if it's the same player that's ending collision
       setCollisionPlayer((prevPlayer: any) => {
         if (prevPlayer?.id === event.targetPlayer?.id) {
-          console.log('[HomePage] Clearing collision player:', event.targetPlayer?.id)
           return null
         }
         // If it's a different player ending collision, keep the current one
-        console.log('[HomePage] Different player ending collision, keeping current player')
         return prevPlayer
       })
     }
 
     const handlePlayerClickEvent = (event: any) => {
-      console.log('[HomePage] Player click event:', event)
       // For click events, we set the collision player to trigger the same UI behavior
       // Only update if it's a different player
       setCollisionPlayer((prevPlayer: any) => {
         if (prevPlayer?.id === event.targetPlayer?.id) {
-          console.log('[HomePage] Same player click, skipping update')
           return prevPlayer
         }
         return event.targetPlayer
@@ -566,7 +551,6 @@ export default function Home() {
     }
 
     const handleChatConversationOpened = (event: any) => {
-      console.log('[HomePage] Chat conversation opened:', event)
       // Handle chat conversation opening - this could trigger UI updates
       // For now, we'll let the ChatManager handle the conversation display
     }

@@ -15,6 +15,9 @@ interface BindingInfo {
   workstationId: number
   cost: number
   boundAt: string
+  expiresAt?: string
+  remainingDays?: number
+  isExpiringSoon?: boolean
 }
 
 interface UserInfo {
@@ -40,10 +43,10 @@ const WorkstationInfoModal = memo(({
   const [error, setError] = useState<string | null>(null)
 
   // 计算时间信息
-  const calculateTimeInfo = useCallback((boundAt: string) => {
-    const boundDate = new Date(boundAt)
+  const calculateTimeInfo = useCallback((binding: BindingInfo) => {
+    const boundDate = new Date(binding.boundAt)
     const now = new Date()
-    
+
     // 租赁开始时间
     const rentalStart = boundDate.toLocaleString('zh-CN', {
       year: 'numeric',
@@ -52,9 +55,12 @@ const WorkstationInfoModal = memo(({
       hour: '2-digit',
       minute: '2-digit'
     })
-    
-    // 租赁时长（30天）
-    const rentalEnd = new Date(boundDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+    // 使用API返回的到期时间，如果没有则默认30天
+    const rentalEnd = binding.expiresAt
+      ? new Date(binding.expiresAt)
+      : new Date(boundDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+
     const rentalEndStr = rentalEnd.toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',
@@ -62,31 +68,40 @@ const WorkstationInfoModal = memo(({
       hour: '2-digit',
       minute: '2-digit'
     })
-    
+
     // 已使用时间
     const timeUsed = now.getTime() - boundDate.getTime()
     const daysUsed = Math.floor(timeUsed / (1000 * 60 * 60 * 24))
     const hoursUsed = Math.floor((timeUsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutesUsed = Math.floor((timeUsed % (1000 * 60 * 60)) / (1000 * 60))
-    
+
     // 剩余时间
     const timeRemaining = rentalEnd.getTime() - now.getTime()
     const daysRemaining = Math.max(0, Math.floor(timeRemaining / (1000 * 60 * 60 * 24)))
     const hoursRemaining = Math.max(0, Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
-    
+
     // 是否已过期
     const isExpired = timeRemaining <= 0
-    
+
+    // 是否即将过期（1天内）
+    const isExpiringSoon = binding.isExpiringSoon || (!isExpired && timeRemaining <= (24 * 60 * 60 * 1000))
+
+    // 总天数（根据实际租期计算）
+    const totalTime = rentalEnd.getTime() - boundDate.getTime()
+    const totalDays = Math.ceil(totalTime / (1000 * 60 * 60 * 24))
+
     // 使用进度百分比
-    const usagePercentage = Math.min(100, Math.max(0, (timeUsed / (30 * 24 * 60 * 60 * 1000)) * 100))
-    
+    const usagePercentage = Math.min(100, Math.max(0, (timeUsed / totalTime) * 100))
+
     return {
       rentalStart,
       rentalEnd: rentalEndStr,
       timeUsed: `${daysUsed}天 ${hoursUsed}小时 ${minutesUsed}分钟`,
       timeRemaining: isExpired ? '已过期' : `${daysRemaining}天 ${hoursRemaining}小时`,
+      daysRemaining: binding.remainingDays || daysRemaining,
       isExpired,
-      totalDays: 30,
+      isExpiringSoon,
+      totalDays,
       usagePercentage
     }
   }, [])
@@ -151,29 +166,48 @@ const WorkstationInfoModal = memo(({
     return null
   }
 
-  const timeInfo = bindingInfo ? calculateTimeInfo(bindingInfo.boundAt) : null
+  const timeInfo = bindingInfo ? calculateTimeInfo(bindingInfo) : null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* 现代像素风格背景 */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* 深色背景蒙板 */}
       <div
-        className="absolute inset-0 bg-retro-bg-darker animate-fade-in"
+        className="absolute inset-0 bg-black/80 animate-fade-in"
         onClick={handleClose}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
       />
       
       {/* 模态框容器 - 现代像素艺术设计 */}
-      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-retro-green/20 animate-slide-in-up">
+      <div
+        className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-retro-green/20 animate-slide-in-up"
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* 装饰性光效 */}
         <div className="absolute inset-0 bg-gradient-to-br from-retro-green/5 via-retro-cyan/8 to-retro-blue/5 rounded-2xl "></div>
         <div className="absolute inset-0 border border-retro-green/20 rounded-2xl "></div>
         
         {/* 关闭按钮 - 像素化设计 */}
         <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50 transition-all duration-200 flex items-center justify-center shadow-lg group"
+          onClick={(e) => {
+            console.log('右上角关闭按钮被点击')
+            e.stopPropagation()
+            handleClose()
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
+          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50 transition-all duration-200 flex items-center justify-center shadow-lg group z-10"
+          style={{ pointerEvents: 'auto' }}
         >
-          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
-          <span className="relative font-bold">✕</span>
+          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+          <span className="relative font-bold pointer-events-none">✕</span>
         </button>
 
         {/* 标题区域 - 现代像素艺术风格 */}
@@ -345,6 +379,30 @@ const WorkstationInfoModal = memo(({
               </div>
             </div>
 
+            {/* 到期警告横幅 - 像素化警告横幅 */}
+            {timeInfo.isExpiringSoon && !timeInfo.isExpired && (
+              <div className="relative animate-slide-in-up">
+                <div className="absolute inset-0 bg-gradient-to-r from-retro-orange/10 to-retro-red/10 rounded-xl opacity-60 pointer-events-none"></div>
+                <div className="relative bg-gradient-to-br from-retro-orange/20 to-retro-red/20 backdrop-blur-sm border-2 border-retro-orange/50 rounded-xl p-4 shadow-lg animate-pulse">
+                  <div className="absolute inset-0 bg-retro-orange/5 rounded-xl"></div>
+                  <div className="relative flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-retro-orange to-retro-red rounded-lg flex items-center justify-center shadow-lg animate-bounce">
+                      <span className="text-xl">⚠️</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-retro-orange font-bold text-base font-pixel tracking-wide">租期即将到期！</div>
+                      <p className="text-retro-orange/90 text-sm font-retro mt-1">
+                        您的工位将在 <span className="font-bold text-retro-red">{timeInfo.daysRemaining}天</span> 后到期，请及时续租以免失去工位。
+                      </p>
+                    </div>
+                    <div className="w-6 h-6 bg-retro-red/30 rounded-full flex items-center justify-center">
+                      <div className="w-3 h-3 bg-retro-red rounded-full animate-ping"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 使用情况和进度 - 像素化进度卡片 */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/5 to-retro-purple/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
@@ -363,9 +421,20 @@ const WorkstationInfoModal = memo(({
                     </div>
                     <div className="bg-gradient-to-r from-retro-bg-darker/30 to-retro-bg-dark/30 rounded-lg p-3 border border-retro-border/30">
                       <div className="text-xs text-retro-textMuted font-pixel tracking-wide mb-1">REMAINING</div>
-                      <div className={`text-sm font-bold font-retro ${timeInfo.isExpired ? 'text-retro-red' : 'text-retro-green'}`}>
+                      <div className={`text-sm font-bold font-retro ${
+                        timeInfo.isExpired
+                          ? 'text-retro-red'
+                          : timeInfo.isExpiringSoon
+                            ? 'text-retro-orange animate-pulse'
+                            : 'text-retro-green'
+                      }`}>
                         {timeInfo.timeRemaining}
                       </div>
+                      {timeInfo.isExpiringSoon && !timeInfo.isExpired && (
+                        <div className="text-xs text-retro-orange font-pixel tracking-wide mt-1">
+                          即将到期！
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -396,33 +465,66 @@ const WorkstationInfoModal = memo(({
 
             {/* 状态指示器 - 像素化状态卡片 */}
             <div className={`relative group bg-gradient-to-br backdrop-blur-sm rounded-xl p-4 border-2 shadow-lg transition-all duration-300 ${
-              timeInfo.isExpired 
-                ? 'from-retro-red/15 to-retro-orange/15 border-retro-red/30 hover:border-retro-red/50' 
-                : 'from-retro-green/15 to-retro-cyan/15 border-retro-green/30 hover:border-retro-green/50'
+              timeInfo.isExpired
+                ? 'from-retro-red/15 to-retro-orange/15 border-retro-red/30 hover:border-retro-red/50'
+                : timeInfo.isExpiringSoon
+                  ? 'from-retro-orange/15 to-retro-red/15 border-retro-orange/30 hover:border-retro-orange/50'
+                  : 'from-retro-green/15 to-retro-cyan/15 border-retro-green/30 hover:border-retro-green/50'
             }`}>
-              <div className={`absolute inset-0 rounded-xl  opacity-50 ${
-                timeInfo.isExpired ? 'bg-retro-red/5' : 'bg-retro-green/5'
+              <div className={`absolute inset-0 rounded-xl opacity-50 ${
+                timeInfo.isExpired
+                  ? 'bg-retro-red/5'
+                  : timeInfo.isExpiringSoon
+                    ? 'bg-retro-orange/5'
+                    : 'bg-retro-green/5'
               }`}></div>
               <div className="relative flex items-center justify-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-lg border border-white/20 ${
-                  timeInfo.isExpired 
-                    ? 'bg-gradient-to-br from-retro-red/30 to-retro-orange/30' 
-                    : 'bg-gradient-to-br from-retro-green/30 to-retro-cyan/30'
-                }`}>
-                  <span className="text-lg">{timeInfo.isExpired ? '🛑' : '✅'}</span>
+                  timeInfo.isExpired
+                    ? 'bg-gradient-to-br from-retro-red/30 to-retro-orange/30'
+                    : timeInfo.isExpiringSoon
+                      ? 'bg-gradient-to-br from-retro-orange/30 to-retro-red/30'
+                      : 'bg-gradient-to-br from-retro-green/30 to-retro-cyan/30'
+                } ${timeInfo.isExpiringSoon && !timeInfo.isExpired ? 'animate-pulse' : ''}`}>
+                  <span className="text-lg">
+                    {timeInfo.isExpired
+                      ? '🛑'
+                      : timeInfo.isExpiringSoon
+                        ? '⏰'
+                        : '✅'
+                    }
+                  </span>
                 </div>
                 <div className="text-center">
                   <div className={`text-sm font-bold font-pixel tracking-wide ${
-                    timeInfo.isExpired ? 'text-retro-red' : 'text-retro-green'
+                    timeInfo.isExpired
+                      ? 'text-retro-red'
+                      : timeInfo.isExpiringSoon
+                        ? 'text-retro-orange'
+                        : 'text-retro-green'
                   }`}>
-                    {timeInfo.isExpired ? 'EXPIRED' : 'ACTIVE'}
+                    {timeInfo.isExpired
+                      ? 'EXPIRED'
+                      : timeInfo.isExpiringSoon
+                        ? 'EXPIRING SOON'
+                        : 'ACTIVE'
+                    }
                   </div>
                   <div className="text-xs text-retro-textMuted font-retro">
-                    {timeInfo.isExpired ? 'Rental period ended' : 'Rental in progress'}
+                    {timeInfo.isExpired
+                      ? 'Rental period ended'
+                      : timeInfo.isExpiringSoon
+                        ? `${timeInfo.daysRemaining}天后到期`
+                        : 'Rental in progress'
+                    }
                   </div>
                 </div>
                 <div className={`w-3 h-3 rounded-full shadow-lg ${
-                  timeInfo.isExpired ? 'bg-retro-red' : 'bg-retro-green '
+                  timeInfo.isExpired
+                    ? 'bg-retro-red'
+                    : timeInfo.isExpiringSoon
+                      ? 'bg-retro-orange animate-ping'
+                      : 'bg-retro-green'
                 }`}></div>
               </div>
             </div>
@@ -436,7 +538,12 @@ const WorkstationInfoModal = memo(({
           
           {/* 关闭按钮 */}
           <button
-            onClick={handleClose}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleClose()
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
             className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-3 px-4 rounded-xl border-2 border-retro-border hover:border-retro-cyan/60 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm transform hover:scale-[1.02] active:scale-[0.98]"
           >
             {/* 按钮光效 */}

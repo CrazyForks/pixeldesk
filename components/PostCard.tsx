@@ -16,7 +16,6 @@ interface PostCardProps {
 
 export default function PostCard({ post, currentUserId, onLike, onReplyCountUpdate, isMobile = false }: PostCardProps) {
   const [showReplies, setShowReplies] = useState(false)
-  const [showReplyForm, setShowReplyForm] = useState(false)
   const [isLiking, setIsLiking] = useState(false)
 
   // 使用回复hook来管理回复数据
@@ -45,14 +44,21 @@ export default function PostCard({ post, currentUserId, onLike, onReplyCountUpda
 
   // 处理回复提交
   const handleReplySubmit = async (replyData: CreateReplyData) => {
+    console.log('🎯 [PostCard] 开始处理回复提交，postId:', post.id, '回复数据:', replyData)
+    console.log('🔍 [PostCard] 当前用户ID:', currentUserId)
+
     const newReply = await createReply(replyData)
+    console.log('📦 [PostCard] createReply返回结果:', newReply)
+
     if (newReply) {
       // 更新帖子的回复计数
       if (onReplyCountUpdate) {
+        console.log('📊 [PostCard] 更新回复计数，从', post.replyCount, '到', (post.replyCount || 0) + 1)
         onReplyCountUpdate(post.id, (post.replyCount || 0) + 1)
       }
-      setShowReplyForm(false)
-      console.log('✅ New reply created:', newReply)
+      console.log('✅ [PostCard] 回复创建成功:', newReply)
+    } else {
+      console.error('❌ [PostCard] 回复创建失败')
     }
     return !!newReply
   }
@@ -210,26 +216,15 @@ export default function PostCard({ post, currentUserId, onLike, onReplyCountUpda
       {/* 回复区域 - 优化层次和间距 */}
       {showReplies && (
         <div className="border-t border-retro-border/20">
-          <div className="p-5 space-y-5 bg-retro-bg-darker/20">
-            {/* 回复列表标题和操作 */}
-            <div className="flex items-center justify-between">
-              <h4 className="text-base font-semibold text-white flex items-center gap-2">
-                <svg className="w-4 h-4 text-retro-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                Replies ({post.replyCount || 0})
-              </h4>
-              
-              {/* 添加回复按钮 */}
-              <button
-                onClick={() => setShowReplyForm(!showReplyForm)}
-                className="px-4 py-2 bg-retro-green/10 hover:bg-retro-green/20 text-retro-green rounded-lg border border-retro-green/30 hover:border-retro-green/50 transition-all duration-200 text-sm font-medium"
-                disabled={isCreatingReply}
-              >
-                {showReplyForm ? 'Cancel' : 'Add Reply'}
-              </button>
-            </div>
-            
+          <div className="p-5 space-y-4 bg-retro-bg-darker/20">
+            {/* 回复输入表单 - 直接显示在顶部 */}
+            <CreateReplyForm
+              onSubmit={handleReplySubmit}
+              onCancel={() => {}} // 不需要取消功能，因为表单始终显示
+              isMobile={isMobile}
+              isSubmitting={isCreatingReply}
+            />
+
             {/* 错误显示 */}
             {repliesError && (
               <div className="p-3 bg-retro-red/10 border border-retro-red/20 rounded-lg">
@@ -241,16 +236,16 @@ export default function PostCard({ post, currentUserId, onLike, onReplyCountUpda
                 </div>
               </div>
             )}
-            
-            {/* 回复输入表单 */}
-            {showReplyForm && (
-              <CreateReplyForm
-                onSubmit={handleReplySubmit}
-                onCancel={() => setShowReplyForm(false)}
-                isMobile={isMobile}
-                isSubmitting={isCreatingReply}
-              />
-            )}
+
+            {/* 回复列表标题 */}
+            <div className="flex items-center gap-2 pt-2">
+              <svg className="w-4 h-4 text-retro-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <h4 className="text-base font-semibold text-white">
+                Replies ({post.replyCount || 0})
+              </h4>
+            </div>
             
             {/* 加载状态 */}
             {isLoadingReplies && replies.length === 0 && (
