@@ -144,19 +144,27 @@ export class Player extends Phaser.GameObjects.Container {
         }
     }
     
-    // 保存玩家状态到localStorage
+    // 保存玩家状态到localStorage - 添加防抖以避免频繁写入
     saveState() {
         // 如果状态保存功能被禁用，直接返回
         if (!this.enableStateSave) {
             return;
         }
 
-        const state = {
-            x: this.x,
-            y: this.y,
-            direction: this.currentDirection
-        };
-        localStorage.setItem('playerState', JSON.stringify(state));
+        // 防抖机制：避免频繁的localStorage写入
+        if (this.saveStateTimer) {
+            clearTimeout(this.saveStateTimer);
+        }
+
+        this.saveStateTimer = setTimeout(() => {
+            const state = {
+                x: this.x,
+                y: this.y,
+                direction: this.currentDirection
+            };
+            localStorage.setItem('playerState', JSON.stringify(state));
+            this.saveStateTimer = null;
+        }, 200); // 200ms防抖延迟
     }
     
     // 从localStorage获取保存的玩家状态
@@ -337,7 +345,7 @@ export class Player extends Phaser.GameObjects.Container {
         
         // 使用定时器而不是每帧检查，大幅减少CPU使用
         this.visibilityTimer = this.scene.time.addEvent({
-            delay: 500, // 每500ms检查一次，比每帧检查效率高得多
+            delay: 1000, // 改为每1秒检查一次，进一步减少CPU使用
             callback: this.checkVisibility,
             callbackScope: this,
             loop: true
@@ -706,26 +714,32 @@ export class Player extends Phaser.GameObjects.Container {
     }
     
     destroy() {
+        // 清理状态保存防抖计时器
+        if (this.saveStateTimer) {
+            clearTimeout(this.saveStateTimer);
+            this.saveStateTimer = null;
+        }
+
         // 清理浮动计时器
         if (this.floatTimer) {
             this.floatTimer.remove();
         }
-        
+
         // 清理可视性检查定时器
         if (this.visibilityTimer) {
             this.visibilityTimer.remove();
         }
-        
+
         // 清理浮动动画Tween
         if (this.floatingTween) {
             this.floatingTween.destroy();
         }
-        
+
         // 清理防抖计时器
         if (this.visibilityDebounceTimer) {
             this.scene.time.removeEvent(this.visibilityDebounceTimer);
         }
-        
+
         // 清理碰撞防抖计时器
         if (this.collisionDebounceTimer) {
             this.scene.time.removeEvent(this.collisionDebounceTimer);
