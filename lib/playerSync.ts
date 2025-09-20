@@ -211,22 +211,33 @@ export async function syncLocalStorageToServer(): Promise<{ success: boolean; er
   }
 }
 
+// 全局定时器引用，防止重复创建多个定时器
+let syncTimer: NodeJS.Timeout | null = null
+
 /**
  * Initialize player sync system
  * Call this when the app starts or when user logs in
  */
 export async function initializePlayerSync(): Promise<PlayerSyncResult> {
   console.log('Initializing player sync...')
-  
+
+  // 清理已存在的定时器，防止重复创建导致CPU占用过高
+  if (syncTimer) {
+    clearInterval(syncTimer)
+    syncTimer = null
+    console.log('🔧 Cleared existing player sync timer to prevent duplicates')
+  }
+
   // First sync from server to localStorage
   const result = await syncPlayerToLocalStorage()
-  
+
   // Set up periodic sync from localStorage to server
   if (result.success && result.hasPlayer) {
-    // Sync to server every 30 seconds
-    setInterval(async () => {
+    // Sync to server every 30 seconds - 创建新的唯一定时器
+    syncTimer = setInterval(async () => {
       await syncLocalStorageToServer()
     }, 30000)
+    console.log('⏰ Created new player sync timer (30s interval)')
   }
 
   return result
