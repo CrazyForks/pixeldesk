@@ -464,9 +464,9 @@ export class Start extends Phaser.Scene {
     this.handlePlayerMovement()
 
     // 检查T键按下，快速回到工位（临时禁用FocusManager检查）
-    if (this.teleportKey && Phaser.Input.Keyboard.JustDown(this.teleportKey)) {
-      this.handleTeleportKeyPress()
-    }
+    // if (this.teleportKey && Phaser.Input.Keyboard.JustDown(this.teleportKey)) {
+    //   this.handleTeleportKeyPress()
+    // }
 
     // 移除不必要的每帧UI更新和碰撞检测，改为定时执行
     // bindingUI.update() 和 collision detection 现在使用定时器
