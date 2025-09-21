@@ -1,12 +1,24 @@
 /**
  * 焦点管理器 - 解决Phaser键盘输入与Next.js输入框的冲突问题
- * 
+ *
  * 功能：
  * 1. 检测输入框焦点状态
  * 2. 检测鼠标位置
  * 3. 管理Phaser键盘监听的启用/禁用
  * 4. 提供焦点状态变化回调
  */
+
+// ===== 性能优化配置 =====
+const PERFORMANCE_CONFIG = {
+  // 禁用控制台日志以大幅减少CPU消耗
+  ENABLE_DEBUG_LOGGING: false,
+  // 关键错误和警告仍然显示
+  ENABLE_ERROR_LOGGING: true
+}
+
+// 性能优化的日志系统
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
 export class FocusManager {
     constructor(scene) {
         this.scene = scene;
@@ -29,7 +41,7 @@ export class FocusManager {
         // 初始化时设置键盘捕获
         this.updatePhaserKeyboardCapture(this.keyboardEnabled);
         
-        console.log('🎯 FocusManager initialized');
+        debugLog('🎯 FocusManager initialized');
     }
     
     // ===== 输入框焦点检测 =====
@@ -38,7 +50,7 @@ export class FocusManager {
         document.addEventListener('focusin', (event) => {
             const isInputElement = this.isInputElement(event.target);
             
-            console.log('🔍 Focus in event:', {
+            debugLog('🔍 Focus in event:', {
                 tagName: event.target.tagName,
                 type: event.target.type,
                 className: event.target.className,
@@ -49,14 +61,14 @@ export class FocusManager {
             
             if (isInputElement) {
                 this.setInputFocused(true);
-                console.log('📝 Input focused - keyboard disabled for game');
+                debugLog('📝 Input focused - keyboard disabled for game');
             }
         });
         
         document.addEventListener('focusout', (event) => {
             const isInputElement = this.isInputElement(event.target);
             
-            console.log('🔍 Focus out event:', {
+            debugLog('🔍 Focus out event:', {
                 tagName: event.target.tagName,
                 type: event.target.type,
                 className: event.target.className,
@@ -71,7 +83,7 @@ export class FocusManager {
                     const activeElement = document.activeElement;
                     const stillInInput = this.isInputElement(activeElement);
                     
-                    console.log('🔍 Delayed focus check:', {
+                    debugLog('🔍 Delayed focus check:', {
                         activeElementTag: activeElement?.tagName,
                         activeElementType: activeElement?.type,
                         stillInInput: stillInInput
@@ -79,7 +91,7 @@ export class FocusManager {
                     
                     if (!stillInInput) {
                         this.setInputFocused(false);
-                        console.log('📝 Input blurred - keyboard enabled for game');
+                        debugLog('📝 Input blurred - keyboard enabled for game');
                     }
                 }, 50);
             }
@@ -207,12 +219,12 @@ export class FocusManager {
             
             canvas.addEventListener('focus', () => {
                 this.setGameFocused(true);
-                console.log('🎮 Game canvas focused');
+                debugLog('🎮 Game canvas focused');
             });
             
             canvas.addEventListener('blur', () => {
                 this.setGameFocused(false);
-                console.log('🎮 Game canvas blurred');
+                debugLog('🎮 Game canvas blurred');
             });
             
             // 点击canvas时自动聚焦
@@ -262,10 +274,10 @@ export class FocusManager {
             // 动态控制Phaser的键盘捕获
             this.updatePhaserKeyboardCapture(shouldEnable);
             
-            console.log(`⌨️ Keyboard input ${shouldEnable ? 'ENABLED' : 'DISABLED'} for game`);
-            console.log(`   - Input focused: ${this.isInputFocused}`);
+            debugLog(`⌨️ Keyboard input ${shouldEnable ? 'ENABLED' : 'DISABLED'} for game`);
+            debugLog(`   - Input focused: ${this.isInputFocused}`);
             if (this.isInputFocused) {
-                console.log(`   - Active element: ${document.activeElement?.tagName || 'unknown'}`);
+                debugLog(`   - Active element: ${document.activeElement?.tagName || 'unknown'}`);
             }
         }
     }
@@ -274,7 +286,7 @@ export class FocusManager {
     updatePhaserKeyboardCapture(shouldEnable) {
         // 现在通过handlePlayerMovement中的shouldHandleKeyboard()检查来控制
         // 不需要动态添加/移除键盘捕获，因为我们改为手动检查键盘状态
-        console.log(`⌨️ Keyboard input ${shouldEnable ? 'ENABLED' : 'DISABLED'} for game (via movement check)`);
+        debugLog(`⌨️ Keyboard input ${shouldEnable ? 'ENABLED' : 'DISABLED'} for game (via movement check)`);
     }
     
     // ===== 回调管理 =====
@@ -309,13 +321,13 @@ export class FocusManager {
     // 强制启用键盘输入（谨慎使用）
     forceEnableKeyboard() {
         this.keyboardEnabled = true;
-        console.log('⌨️ Keyboard input FORCE ENABLED');
+        debugLog('⌨️ Keyboard input FORCE ENABLED');
     }
     
     // 强制禁用键盘输入
     forceDisableKeyboard() {
         this.keyboardEnabled = false;
-        console.log('⌨️ Keyboard input FORCE DISABLED');
+        debugLog('⌨️ Keyboard input FORCE DISABLED');
     }
     
     // 获取当前焦点状态
@@ -331,18 +343,18 @@ export class FocusManager {
     // 调试信息
     debugFocusState() {
         const state = this.getFocusState();
-        console.log('🔍 Focus State Debug:');
-        console.log('  Game Focused:', state.isGameFocused);
-        console.log('  Input Focused:', state.isInputFocused);
-        console.log('  Mouse Over UI:', state.isMouseOverUI);
-        console.log('  Keyboard Enabled:', state.keyboardEnabled);
-        console.log('  Active Element:', document.activeElement?.tagName, document.activeElement?.type);
+        debugLog('🔍 Focus State Debug:');
+        debugLog('  Game Focused:', state.isGameFocused);
+        debugLog('  Input Focused:', state.isInputFocused);
+        debugLog('  Mouse Over UI:', state.isMouseOverUI);
+        debugLog('  Keyboard Enabled:', state.keyboardEnabled);
+        debugLog('  Active Element:', document.activeElement?.tagName, document.activeElement?.type);
     }
     
     // 清理方法
     destroy() {
         // 移除所有事件监听器
         // 注意：这里只是示例，实际实现需要保存事件处理器的引用以便移除
-        console.log('🎯 FocusManager destroyed');
+        debugLog('🎯 FocusManager destroyed');
     }
 }

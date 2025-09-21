@@ -213,13 +213,40 @@ export async function syncLocalStorageToServer(): Promise<{ success: boolean; er
 
 // 全局定时器引用，防止重复创建多个定时器
 let syncTimer: NodeJS.Timeout | null = null
+// 上次同步的数据快照，用于变化检测
+let lastSyncData: string | null = null
+
+/**
+ * 检查数据是否发生了变化，只有变化时才同步
+ */
+function hasDataChanged(): boolean {
+  try {
+    const playerDataStr = localStorage.getItem('pixelDeskUser')
+    const playerStateStr = localStorage.getItem('playerState')
+
+    const currentData = JSON.stringify({
+      playerData: playerDataStr,
+      playerState: playerStateStr
+    })
+
+    if (currentData !== lastSyncData) {
+      lastSyncData = currentData
+      return true
+    }
+
+    return false
+  } catch (error) {
+    console.error('Error checking data changes:', error)
+    return false
+  }
+}
 
 /**
  * Initialize player sync system
  * Call this when the app starts or when user logs in
  */
 export async function initializePlayerSync(): Promise<PlayerSyncResult> {
-  console.log('Initializing player sync...')
+  console.log('Initializing optimized player sync...')
 
   // 清理已存在的定时器，防止重复创建导致CPU占用过高
   if (syncTimer) {
@@ -231,13 +258,17 @@ export async function initializePlayerSync(): Promise<PlayerSyncResult> {
   // First sync from server to localStorage
   const result = await syncPlayerToLocalStorage()
 
-  // Set up periodic sync from localStorage to server
+  // Set up periodic sync from localStorage to server - 大幅减少同步频率
   if (result.success && result.hasPlayer) {
-    // Sync to server every 30 seconds - 创建新的唯一定时器
+    // 将同步间隔从30秒增加到5分钟，并添加变化检测
     syncTimer = setInterval(async () => {
-      await syncLocalStorageToServer()
-    }, 30000)
-    console.log('⏰ Created new player sync timer (30s interval)')
+      // 只有数据发生变化时才进行同步，大幅减少不必要的数据库操作
+      if (hasDataChanged()) {
+        console.log('🔄 Player data changed, syncing to server...')
+        await syncLocalStorageToServer()
+      }
+    }, 300000) // 5分钟 = 300000ms，比原来的30秒减少了10倍
+    console.log('⏰ Created optimized player sync timer (5min interval with change detection)')
   }
 
   return result

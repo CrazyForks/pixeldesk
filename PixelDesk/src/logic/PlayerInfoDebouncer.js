@@ -348,37 +348,46 @@ export class PlayerInfoDebouncer {
     }
     
     /**
-     * Performance monitoring
+     * Performance monitoring - 禁用以减少CPU消耗
      */
     setupPerformanceMonitoring() {
-        this.scene.time.addEvent({
-            delay: 5000, // Log every 5 seconds
-            callback: () => {
-                this.logPerformanceStats();
-            },
-            loop: true
-        });
+        // 性能优化：禁用定期性能日志输出以减少CPU消耗
+        // 在开发调试时可以手动启用
+        return;
+
+        // 原始代码已注释，如需调试可以解除注释
+        // this.scene.time.addEvent({
+        //     delay: 5000, // Log every 5 seconds
+        //     callback: () => {
+        //         this.logPerformanceStats();
+        //     },
+        //     loop: true
+        // });
     }
-    
+
     logPerformanceStats() {
-        const stats = this.updateStats;
-        
-        if (stats.totalUpdates > 0) {
-            console.log('[PlayerInfoDebouncer] Performance stats:', {
-                totalUpdates: stats.totalUpdates,
-                batchedUpdates: stats.batchedUpdates,
-                debouncedUpdates: stats.debouncedUpdates,
-                averageBatchSize: stats.averageBatchSize.toFixed(1),
-                queueSize: this.updateQueue.size,
-                pendingUpdates: this.pendingUpdates.size,
-                activeTimers: this.debounceTimers.size
-            });
-            
-            // Reset counters
-            this.updateStats.totalUpdates = 0;
-            this.updateStats.batchedUpdates = 0;
-            this.updateStats.debouncedUpdates = 0;
-        }
+        // 性能优化：禁用日志输出
+        return;
+
+        // 原始代码已注释，如需调试可以解除注释
+        // const stats = this.updateStats;
+        //
+        // if (stats.totalUpdates > 0) {
+        //     console.log('[PlayerInfoDebouncer] Performance stats:', {
+        //         totalUpdates: stats.totalUpdates,
+        //         batchedUpdates: stats.batchedUpdates,
+        //         debouncedUpdates: stats.debouncedUpdates,
+        //         averageBatchSize: stats.averageBatchSize.toFixed(1),
+        //         queueSize: this.updateQueue.size,
+        //         pendingUpdates: this.pendingUpdates.size,
+        //         activeTimers: this.debounceTimers.size
+        //     });
+        //
+        //     // Reset counters
+        //     this.updateStats.totalUpdates = 0;
+        //     this.updateStats.batchedUpdates = 0;
+        //     this.updateStats.debouncedUpdates = 0;
+        // }
     }
     
     /**

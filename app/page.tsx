@@ -160,7 +160,7 @@ export default function Home() {
       // 用户已登录 - 处理从临时玩家到正式用户的迁移
       const migrationResult = migrateTempPlayerToUser(user.id)
       if (migrationResult.migrationSuccess) {
-        console.log('🔄 临时玩家已迁移到正式用户')
+        // 临时玩家数据迁移成功
       }
 
       setIsTemporaryPlayer(false)
@@ -199,7 +199,7 @@ export default function Home() {
           }))
         }
       } catch (error) {
-        console.warn('Failed to load game user data:', error)
+        // 加载游戏用户数据失败
         // 出错时使用认证数据作为后备
         setCurrentUser((prev: any) => ({
           id: user.id,
@@ -219,12 +219,12 @@ export default function Home() {
       
       if (tempPlayerData) {
         // 使用现有临时玩家
-        console.log('🎮 使用现有临时玩家:', tempPlayerData.username)
+        // 使用现有临时玩家
         setCurrentUser(tempPlayerData)
         setIsTemporaryPlayer(true)
       } else if (isFirstTimeVisitor()) {
         // 首次访问，创建临时玩家
-        console.log('👋 首次访问用户，创建临时玩家')
+        // 首次访问用户，创建临时玩家
         createTempPlayer()
         const tempGameData = getTempPlayerGameData()
 
@@ -234,7 +234,7 @@ export default function Home() {
         }
       } else {
         // 既不是首次访问，也没有临时玩家数据 - 创建新的临时玩家（比如用户退出登录后）
-        console.log('🔄 用户退出登录，创建新临时玩家')
+        // 用户退出登录，创建新临时玩家
         createTempPlayer()
         const tempGameData = getTempPlayerGameData()
 
@@ -320,7 +320,7 @@ export default function Home() {
       
       // 监听Phaser游戏初始化完成事件
       window.addEventListener('phaser-game-ready', () => {
-        console.log('Phaser game is ready, loading workstation stats')
+        // Phaser游戏已准备好
         loadWorkstationStats()
       })
 
@@ -361,7 +361,7 @@ export default function Home() {
               workstationId: String(binding.workstationId)
             }))
           } catch (error) {
-            console.warn('⚠️ [inline-loadBinding] 缓存解析失败:', error)
+            // 缓存解析失败
           }
         }
 

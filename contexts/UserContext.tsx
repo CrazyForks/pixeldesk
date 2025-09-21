@@ -51,14 +51,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
             setPlayerExists(playerSyncResult.hasPlayer)
           }
         } else {
-          // Don't log error for expected auth failures
-          if (response.status !== 401 && response.status !== 404) {
-            console.warn('Auth verification failed:', response.status)
-          }
+          // 忽略预期的认证失败日志以优化性能
         }
       } catch (error) {
-        // Silently handle auth errors to avoid noise
-        console.warn('Auth check failed:', error)
+        // 静默处理认证错误以减少日志噪音
       } finally {
         setIsLoading(false)
       }
@@ -115,7 +111,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // 处理临时玩家迁移
         const migrationResult = migrateTempPlayerToUser(data.data.id)
         if (migrationResult.migrationSuccess) {
-          console.log('✅ 临时玩家数据已成功迁移到正式用户')
+          // 临时玩家数据迁移成功
         }
         
         // Clear any existing player data from localStorage for new user

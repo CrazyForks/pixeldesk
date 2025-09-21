@@ -15,10 +15,15 @@ export class Player extends Phaser.GameObjects.Container {
         // 尝试从存储中恢复位置（仅当启用状态保存时）
         let savedState = null;
         if (enableStateSave && !isOtherPlayer) {
-            savedState = Player.getSavedState();
-            if (savedState) {
-                x = savedState.x;
-                y = savedState.y;
+            try {
+                const state = localStorage.getItem('playerState');
+                savedState = state ? JSON.parse(state) : null;
+                if (savedState) {
+                    x = savedState.x;
+                    y = savedState.y;
+                }
+            } catch (e) {
+                // 忽略localStorage错误
             }
         }
         
@@ -178,7 +183,7 @@ export class Player extends Phaser.GameObjects.Container {
     }
     
     // 从localStorage获取保存的玩家状态
-    static getSavedState() {
+    getSavedState() {
         try {
             const state = localStorage.getItem('playerState');
             return state ? JSON.parse(state) : null;
@@ -187,9 +192,9 @@ export class Player extends Phaser.GameObjects.Container {
             return null;
         }
     }
-    
+
     // 清除保存的玩家状态
-    static clearSavedState() {
+    clearSavedState() {
         localStorage.removeItem('playerState');
     }
     
@@ -222,10 +227,10 @@ export class Player extends Phaser.GameObjects.Container {
         // 为每个角色生成随机的浮动参数，创造不同的浮动节奏
         const randomFactor = 0.7 + Math.random() * 0.6; // 0.7 到 1.3 的随机因子
         
-        // 角色浮动动画参数（每个角色都有不同的节奏）
+        // 角色浮动动画参数（大幅减少动画频率以节省CPU）
         this.characterFloatAmplitude = 1.2 + Math.random() * 0.6;   // 浮动幅度：1.2 到 1.8 像素
-        this.characterFloatInterval = 1800 + Math.random() * 800;   // 浮动间隔：1800 到 2600 毫秒
-        this.characterFloatDuration = 600 + Math.random() * 400;    // 单次浮动持续时间：600 到 1000 毫秒
+        this.characterFloatInterval = 8000 + Math.random() * 4000;   // 浮动间隔：8到12秒（原来1.8-2.6秒）
+        this.characterFloatDuration = 800 + Math.random() * 400;    // 单次浮动持续时间：800 到 1200 毫秒
         
         // 记录角色的初始Y位置
         this.characterBaseY = this.y;
@@ -353,9 +358,9 @@ export class Player extends Phaser.GameObjects.Container {
         this.isVisible = true;
         this.visibilityDebounceTimer = null; // 防抖计时器
         
-        // 使用定时器而不是每帧检查，大幅减少CPU使用
+        // 进一步优化：将可见性检查频率从1秒减少到5秒，减少CPU占用
         this.visibilityTimer = this.scene.time.addEvent({
-            delay: 1000, // 改为每1秒检查一次，进一步减少CPU使用
+            delay: 5000, // 改为每5秒检查一次，进一步减少CPU使用
             callback: this.checkVisibility,
             callbackScope: this,
             loop: true

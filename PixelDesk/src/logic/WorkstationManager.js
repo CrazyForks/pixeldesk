@@ -4,6 +4,18 @@ import { Player } from '../entities/Player.js';
 // 解决：完全禁用所有缓存，每次都从数据库获取最新数据
 // import { WorkstationBindingCache, AdaptiveDebounce } from '../cache/WorkstationBindingCache.js';
 
+// ===== 性能优化配置 =====
+const PERFORMANCE_CONFIG = {
+  // 禁用控制台日志以大幅减少CPU消耗
+  ENABLE_DEBUG_LOGGING: false,
+  // 关键错误和警告仍然显示
+  ENABLE_ERROR_LOGGING: true
+}
+
+// 性能优化的日志系统
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
+
 export class WorkstationManager {
     constructor(scene) {
         this.scene = scene;
@@ -42,7 +54,7 @@ export class WorkstationManager {
             if (typeof this.scene.scene.isActive !== 'function') return false;
             return this.scene.scene.isActive();
         } catch (error) {
-            console.warn('Scene validity check failed:', error);
+            debugWarn('Scene validity check failed:', error);
             return false;
         }
     }
@@ -70,7 +82,7 @@ export class WorkstationManager {
         this.workstations.set(tiledObject.id, workstation);
         this.setupInteraction(workstation);
         
-        // console.log(`Created workstation with ID: ${tiledObject.id}`, workstation);
+        // debugLog(`Created workstation with ID: ${tiledObject.id}`, workstation);
         return workstation;
     }
 
@@ -123,8 +135,8 @@ export class WorkstationManager {
     onWorkstationClick(workstationId) {
         const workstation = this.workstations.get(workstationId);
         if (workstation) {
-            console.log(`Clicked workstation ${workstationId}:`, workstation);
-            console.log(`User bound: ${this.getUserByWorkstation(workstationId) || 'None'}`);
+            debugLog(`Clicked workstation ${workstationId}:`, workstation);
+            debugLog(`User bound: ${this.getUserByWorkstation(workstationId) || 'None'}`);
             
             this.highlightWorkstation(workstationId);
             
@@ -138,7 +150,7 @@ export class WorkstationManager {
                 // 已占用的工位显示工位信息弹窗
                 const userId = this.getUserByWorkstation(workstationId);
                 if (userId) {
-                    console.log(`显示工位 ${workstationId} 的信息弹窗，用户ID: ${userId}`);
+                    debugLog(`显示工位 ${workstationId} 的信息弹窗，用户ID: ${userId}`);
                     
                     // 调用全局函数显示工位信息弹窗
                     if (typeof window !== 'undefined' && window.showWorkstationInfo) {
@@ -191,23 +203,23 @@ export class WorkstationManager {
     async bindUserToWorkstation(workstationId, userId, userInfo = {}) {
         const workstation = this.workstations.get(workstationId);
         if (!workstation) {
-            console.warn(`Workstation ${workstationId} not found`);
+            debugWarn(`Workstation ${workstationId} not found`);
             return { success: false, error: 'Workstation not found' };
         }
 
         if (workstation.isOccupied) {
-            console.warn(`Workstation ${workstationId} is already occupied by user ${workstation.userId}`);
+            debugWarn(`Workstation ${workstationId} is already occupied by user ${workstation.userId}`);
             return { success: false, error: 'Workstation already occupied' };
         }
 
         // 检查用户是否已经绑定到其他工位
         const existingWorkstation = this.getWorkstationByUser(userId);
         if (existingWorkstation) {
-            console.warn(`🚫 [bindUserToWorkstation] 用户 ${userId} 已绑定到工位 ${existingWorkstation.id}`);
-            console.warn(`🔍 [bindUserToWorkstation] 当前userBindings状态:`, Array.from(this.userBindings.entries()));
+            debugWarn(`🚫 [bindUserToWorkstation] 用户 ${userId} 已绑定到工位 ${existingWorkstation.id}`);
+            debugWarn(`🔍 [bindUserToWorkstation] 当前userBindings状态:`, Array.from(this.userBindings.entries()));
             return { success: false, error: 'User already bound to another workstation' };
         }
-        console.log(`✅ [bindUserToWorkstation] 用户 ${userId} 没有现有绑定，可以绑定到工位 ${workstationId}`);
+        debugLog(`✅ [bindUserToWorkstation] 用户 ${userId} 没有现有绑定，可以绑定到工位 ${workstationId}`);
 
         // 计算过期时间（30天后）
         const now = new Date();
@@ -238,9 +250,9 @@ export class WorkstationManager {
         this.addUserWorkstationHighlight(workstation);
         
         // 在工位上显示角色形象
-        console.log(`👤 [bindUserToWorkstation] 即将调用 addCharacterToWorkstation`);
+        debugLog(`👤 [bindUserToWorkstation] 即将调用 addCharacterToWorkstation`);
         this.addCharacterToWorkstation(workstation, userId, userInfo);
-        console.log(`👤 [bindUserToWorkstation] addCharacterToWorkstation 调用完成:`, {
+        debugLog(`👤 [bindUserToWorkstation] addCharacterToWorkstation 调用完成:`, {
             workstationHasCharacter: !!workstation.characterSprite,
             characterKey: workstation.characterKey,
             characterVisible: workstation.characterSprite?.visible,
@@ -275,7 +287,7 @@ export class WorkstationManager {
             return { success: false, error: saveResult.error };
         }
         
-        console.log(`工位绑定成功，服务器返回剩余积分: ${saveResult.remainingPoints}`);
+        debugLog(`工位绑定成功，服务器返回剩余积分: ${saveResult.remainingPoints}`);
         
         // 更新本地用户数据中的积分
         if (saveResult.remainingPoints !== undefined) {
@@ -288,7 +300,7 @@ export class WorkstationManager {
         }
         
         // 触发事件（增强版本，包含更多信息）
-        console.log(`📢 [bindUserToWorkstation] 即将触发 user-bound 事件:`, {
+        debugLog(`📢 [bindUserToWorkstation] 即将触发 user-bound 事件:`, {
             workstationId,
             userId,
             userName: userInfo?.name,
@@ -312,7 +324,7 @@ export class WorkstationManager {
             workstationHasCharacter: !!workstation.characterSprite,
             userBindingExists: this.userBindings.has(workstationId)
         };
-        console.log(`🔍 [bindUserToWorkstation] 结束时的绑定状态:`, finalBindingState);
+        debugLog(`🔍 [bindUserToWorkstation] 结束时的绑定状态:`, finalBindingState);
 
         return {
             success: true,
@@ -325,12 +337,12 @@ export class WorkstationManager {
     unbindUserFromWorkstation(workstationId) {
         const workstation = this.workstations.get(workstationId);
         if (!workstation) {
-            console.warn(`Workstation ${workstationId} not found`);
+            debugWarn(`Workstation ${workstationId} not found`);
             return { success: false, error: 'Workstation not found' };
         }
 
         if (!workstation.isOccupied) {
-            console.warn(`Workstation ${workstationId} is not occupied`);
+            debugWarn(`Workstation ${workstationId} is not occupied`);
             return { success: false, error: 'Workstation not occupied' };
         }
 
@@ -362,7 +374,7 @@ export class WorkstationManager {
         // 移除角色显示
         this.removeCharacterFromWorkstation(workstation);
 
-        console.log(`Successfully unbound user ${userId} from workstation ${workstationId}`);
+        debugLog(`Successfully unbound user ${userId} from workstation ${workstationId}`);
         
         // 触发事件
         this.scene.events.emit('user-unbound', {
@@ -499,27 +511,27 @@ export class WorkstationManager {
             this.config = { ...this.config, ...data.config };
         }
         
-        console.log('Workstation data imported successfully');
+        debugLog('Workstation data imported successfully');
     }
  
     // ===== 调试和日志 =====
     printStatistics() {
         const stats = this.getStatistics();
-        console.log('=== Workstation Statistics ===');
-        console.log(`Total workstations: ${stats.total}`);
-        console.log(`Occupied: ${stats.occupied}`);
-        console.log(`Available: ${stats.available}`);
-        console.log(`Occupancy rate: ${stats.occupancyRate}`);
-        console.log('=== Type Statistics ===');
+        debugLog('=== Workstation Statistics ===');
+        debugLog(`Total workstations: ${stats.total}`);
+        debugLog(`Occupied: ${stats.occupied}`);
+        debugLog(`Available: ${stats.available}`);
+        debugLog(`Occupancy rate: ${stats.occupancyRate}`);
+        debugLog('=== Type Statistics ===');
         Object.entries(stats.types).forEach(([type, data]) => {
-            console.log(`${type}: ${data.occupied}/${data.total} occupied`);
+            debugLog(`${type}: ${data.occupied}/${data.total} occupied`);
         });
     }
 
     printAllWorkstations() {
-        console.log('=== All Workstations ===');
+        debugLog('=== All Workstations ===');
         this.workstations.forEach((workstation, id) => {
-            console.log(`ID: ${id}, User: ${workstation.userId || 'None'}, Position: (${workstation.position.x}, ${workstation.position.y}), Type: ${workstation.type}`);
+            debugLog(`ID: ${id}, User: ${workstation.userId || 'None'}, Position: (${workstation.position.x}, ${workstation.position.y}), Type: ${workstation.type}`);
         });
     }
 
@@ -532,7 +544,7 @@ export class WorkstationManager {
             const result = await response.json();
             
             if (result.success && result.data) {
-                console.log('从服务器加载工位绑定信息:', result.data);
+                debugLog('从服务器加载工位绑定信息:', result.data);
                 return result.data;
             } else {
                 console.error('获取工位绑定信息失败:', result.error);
@@ -546,12 +558,12 @@ export class WorkstationManager {
     
     async syncWorkstationBindings() {
         // 完全禁用缓存系统，每次都重新获取最新数据
-        console.log('🔄 使用无缓存的工位同步方法');
+        debugLog('🔄 使用无缓存的工位同步方法');
 
         try {
             // 每次都重新获取所有绑定数据，不使用任何缓存
             const allBindings = await this.loadAllWorkstationBindings();
-            console.log(`📦 收到 ${allBindings.length} 个工位绑定:`, allBindings.map(b => ({
+            debugLog(`📦 收到 ${allBindings.length} 个工位绑定:`, allBindings.map(b => ({
                 workstationId: b.workstationId,
                 userId: b.userId,
                 userName: b.user?.name
@@ -560,7 +572,7 @@ export class WorkstationManager {
             // 直接应用绑定，完全不使用缓存
             this.applyBindingsDirectly(allBindings);
 
-            console.log('✅ 工位同步完成（无缓存）');
+            debugLog('✅ 工位同步完成（无缓存）');
             return;
         } catch (error) {
             console.error('❌ 工位同步失败:', error);
@@ -570,7 +582,7 @@ export class WorkstationManager {
 
     // 直接应用绑定数据，不使用缓存
     applyBindingsDirectly(bindings) {
-        console.log(`🎯 [applyBindingsDirectly] 开始直接应用 ${bindings.length} 个绑定`);
+        debugLog(`🎯 [applyBindingsDirectly] 开始直接应用 ${bindings.length} 个绑定`);
 
         // 创建绑定映射表
         const bindingsMap = new Map();
@@ -583,7 +595,7 @@ export class WorkstationManager {
             const binding = bindingsMap.get(workstationId);
 
             if (binding) {
-                console.log(`✅ [applyBindingsDirectly] 应用工位 ${workstationId} 绑定:`, {
+                debugLog(`✅ [applyBindingsDirectly] 应用工位 ${workstationId} 绑定:`, {
                     userId: binding.userId,
                     userName: binding.user?.name
                 });
@@ -617,7 +629,7 @@ export class WorkstationManager {
             } else {
                 // 确保工位显示为未绑定状态
                 if (workstation.isOccupied) {
-                    console.log(`❌ [applyBindingsDirectly] 清理工位 ${workstationId} 绑定状态`);
+                    debugLog(`❌ [applyBindingsDirectly] 清理工位 ${workstationId} 绑定状态`);
 
                     workstation.isOccupied = false;
                     workstation.userId = null;
@@ -637,12 +649,12 @@ export class WorkstationManager {
             }
         });
 
-        console.log(`📊 [applyBindingsDirectly] 完成: ${bindings.length} 个绑定已应用`);
+        debugLog(`📊 [applyBindingsDirectly] 完成: ${bindings.length} 个绑定已应用`);
     }
     
     // 手动刷新工位状态
     async refreshWorkstationStatus() {
-        console.log('手动刷新工位状态...');
+        debugLog('手动刷新工位状态...');
         await this.syncWorkstationBindings();
         
         // 触发刷新完成事件
@@ -673,7 +685,7 @@ export class WorkstationManager {
 
         // 检查 scene 是否存在且有效
         if (!this.isSceneValid()) {
-            console.warn('Scene is not available or not active, skipping addUserWorkstationHighlight');
+            debugWarn('Scene is not available or not active, skipping addUserWorkstationHighlight');
             return;
         }
 
@@ -726,7 +738,7 @@ export class WorkstationManager {
 
         // 检查 scene 是否存在且有效
         if (!this.isSceneValid()) {
-            console.warn('Scene is not available or not active, skipping addExpiryCountdown');
+            debugWarn('Scene is not available or not active, skipping addExpiryCountdown');
             return;
         }
 
@@ -802,7 +814,7 @@ export class WorkstationManager {
             const result = await response.json();
 
             if (result.success) {
-                console.log('工位绑定信息已保存到服务器:', result.data);
+                debugLog('工位绑定信息已保存到服务器:', result.data);
                 return { success: true, remainingPoints: result.data.remainingPoints };
             } else {
                 console.error('工位绑定失败:', result.error);
@@ -832,7 +844,7 @@ export class WorkstationManager {
             const result = await response.json();
 
             if (result.success) {
-                console.log(`用户 ${userId} 积分已更新到服务器: ${pointsChange > 0 ? '+' : ''}${pointsChange}, 新积分: ${result.data.points}`);
+                debugLog(`用户 ${userId} 积分已更新到服务器: ${pointsChange > 0 ? '+' : ''}${pointsChange}, 新积分: ${result.data.points}`);
 
                 // 触发积分更新事件，通知前端UI更新
                 if (typeof window !== 'undefined') {
@@ -844,7 +856,7 @@ export class WorkstationManager {
                         }
                     });
                     window.dispatchEvent(event);
-                    console.log(`已触发积分更新事件: 用户 ${userId}, 新积分: ${result.data.points}`);
+                    debugLog(`已触发积分更新事件: 用户 ${userId}, 新积分: ${result.data.points}`);
                 }
 
                 return { success: true, newPoints: result.data.points };
@@ -870,7 +882,7 @@ export class WorkstationManager {
                     // 工位已过期，自动解绑
                     this.unbindUserFromWorkstation(workstationId);
                     expiredCount++;
-                    console.log(`工位 ${workstationId} 已过期，自动解绑用户 ${workstation.userId}`);
+                    debugLog(`工位 ${workstationId} 已过期，自动解绑用户 ${workstation.userId}`);
                 } else {
                     // 更新剩余天数
                     const remainingTime = expiresAt - now;
@@ -880,7 +892,7 @@ export class WorkstationManager {
         });
 
         if (expiredCount > 0) {
-            console.log(`清理了 ${expiredCount} 个过期工位`);
+            debugLog(`清理了 ${expiredCount} 个过期工位`);
         }
     }
 
@@ -899,7 +911,7 @@ export class WorkstationManager {
 
     // ===== 工位购买功能 =====
     async purchaseWorkstation(workstationId, userId, userInfo) {
-        console.log(`用户 ${userId} 尝试购买工位 ${workstationId}, 当前积分: ${userInfo.points || 0}`);
+        debugLog(`用户 ${userId} 尝试购买工位 ${workstationId}, 当前积分: ${userInfo.points || 0}`);
 
         // 检查用户积分是否足够
         const userPoints = userInfo.points || 0;
@@ -914,7 +926,7 @@ export class WorkstationManager {
             return bindResult;
         }
 
-        console.log(`工位购买成功，剩余积分: ${bindResult.remainingPoints || userPoints - 5}`);
+        debugLog(`工位购买成功，剩余积分: ${bindResult.remainingPoints || userPoints - 5}`);
         
         return { 
             success: true, 
@@ -925,7 +937,7 @@ export class WorkstationManager {
     
     // ===== 角色显示管理 =====
     addCharacterToWorkstation(workstation, userId, userInfo) {
-        console.log(`👤 [addCharacterToWorkstation] 开始为工位 ${workstation.id} 添加角色:`, {
+        debugLog(`👤 [addCharacterToWorkstation] 开始为工位 ${workstation.id} 添加角色:`, {
             userId,
             userInfo,
             hasExistingCharacter: !!workstation.characterSprite,
@@ -942,19 +954,19 @@ export class WorkstationManager {
         });
 
         if (workstation.characterSprite) {
-            console.log(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 已有角色精灵，跳过`);
+            debugLog(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 已有角色精灵，跳过`);
             return; // 已有角色精灵
         }
 
         // 检查 scene 是否存在且有效
         if (!this.isSceneValid()) {
-            console.warn(`⚠️ [addCharacterToWorkstation] Scene 无效，跳过工位 ${workstation.id} 的角色添加`);
+            debugWarn(`⚠️ [addCharacterToWorkstation] Scene 无效，跳过工位 ${workstation.id} 的角色添加`);
             return;
         }
 
         // 调试：检查当前用户信息
         const currentUser = this.scene.currentUser;
-        console.log(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 调试信息:`, {
+        debugLog(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 调试信息:`, {
             currentUserId: currentUser?.id,
             workstationUserId: workstation.userId,
             isCurrentUser: currentUser && workstation.userId === currentUser.id,
@@ -963,16 +975,16 @@ export class WorkstationManager {
 
         // 暂时注释掉不显示当前用户角色的逻辑，调试角色显示问题
         // if (currentUser && workstation.userId === currentUser.id) {
-        //     console.log(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 是当前用户 ${currentUser.id} 的工位，不显示角色`);
+        //     debugLog(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 是当前用户 ${currentUser.id} 的工位，不显示角色`);
         //     return;
         // }
 
-        console.log(`🎯 [addCharacterToWorkstation] 强制显示所有角色以进行调试`);
+        debugLog(`🎯 [addCharacterToWorkstation] 强制显示所有角色以进行调试`);
 
         
         // 根据工位方向计算角色位置
         const { x: charX, y: charY, direction: characterDirection } = this.calculateCharacterPosition(workstation);
-        console.log(`📐 [addCharacterToWorkstation] 计算角色位置:`, {
+        debugLog(`📐 [addCharacterToWorkstation] 计算角色位置:`, {
             charX, charY, characterDirection,
             workstationPos: workstation.position,
             workstationSize: workstation.size,
@@ -985,7 +997,7 @@ export class WorkstationManager {
             // 优先使用用户选择的角色形象
             characterKey = userInfo.character || userInfo.avatar;
         }
-        console.log(`🎨 [addCharacterToWorkstation] 角色图片选择:`, {
+        debugLog(`🎨 [addCharacterToWorkstation] 角色图片选择:`, {
             characterKey,
             userInfoCharacter: userInfo?.character,
             userInfoAvatar: userInfo?.avatar,
@@ -994,7 +1006,7 @@ export class WorkstationManager {
         
         // 尝试加载角色图片
         try {
-            console.log(`🔍 [addCharacterToWorkstation] 检查场景纹理管理器:`, {
+            debugLog(`🔍 [addCharacterToWorkstation] 检查场景纹理管理器:`, {
                 hasScene: !!this.scene,
                 hasTextures: !!this.scene?.textures,
                 hasLoad: !!this.scene?.load,
@@ -1003,29 +1015,29 @@ export class WorkstationManager {
 
             // 检查 scene 是否有纹理管理器
             if (!this.scene || !this.scene.textures || !this.scene.load) {
-                console.warn('⚠️ [addCharacterToWorkstation] Scene textures or loader not available, using default character');
+                debugWarn('⚠️ [addCharacterToWorkstation] Scene textures or loader not available, using default character');
                 this.createCharacterSprite(workstation, charX, charY, 'Premade_Character_48x48_01', userId, characterDirection);
                 return;
             }
             
             // 如果图片还没加载，先加载
             if (!this.scene.textures.exists(characterKey)) {
-                console.log(`📥 [addCharacterToWorkstation] 加载角色纹理: ${characterKey}`);
+                debugLog(`📥 [addCharacterToWorkstation] 加载角色纹理: ${characterKey}`);
                 this.scene.load.image(characterKey, `/assets/characters/${characterKey}.png`);
                 this.scene.load.once(`complete`, () => {
-                    console.log(`✅ [addCharacterToWorkstation] 纹理加载完成: ${characterKey}`);
+                    debugLog(`✅ [addCharacterToWorkstation] 纹理加载完成: ${characterKey}`);
                     this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
                 });
                 this.scene.load.start();
             } else {
-                console.log(`✅ [addCharacterToWorkstation] 纹理已存在: ${characterKey}`);
+                debugLog(`✅ [addCharacterToWorkstation] 纹理已存在: ${characterKey}`);
                 this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
             }
         } catch (error) {
             console.error('❌ [addCharacterToWorkstation] 无法加载角色图片:', characterKey, error);
             // 使用默认角色
             if (characterKey !== 'Premade_Character_48x48_01') {
-                console.log(`🔄 [addCharacterToWorkstation] 回退到默认角色`);
+                debugLog(`🔄 [addCharacterToWorkstation] 回退到默认角色`);
                 this.createCharacterSprite(workstation, charX, charY, 'Premade_Character_48x48_01', userId, characterDirection);
             } else {
                 console.error(`❌ [addCharacterToWorkstation] 连默认角色都无法创建`);
@@ -1034,7 +1046,7 @@ export class WorkstationManager {
     }
     
     createCharacterSprite(workstation, x, y, characterKey, userId, characterDirection) {
-        console.log(`🎨 [createCharacterSprite] 开始创建工位 ${workstation.id} 的角色精灵:`, {
+        debugLog(`🎨 [createCharacterSprite] 开始创建工位 ${workstation.id} 的角色精灵:`, {
             position: { x, y },
             characterKey,
             userId,
@@ -1044,7 +1056,7 @@ export class WorkstationManager {
 
         // 检查 scene 是否存在且有效
         if (!this.isSceneValid()) {
-            console.warn(`⚠️ [createCharacterSprite] Scene 无效，跳过工位 ${workstation.id} 的角色精灵创建`);
+            debugWarn(`⚠️ [createCharacterSprite] Scene 无效，跳过工位 ${workstation.id} 的角色精灵创建`);
             return;
         }
 
@@ -1061,10 +1073,10 @@ export class WorkstationManager {
             }
         };
 
-        console.log(`👤 [createCharacterSprite] 创建Player实例，数据:`, playerData);
+        debugLog(`👤 [createCharacterSprite] 创建Player实例，数据:`, playerData);
 
         try {
-            console.log(`🚀 [createCharacterSprite] 开始创建 Player 实例:`, {
+            debugLog(`🚀 [createCharacterSprite] 开始创建 Player 实例:`, {
                 scene: !!this.scene,
                 position: { x, y },
                 characterKey,
@@ -1074,7 +1086,7 @@ export class WorkstationManager {
 
             // 创建Player实例（禁用移动和状态保存，标记为其他玩家）
             const character = new Player(this.scene, x, y, characterKey, false, false, true, playerData);
-            console.log(`✅ [createCharacterSprite] Player实例创建成功:`, {
+            debugLog(`✅ [createCharacterSprite] Player实例创建成功:`, {
                 character: !!character,
                 characterId: character?.playerData?.id,
                 characterName: character?.playerData?.name,
@@ -1087,18 +1099,18 @@ export class WorkstationManager {
             // 设置角色朝向
             if (typeof character.setDirectionFrame === 'function') {
                 character.setDirectionFrame(characterDirection);
-                console.log(`🧭 [createCharacterSprite] 角色朝向设置完成: ${characterDirection}`);
+                debugLog(`🧭 [createCharacterSprite] 角色朝向设置完成: ${characterDirection}`);
             } else {
-                console.warn(`⚠️ [createCharacterSprite] character.setDirectionFrame 不是一个函数`);
+                debugWarn(`⚠️ [createCharacterSprite] character.setDirectionFrame 不是一个函数`);
             }
 
             // 设置缩放（稍微缩小一点）
             character.setScale(0.8);
-            console.log(`🔍 [createCharacterSprite] 角色缩放设置完成: 0.8`);
+            debugLog(`🔍 [createCharacterSprite] 角色缩放设置完成: 0.8`);
 
             // 设置深度
             character.setDepth(1000); // 在工位上方
-            console.log(`🔍 [createCharacterSprite] 角色深度设置完成: 1000`);
+            debugLog(`🔍 [createCharacterSprite] 角色深度设置完成: 1000`);
 
             // 添加点击事件
             try {
@@ -1106,9 +1118,9 @@ export class WorkstationManager {
                 character.on('pointerdown', () => {
                     this.onCharacterClick(userId, workstation);
                 });
-                console.log(`🔧 [createCharacterSprite] 角色交互设置完成`);
+                debugLog(`🔧 [createCharacterSprite] 角色交互设置完成`);
             } catch (interactiveError) {
-                console.warn(`⚠️ [createCharacterSprite] 设置交互失败:`, interactiveError);
+                debugWarn(`⚠️ [createCharacterSprite] 设置交互失败:`, interactiveError);
             }
 
             // 添加悬停效果
@@ -1126,20 +1138,20 @@ export class WorkstationManager {
                         this.scene.input.setDefaultCursor('default');
                     }
                 });
-                console.log(`🔧 [createCharacterSprite] 角色悬停效果设置完成`);
+                debugLog(`🔧 [createCharacterSprite] 角色悬停效果设置完成`);
             } catch (hoverError) {
-                console.warn(`⚠️ [createCharacterSprite] 设置悬停效果失败:`, hoverError);
+                debugWarn(`⚠️ [createCharacterSprite] 设置悬停效果失败:`, hoverError);
             }
 
             // 添加到场景
             try {
                 this.scene.add.existing(character);
-                console.log(`🎬 [createCharacterSprite] 角色已添加到场景`);
+                debugLog(`🎬 [createCharacterSprite] 角色已添加到场景`);
 
                 // 验证角色是否正确添加到场景
                 const sceneChildren = this.scene.children.list;
                 const isInScene = sceneChildren.includes(character);
-                console.log(`🔍 [createCharacterSprite] 角色在场景中验证:`, {
+                debugLog(`🔍 [createCharacterSprite] 角色在场景中验证:`, {
                     isInScene,
                     sceneChildrenCount: sceneChildren.length,
                     characterInList: isInScene,
@@ -1156,7 +1168,7 @@ export class WorkstationManager {
             workstation.characterKey = characterKey;
             workstation.characterDirection = characterDirection;
 
-            console.log(`✅ [createCharacterSprite] 工位 ${workstation.id} 角色创建完成:`, {
+            debugLog(`✅ [createCharacterSprite] 工位 ${workstation.id} 角色创建完成:`, {
                 characterKey,
                 position: { x, y },
                 direction: characterDirection,
@@ -1178,7 +1190,7 @@ export class WorkstationManager {
     }
     
     onCharacterClick(userId, workstation) {
-        console.log(`点击了工位 ${workstation.id} 上的角色 ${userId}`);
+        debugLog(`点击了工位 ${workstation.id} 上的角色 ${userId}`);
         
         // 检查userInfo是否为null或undefined
         const userInfo = workstation.userInfo || {};
@@ -1318,7 +1330,7 @@ export class WorkstationManager {
         
         // 检查 scene 是否存在且有效
         if (!this.isSceneValid()) {
-            console.warn('Scene is not available or not active, skipping addInteractionIcon');
+            debugWarn('Scene is not available or not active, skipping addInteractionIcon');
             return;
         }
         
@@ -1367,7 +1379,7 @@ export class WorkstationManager {
         
         // 检查 scene 是否存在且有效
         if (!this.isSceneValid()) {
-            console.warn('Scene is not available or not active, skipping addOccupiedIcon');
+            debugWarn('Scene is not available or not active, skipping addOccupiedIcon');
             return;
         }
         
@@ -1422,7 +1434,7 @@ export class WorkstationManager {
             const result = await response.json();
 
             if (!result.success || result.data.length === 0) {
-                console.warn(`用户 ${userId} 没有绑定的工位`);
+                debugWarn(`用户 ${userId} 没有绑定的工位`);
                 return { success: false, error: '您还没有绑定工位' };
             }
 
@@ -1430,7 +1442,7 @@ export class WorkstationManager {
             workstation = this.workstations.get(parseInt(binding.workstationId));
 
             if (!workstation) {
-                console.warn(`找不到工位 ${binding.workstationId}`);
+                debugWarn(`找不到工位 ${binding.workstationId}`);
                 return { success: false, error: '工位不存在' };
             }
         } catch (error) {
@@ -1438,9 +1450,9 @@ export class WorkstationManager {
             return { success: false, error: '查询工位失败' };
         }
 
-        console.log(`找到用户 ${userId} 的绑定工位: ID ${workstation.id}, 位置 (${workstation.position.x}, ${workstation.position.y})`);
+        debugLog(`找到用户 ${userId} 的绑定工位: ID ${workstation.id}, 位置 (${workstation.position.x}, ${workstation.position.y})`);
         if (workstation.sprite) {
-            console.log(`工位精灵实际位置: (${workstation.sprite.x}, ${workstation.sprite.y})`);
+            debugLog(`工位精灵实际位置: (${workstation.sprite.x}, ${workstation.sprite.y})`);
         }
 
         // 计算传送位置（工位前方）
@@ -1455,11 +1467,11 @@ export class WorkstationManager {
 
         // 执行传送
         if (player && typeof player.teleportTo === 'function') {
-            console.log(`执行传送: 玩家当前位置 (${player.x}, ${player.y}) -> 目标位置 (${teleportPosition.x}, ${teleportPosition.y})`);
+            debugLog(`执行传送: 玩家当前位置 (${player.x}, ${player.y}) -> 目标位置 (${teleportPosition.x}, ${teleportPosition.y})`);
             player.teleportTo(teleportPosition.x, teleportPosition.y, teleportPosition.direction);
         }
 
-        console.log(`用户 ${userId} 快速回到工位，扣除1积分，剩余积分: ${pointsResult.newPoints}`);
+        debugLog(`用户 ${userId} 快速回到工位，扣除1积分，剩余积分: ${pointsResult.newPoints}`);
         
         // 触发事件
         this.scene.events.emit('teleport-to-workstation', {
@@ -1511,16 +1523,16 @@ export class WorkstationManager {
                 break;
         }
 
-        console.log(`计算传送位置: 工位ID ${workstation.id}, 精灵位置 (${spriteX}, ${spriteY}), 传送位置 (${teleportX}, ${teleportY})`);
+        debugLog(`计算传送位置: 工位ID ${workstation.id}, 精灵位置 (${spriteX}, ${spriteY}), 传送位置 (${teleportX}, ${teleportY})`);
         return { x: teleportX, y: teleportY, direction: teleportDirection };
     }
 
     // ===== 清理方法 =====
     clearAllBindings() {
         // 清理所有工位绑定（仅在必要时使用，避免界面闪烁）
-        console.log('强制清理所有工位绑定...');
+        debugLog('强制清理所有工位绑定...');
         const results = this.unbindAllUsers();
-        console.log(`已清理 ${results.length} 个工位绑定`);
+        debugLog(`已清理 ${results.length} 个工位绑定`);
         
         // 移除所有交互图标、占用图标和角色显示
         this.workstations.forEach(workstation => {
@@ -1529,13 +1541,13 @@ export class WorkstationManager {
             this.removeCharacterFromWorkstation(workstation);
         });
         
-        console.log('所有工位绑定和交互图标已清理');
+        debugLog('所有工位绑定和交互图标已清理');
     }
     
     // 新增：优雅清理方法，用于场景切换等情况
     gracefulClearBindings() {
         // 优雅地清理绑定，避免视觉闪烁
-        console.log('优雅清理工位绑定...');
+        debugLog('优雅清理工位绑定...');
 
         // 逐个清理，给每个清理操作一些延迟
         const workstationIds = Array.from(this.userBindings.keys());
@@ -1547,7 +1559,7 @@ export class WorkstationManager {
                 clearCount++;
 
                 if (clearCount === workstationIds.length) {
-                    console.log(`优雅清理完成，共清理 ${clearCount} 个工位绑定`);
+                    debugLog(`优雅清理完成，共清理 ${clearCount} 个工位绑定`);
                 }
             }, index * 50); // 每个清理操作间隔50ms
         });
@@ -1555,7 +1567,7 @@ export class WorkstationManager {
 
     // 强制重新同步所有工位绑定的方法
     async forceRefreshAllBindings() {
-        console.log('🔄 强制重新同步所有工位绑定...');
+        debugLog('🔄 强制重新同步所有工位绑定...');
 
         try {
             // 1. 清理当前所有绑定状态（不调用API，只清理本地状态）
@@ -1580,7 +1592,7 @@ export class WorkstationManager {
 
             // 2. 重新获取所有绑定数据
             const allBindings = await this.loadAllWorkstationBindings();
-            console.log(`📦 获取到 ${allBindings.length} 个工位绑定数据:`, allBindings.map(b => ({
+            debugLog(`📦 获取到 ${allBindings.length} 个工位绑定数据:`, allBindings.map(b => ({
                 workstationId: b.workstationId,
                 userId: b.userId,
                 userName: b.user?.name
@@ -1591,15 +1603,15 @@ export class WorkstationManager {
             allBindings.forEach(binding => {
                 const workstation = this.workstations.get(parseInt(binding.workstationId));
                 if (workstation) {
-                    console.log(`✅ 应用工位 ${binding.workstationId} 绑定: ${binding.user?.name}`);
+                    debugLog(`✅ 应用工位 ${binding.workstationId} 绑定: ${binding.user?.name}`);
                     this.applyBindingToWorkstation(workstation, binding);
                     appliedCount++;
                 } else {
-                    console.warn(`⚠️ 工位 ${binding.workstationId} 在地图中不存在`);
+                    debugWarn(`⚠️ 工位 ${binding.workstationId} 在地图中不存在`);
                 }
             });
 
-            console.log(`✅ 强制同步完成: ${appliedCount}/${allBindings.length} 个绑定已应用`);
+            debugLog(`✅ 强制同步完成: ${appliedCount}/${allBindings.length} 个绑定已应用`);
             return { success: true, applied: appliedCount, total: allBindings.length };
 
         } catch (error) {
@@ -1614,7 +1626,7 @@ export class WorkstationManager {
      * 视口优化功能已永久禁用，避免缓存问题
      */
     enableViewportOptimization() {
-        console.log('🚫 视口优化已永久禁用，避免缓存问题');
+        debugLog('🚫 视口优化已永久禁用，避免缓存问题');
         return;
     }
     
@@ -1622,7 +1634,7 @@ export class WorkstationManager {
      * 视口优化功能已永久禁用
      */
     disableViewportOptimization() {
-        console.log('🚫 视口优化已永久禁用');
+        debugLog('🚫 视口优化已永久禁用');
         return;
     }
     
@@ -1638,26 +1650,26 @@ export class WorkstationManager {
     
     // 视口优化同步方法已永久禁用
     async syncVisibleWorkstationBindings() {
-        console.log('🚫 视口优化同步已永久禁用，使用标准同步');
+        debugLog('🚫 视口优化同步已永久禁用，使用标准同步');
         return await this.syncWorkstationBindings();
     }
     
     // 这个方法已不再需要，因为我们直接使用loadAllWorkstationBindings
     async loadWorkstationBindingsByIds() {
-        console.log('🚫 loadWorkstationBindingsByIds已禁用，使用loadAllWorkstationBindings');
+        debugLog('🚫 loadWorkstationBindingsByIds已禁用，使用loadAllWorkstationBindings');
         return await this.loadAllWorkstationBindings();
     }
     
     // 视口绑定应用方法已禁用
     applyVisibleBindings() {
-        console.log('🚫 applyVisibleBindings已禁用');
+        debugLog('🚫 applyVisibleBindings已禁用');
     }
     
     /**
      * 应用绑定状态到工位
      */
     applyBindingToWorkstation(workstation, binding) {
-        console.log(`🎯 [applyBindingToWorkstation] 开始应用工位 ${workstation.id} 的绑定:`, {
+        debugLog(`🎯 [applyBindingToWorkstation] 开始应用工位 ${workstation.id} 的绑定:`, {
             userId: binding.userId,
             userName: binding.user?.name,
             remainingDays: binding.remainingDays,
@@ -1681,29 +1693,29 @@ export class WorkstationManager {
         workstation.isExpiringSoon = binding.isExpiringSoon || false;
 
         this.userBindings.set(String(workstation.id), binding.userId);
-        console.log(`✅ [applyBindingToWorkstation] 工位 ${workstation.id} 状态已更新: isOccupied=${workstation.isOccupied}, userId=${workstation.userId}, remainingDays=${workstation.remainingDays}`);
+        debugLog(`✅ [applyBindingToWorkstation] 工位 ${workstation.id} 状态已更新: isOccupied=${workstation.isOccupied}, userId=${workstation.userId}, remainingDays=${workstation.remainingDays}`);
 
         // 更新视觉效果
         if (workstation.sprite) {
             workstation.sprite.setTint(this.config.occupiedTint);
-            console.log(`🎨 [applyBindingToWorkstation] 工位 ${workstation.id} 精灵已着色`);
+            debugLog(`🎨 [applyBindingToWorkstation] 工位 ${workstation.id} 精灵已着色`);
         } else {
-            console.warn(`⚠️ [applyBindingToWorkstation] 工位 ${workstation.id} 没有精灵对象`);
+            debugWarn(`⚠️ [applyBindingToWorkstation] 工位 ${workstation.id} 没有精灵对象`);
         }
 
         // 管理图标
         this.removeInteractionIcon(workstation);
         this.addOccupiedIcon(workstation);
-        console.log(`🏷️ [applyBindingToWorkstation] 工位 ${workstation.id} 图标已更新`);
+        debugLog(`🏷️ [applyBindingToWorkstation] 工位 ${workstation.id} 图标已更新`);
 
         // 添加用户工位高亮（如果即将过期，使用警告颜色）
         this.addUserWorkstationHighlight(workstation);
 
         // 添加角色显示
-        console.log(`👤 [applyBindingToWorkstation] 开始为工位 ${workstation.id} 添加角色显示`);
+        debugLog(`👤 [applyBindingToWorkstation] 开始为工位 ${workstation.id} 添加角色显示`);
         this.addCharacterToWorkstation(workstation, binding.userId, workstation.userInfo);
 
-        console.log(`🎯 [applyBindingToWorkstation] 工位 ${workstation.id} 绑定应用完成`, {
+        debugLog(`🎯 [applyBindingToWorkstation] 工位 ${workstation.id} 绑定应用完成`, {
             hasCharacterAfter: !!workstation.characterSprite,
             characterKey: workstation.characterKey,
             remainingDays: workstation.remainingDays,
@@ -1752,13 +1764,13 @@ export class WorkstationManager {
         
         this.workstations.clear();
         this.userBindings.clear();
-        console.log('WorkstationManager destroyed');
+        debugLog('WorkstationManager destroyed');
     }
 
     // 清理userBindings中的无效数据
     cleanupUserBindings() {
-        console.log(`🧹 [cleanupUserBindings] 清理初始化时的userBindings，当前条目数: ${this.userBindings.size}`);
+        debugLog(`🧹 [cleanupUserBindings] 清理初始化时的userBindings，当前条目数: ${this.userBindings.size}`);
         this.userBindings.clear();
-        console.log(`✅ [cleanupUserBindings] userBindings已清空，避免遗留数据问题`);
+        debugLog(`✅ [cleanupUserBindings] userBindings已清空，避免遗留数据问题`);
     }
 }

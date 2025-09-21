@@ -3,6 +3,18 @@
  * Efficiently handles multiple simultaneous collisions with priority system
  */
 
+// ===== 性能优化配置 =====
+const PERFORMANCE_CONFIG = {
+  // 禁用控制台日志以大幅减少CPU消耗
+  ENABLE_DEBUG_LOGGING: false,
+  // 关键错误和警告仍然显示
+  ENABLE_ERROR_LOGGING: true
+}
+
+// 性能优化的日志系统
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
+
 export class MultiPlayerCollisionManager {
     constructor(scene) {
         this.scene = scene;
@@ -54,7 +66,7 @@ export class MultiPlayerCollisionManager {
         // Initialize performance monitoring
         this.setupPerformanceMonitoring();
         
-        console.log('[MultiPlayerCollisionManager] Initialized with priority-based collision handling');
+        debugLog('[MultiPlayerCollisionManager] Initialized with priority-based collision handling');
     }
     
     /**
@@ -64,7 +76,7 @@ export class MultiPlayerCollisionManager {
         try {
             const playerId = targetPlayer.playerData?.id;
             if (!playerId) {
-                console.warn('[MultiPlayerCollisionManager] Invalid player data for collision');
+                debugWarn('[MultiPlayerCollisionManager] Invalid player data for collision');
                 return false;
             }
             
@@ -130,7 +142,7 @@ export class MultiPlayerCollisionManager {
             this.activeCollisions.size
         );
         
-        console.log(`[MultiPlayerCollisionManager] Collision started with ${targetPlayer.playerData.name} (Priority: ${priority})`);
+        debugLog(`[MultiPlayerCollisionManager] Collision started with ${targetPlayer.playerData.name} (Priority: ${priority})`);
         return true;
     }
     
@@ -201,7 +213,7 @@ export class MultiPlayerCollisionManager {
         if (this.collisionQueue.length > 20) {
             const dropped = this.collisionQueue.pop();
             this.stats.droppedCollisions++;
-            console.warn('[MultiPlayerCollisionManager] Dropped collision from queue:', dropped.playerId);
+            debugWarn('[MultiPlayerCollisionManager] Dropped collision from queue:', dropped.playerId);
         }
     }
     
@@ -234,7 +246,7 @@ export class MultiPlayerCollisionManager {
                 targetPlayer.handleCollisionEnd(collision.mainPlayer);
             }
             
-            console.log(`[MultiPlayerCollisionManager] Collision ended with ${playerId} (Duration: ${duration}ms)`);
+            debugLog(`[MultiPlayerCollisionManager] Collision ended with ${playerId} (Duration: ${duration}ms)`);
             
             // Process queued collisions
             this.processQueuedCollisions();
@@ -419,7 +431,7 @@ export class MultiPlayerCollisionManager {
         const stats = this.stats;
         
         if (stats.totalCollisions > 0) {
-            console.log('[MultiPlayerCollisionManager] Performance stats:', {
+            debugLog('[MultiPlayerCollisionManager] Performance stats:', {
                 activeCollisions: this.activeCollisions.size,
                 queuedCollisions: this.collisionQueue.length,
                 totalCollisions: stats.totalCollisions,
@@ -474,7 +486,7 @@ export class MultiPlayerCollisionManager {
     setMaxSimultaneousCollisions(max) {
         if (max > 0 && max <= 20) {
             this.maxSimultaneousCollisions = max;
-            console.log(`[MultiPlayerCollisionManager] Max simultaneous collisions set to ${max}`);
+            debugLog(`[MultiPlayerCollisionManager] Max simultaneous collisions set to ${max}`);
         }
     }
     
@@ -496,7 +508,7 @@ export class MultiPlayerCollisionManager {
         this.collisionZones.clear();
         this.collisionCooldowns.clear();
         
-        console.log('[MultiPlayerCollisionManager] All collisions cleared');
+        debugLog('[MultiPlayerCollisionManager] All collisions cleared');
     }
     
     /**
@@ -504,6 +516,6 @@ export class MultiPlayerCollisionManager {
      */
     cleanup() {
         this.clearAllCollisions();
-        console.log('[MultiPlayerCollisionManager] Cleanup completed');
+        debugLog('[MultiPlayerCollisionManager] Cleanup completed');
     }
 }

@@ -21,9 +21,7 @@ export async function GET() {
     // 如果无法从游戏获取，则从数据库获取作为备用
     if (totalWorkstations === 0) {
       totalWorkstations = await prisma.workstation.count()
-      console.log('Using database workstation count as fallback:', totalWorkstations)
-    } else {
-      console.log('Using game workstation count:', totalWorkstations)
+      // 移除频繁的日志输出以优化性能
     }
     
     // 获取已绑定工位数

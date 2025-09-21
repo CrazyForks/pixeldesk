@@ -3,7 +3,16 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     // 优化大文件处理
-    optimizePackageImports: ['phaser']
+    optimizePackageImports: ['phaser'],
+    // 禁用Webpack构建工作线程以减少内存消耗
+    webpackBuildWorker: false
+  },
+  // 开发模式性能优化
+  onDemandEntries: {
+    // 减少页面保持在内存中的时间
+    maxInactiveAge: 25 * 1000,
+    // 减少并发编译的页面数量
+    pagesBufferLength: 2,
   },
   webpack: (config, { dev, isServer }) => {
     // 支持 Phaser 的资源加载
@@ -12,13 +21,31 @@ const nextConfig = {
       'phaser': 'phaser/dist/phaser.js'
     };
     
-    // Improve HMR WebSocket handling in development
+    // 开发模式性能优化
     if (dev && !isServer) {
-      // Suppress WebSocket connection warnings for HMR
+      // 禁用不必要的日志输出
       config.infrastructureLogging = {
         level: 'error',
       };
-      
+
+      // 优化文件监听以减少CPU占用
+      config.watchOptions = {
+        // 忽略node_modules以减少文件监听
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**'],
+        // 减少轮询频率
+        poll: 3000,
+        // 增加防抖延迟
+        aggregateTimeout: 600,
+      };
+
+      // 减少HMR客户端资源消耗
+      config.optimization = {
+        ...config.optimization,
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: false,
+      };
+
       // Configure HMR client to be more resilient to WebSocket errors
       const originalEntry = config.entry;
       config.entry = async () => {

@@ -2,6 +2,18 @@
  * 工位绑定缓存管理类
  * 支持单项缓存和区域级缓存，优化视口变化时的查询性能
  */
+
+// ===== 性能优化配置 =====
+const PERFORMANCE_CONFIG = {
+  // 禁用控制台日志以大幅减少CPU消耗
+  ENABLE_DEBUG_LOGGING: false,
+  // 关键错误和警告仍然显示
+  ENABLE_ERROR_LOGGING: true
+}
+
+// 性能优化的日志系统
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
 export class WorkstationBindingCache {
     constructor(options = {}) {
         this.cache = new Map();        // 单项缓存：workstationId -> 绑定数据
@@ -16,7 +28,7 @@ export class WorkstationBindingCache {
             ...options
         };
         
-        console.log('🗄️ WorkstationBindingCache initialized with config:', this.config);
+        debugLog('🗄️ WorkstationBindingCache initialized with config:', this.config);
     }
 
     /**
@@ -42,7 +54,7 @@ export class WorkstationBindingCache {
         const now = Date.now();
         if (now - cached.timestamp > this.config.regionExpiry) {
             this.regionCache.delete(regionKey);
-            console.log(`🗑️ 区域缓存过期并清理: ${regionKey}`);
+            debugLog(`🗑️ 区域缓存过期并清理: ${regionKey}`);
             return false;
         }
         
@@ -61,7 +73,7 @@ export class WorkstationBindingCache {
         });
         
         this.limitRegionCache();
-        console.log(`💾 缓存区域: ${regionKey}, 工位数: ${workstationIds.length}`);
+        debugLog(`💾 缓存区域: ${regionKey}, 工位数: ${workstationIds.length}`);
     }
 
     /**
@@ -87,15 +99,15 @@ export class WorkstationBindingCache {
         const cached = {};
         const uncached = [];
 
-        console.log(`🔍 [getCachedBindings] 查询 ${workstationIds.length} 个工位的缓存:`, workstationIds);
-        console.log(`🗄️ [getCachedBindings] 当前缓存大小: ${this.cache.size}, 缓存键值:`, Array.from(this.cache.keys()));
+        debugLog(`🔍 [getCachedBindings] 查询 ${workstationIds.length} 个工位的缓存:`, workstationIds);
+        debugLog(`🗄️ [getCachedBindings] 当前缓存大小: ${this.cache.size}, 缓存键值:`, Array.from(this.cache.keys()));
 
         workstationIds.forEach(id => {
             // 确保ID为数字类型进行查询
             const numericId = parseInt(id);
             const binding = this.getCachedBinding(numericId);
 
-            console.log(`🔍 [getCachedBindings] 工位 ${id} (${typeof id} -> ${numericId}) 缓存结果:`, !!binding);
+            debugLog(`🔍 [getCachedBindings] 工位 ${id} (${typeof id} -> ${numericId}) 缓存结果:`, !!binding);
 
             if (binding) {
                 cached[id] = binding;
@@ -105,7 +117,7 @@ export class WorkstationBindingCache {
         });
 
         const hitRate = Object.keys(cached).length / workstationIds.length;
-        console.log(`🎯 缓存命中率: ${(hitRate * 100).toFixed(1)}% (${Object.keys(cached).length}/${workstationIds.length})`);
+        debugLog(`🎯 缓存命中率: ${(hitRate * 100).toFixed(1)}% (${Object.keys(cached).length}/${workstationIds.length})`);
 
         return { cached, uncached };
     }
@@ -125,7 +137,7 @@ export class WorkstationBindingCache {
                     data: binding,
                     timestamp: now
                 });
-                console.log(`💾 [cacheBindings] 缓存工位 ${workstationId} 绑定:`, {
+                debugLog(`💾 [cacheBindings] 缓存工位 ${workstationId} 绑定:`, {
                     userId: binding.userId,
                     userName: binding.user?.name
                 });
@@ -134,7 +146,7 @@ export class WorkstationBindingCache {
         });
 
         this.limitItemCache();
-        console.log(`💾 新增缓存 ${newCacheCount} 个工位绑定`);
+        debugLog(`💾 新增缓存 ${newCacheCount} 个工位绑定`);
     }
 
     /**
@@ -150,7 +162,7 @@ export class WorkstationBindingCache {
         const toDelete = entries.slice(0, entries.length - this.config.maxItems);
         toDelete.forEach(([id]) => this.cache.delete(id));
         
-        console.log(`🧹 清理了 ${toDelete.length} 个过期的工位缓存`);
+        debugLog(`🧹 清理了 ${toDelete.length} 个过期的工位缓存`);
     }
 
     /**
@@ -165,7 +177,7 @@ export class WorkstationBindingCache {
         const toDelete = entries.slice(0, entries.length - this.config.maxRegions);
         toDelete.forEach(([key]) => this.regionCache.delete(key));
         
-        console.log(`🧹 清理了 ${toDelete.length} 个过期的区域缓存`);
+        debugLog(`🧹 清理了 ${toDelete.length} 个过期的区域缓存`);
     }
 
     /**
@@ -193,7 +205,7 @@ export class WorkstationBindingCache {
         }
         
         if (itemsDeleted > 0 || regionsDeleted > 0) {
-            console.log(`🧹 定期清理: 删除 ${itemsDeleted} 个工位缓存, ${regionsDeleted} 个区域缓存`);
+            debugLog(`🧹 定期清理: 删除 ${itemsDeleted} 个工位缓存, ${regionsDeleted} 个区域缓存`);
         }
     }
 
@@ -203,7 +215,7 @@ export class WorkstationBindingCache {
     invalidateWorkstation(workstationId) {
         const deleted = this.cache.delete(workstationId);
         if (deleted) {
-            console.log(`🔄 工位 ${workstationId} 缓存已失效`);
+            debugLog(`🔄 工位 ${workstationId} 缓存已失效`);
         }
     }
 
@@ -217,7 +229,7 @@ export class WorkstationBindingCache {
         this.cache.clear();
         this.regionCache.clear();
         
-        console.log(`🗑️ 清空所有缓存: ${itemCount} 个工位缓存, ${regionCount} 个区域缓存`);
+        debugLog(`🗑️ 清空所有缓存: ${itemCount} 个工位缓存, ${regionCount} 个区域缓存`);
     }
 
     /**
@@ -272,10 +284,10 @@ export class WorkstationBindingCache {
      */
     printStats() {
         const stats = this.getStats();
-        console.log('📊 WorkstationBindingCache 统计信息:');
-        console.log(`   工位缓存: ${stats.items.active}/${stats.items.total} 活跃 (容量: ${stats.items.maxCapacity})`);
-        console.log(`   区域缓存: ${stats.regions.active}/${stats.regions.total} 活跃 (容量: ${stats.regions.maxCapacity})`);
-        console.log(`   利用率: 工位 ${stats.efficiency.itemUtilization}, 区域 ${stats.efficiency.regionUtilization}`);
+        debugLog('📊 WorkstationBindingCache 统计信息:');
+        debugLog(`   工位缓存: ${stats.items.active}/${stats.items.total} 活跃 (容量: ${stats.items.maxCapacity})`);
+        debugLog(`   区域缓存: ${stats.regions.active}/${stats.regions.total} 活跃 (容量: ${stats.regions.maxCapacity})`);
+        debugLog(`   利用率: 工位 ${stats.efficiency.itemUtilization}, 区域 ${stats.efficiency.regionUtilization}`);
         return stats;
     }
 }
@@ -291,7 +303,7 @@ export class AdaptiveDebounce {
         this.recentMoves = [];
         this.maxHistory = 10;
         
-        console.log(`⏱️ AdaptiveDebounce initialized: base=${baseDelay}ms, max=${maxDelay}ms`);
+        debugLog(`⏱️ AdaptiveDebounce initialized: base=${baseDelay}ms, max=${maxDelay}ms`);
     }
     
     /**
@@ -306,7 +318,7 @@ export class AdaptiveDebounce {
             // 频繁移动时延长防抖时间，减少请求频率
             const multiplier = Math.min(2, 1 + (this.recentMoves.length - 5) * 0.2);
             const adaptedDelay = Math.min(this.maxDelay, this.baseDelay * multiplier);
-            console.log(`⏱️ 适应性防抖: ${this.recentMoves.length} 次移动，延迟调整为 ${adaptedDelay}ms`);
+            debugLog(`⏱️ 适应性防抖: ${this.recentMoves.length} 次移动，延迟调整为 ${adaptedDelay}ms`);
             return adaptedDelay;
         }
         

@@ -3,6 +3,18 @@
  * Implements spatial partitioning, debouncing, and efficient collision detection
  */
 
+// ===== 性能优化配置 =====
+const PERFORMANCE_CONFIG = {
+  // 禁用控制台日志以大幅减少CPU消耗
+  ENABLE_DEBUG_LOGGING: false,
+  // 关键错误和警告仍然显示
+  ENABLE_ERROR_LOGGING: true
+}
+
+// 性能优化的日志系统
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
+
 export class CollisionOptimizer {
     constructor(scene) {
         this.scene = scene;
@@ -50,7 +62,7 @@ export class CollisionOptimizer {
         // Set up error recovery
         this.setupErrorRecovery();
         
-        console.log('[CollisionOptimizer] Initialized with spatial partitioning and performance monitoring');
+        debugLog('[CollisionOptimizer] Initialized with spatial partitioning and performance monitoring');
     }
     
     /**
@@ -385,7 +397,7 @@ export class CollisionOptimizer {
         
         // Only log if there are performance issues
         if (metrics.frameDrops > 0 || metrics.averageCheckTime > 16) {
-            console.warn('[CollisionOptimizer] Performance metrics:', {
+            debugWarn('[CollisionOptimizer] Performance metrics:', {
                 checksPerSecond: metrics.checksPerSecond,
                 averageCheckTime: `${metrics.averageCheckTime.toFixed(2)}ms`,
                 frameDrops: metrics.frameDrops,
@@ -440,7 +452,7 @@ export class CollisionOptimizer {
         
         // Re-enable after 5 seconds
         this.scene.time.delayedCall(5000, () => {
-            console.log('[CollisionOptimizer] Re-enabling collision detection');
+            debugLog('[CollisionOptimizer] Re-enabling collision detection');
             this.errorCount = 0;
             this.initializeOptimizer();
         });
@@ -482,7 +494,7 @@ export class CollisionOptimizer {
     setCollisionSensitivity(radius) {
         if (radius > 0 && radius <= 200) {
             this.scene.collisionSensitivity = radius;
-            console.log(`[CollisionOptimizer] Collision sensitivity set to ${radius}px`);
+            debugLog(`[CollisionOptimizer] Collision sensitivity set to ${radius}px`);
         } else {
             console.warn('[CollisionOptimizer] Invalid collision sensitivity value');
         }
@@ -538,6 +550,6 @@ export class CollisionOptimizer {
         // Clear spatial grid
         this.spatialGrid.clear();
         
-        console.log('[CollisionOptimizer] Cleanup completed');
+        debugLog('[CollisionOptimizer] Cleanup completed');
     }
 }
