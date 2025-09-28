@@ -1,7 +1,7 @@
 import { Start } from './scenes/Start.js';
 
 const config = {
-    type: Phaser.CANVAS,
+    type: Phaser.AUTO,
     title: 'Overlord Rising',
     description: '',
     parent: 'game-container',
@@ -25,4 +25,4 @@ const config = {
     }
 }
 
-new Phaser.Game(config);
+// new Phaser.Game(config);

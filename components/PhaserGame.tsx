@@ -20,7 +20,7 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
     if (typeof window !== 'undefined' && !gameRef.current) {
       // 自定义 Phaser 配置 - 修复WebGL framebuffer错误，改为Canvas渲染器
       const config = {
-        type: Phaser.CANVAS, // 修复: 从WEBGL改为CANVAS，避免framebuffer错误
+        type: Phaser.AUTO, // 修复: 从WEBGL改为CANVAS，避免framebuffer错误
         title: 'PixelDesk Social',
         description: '社交办公游戏',
         parent: gameContainerRef.current,

@@ -435,6 +435,13 @@ export class Start extends Phaser.Scene {
 
     // 保存游戏场景引用，确保工位绑定功能可用
     this.saveGameScene()
+
+    console.log('🎮 游戏配置信息:', {
+      渲染器: this.game.renderer.type === 0 ? 'CANVAS' : 'WEBGL',
+      尺寸: `${this.game.config.width}x${this.game.config.height}`,
+      FPS目标: this.game.loop.targetFps,
+      实际FPS: this.game.loop.actualFps
+    });
   }
 
   update() {
@@ -551,8 +558,9 @@ export class Start extends Phaser.Scene {
     // 检查是否应该处理键盘输入（简化版本）
     if (this.keyboardInputEnabled === false) {
       // 当键盘输入被禁用时，停止角色移动
-      this.player.body.setVelocityX(0);
-      this.player.body.setVelocityY(0);
+      if (this.player.body.setVelocity) {
+        this.player.body.setVelocity(0, 0);
+      }
       return;
     }
 
