@@ -43,7 +43,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute -top-2 -right-2 z-10 bg-retro-bg-darker border border-retro-border rounded-full w-8 h-8 flex items-center justify-center text-retro-textMuted hover:text-white hover:bg-retro-border/30 transition-colors"
+          className="absolute -top-2 -right-2 z-10 bg-retro-bg-darker border border-retro-border rounded-full w-8 h-8 flex items-center justify-center text-retro-textMuted hover:text-white hover:bg-retro-border/30 "
         >
           ×
         </button>

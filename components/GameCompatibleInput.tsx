@@ -61,7 +61,7 @@ const GameCompatibleInput = forwardRef<HTMLInputElement, GameCompatibleInputProp
       bg-retro-bg-darker 
       border-2 rounded-lg 
       text-white placeholder-retro-textMuted/70
-      transition-all duration-200
+      
       focus:outline-none focus:ring-0
       ${error 
         ? 'border-red-500 focus:border-red-400' 

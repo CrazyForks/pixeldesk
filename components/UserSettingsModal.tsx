@@ -234,7 +234,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
           <h2 className="text-white text-lg font-bold">用户设置</h2>
           <button
             onClick={onClose}
-            className="text-retro-textMuted hover:text-white transition-colors"
+            className="text-retro-textMuted hover:text-white "
           >
             ×
           </button>
@@ -259,7 +259,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`px-4 py-2 text-sm transition-colors ${
+              className={`px-4 py-2 text-sm  ${
                 activeTab === tab.key
                   ? 'text-white border-b-2 border-retro-purple'
                   : 'text-retro-textMuted hover:text-white'
@@ -299,7 +299,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg  disabled:opacity-50"
                 >
                   {isLoading ? '更新中...' : '更新资料'}
                 </button>
@@ -340,7 +340,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg  disabled:opacity-50"
               >
                 {isLoading ? '修改中...' : '修改密码'}
               </button>
@@ -392,7 +392,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full bg-retro-border/30 hover:bg-retro-border/50 text-white py-2 px-4 rounded-lg border border-retro-border transition-all duration-200"
+                    className="w-full bg-retro-border/30 hover:bg-retro-border/50 text-white py-2 px-4 rounded-lg border border-retro-border "
                   >
                     选择图片
                   </button>
@@ -402,7 +402,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                       type="button"
                       onClick={handleAvatarUpload}
                       disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 disabled:opacity-50"
+                      className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg  disabled:opacity-50"
                     >
                       {isLoading ? '上传中...' : '上传头像'}
                     </button>
@@ -413,7 +413,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                       type="button"
                       onClick={handleAvatarDelete}
                       disabled={isLoading}
-                      className="w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 py-2 px-4 rounded-lg border border-red-600/30 transition-all duration-200 disabled:opacity-50"
+                      className="w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 py-2 px-4 rounded-lg border border-red-600/30  disabled:opacity-50"
                     >
                       {isLoading ? '删除中...' : '删除头像'}
                     </button>
@@ -432,14 +432,14 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
         <div className="flex items-center justify-between p-4 border-t border-retro-border">
           <button
             onClick={handleLogout}
-            className="text-red-400 hover:text-red-300 text-sm transition-colors"
+            className="text-red-400 hover:text-red-300 text-sm "
           >
             登出账号
           </button>
           
           <button
             onClick={onClose}
-            className="bg-retro-border/30 hover:bg-retro-border/50 text-white py-2 px-4 rounded-lg transition-all duration-200"
+            className="bg-retro-border/30 hover:bg-retro-border/50 text-white py-2 px-4 rounded-lg "
           >
             关闭
           </button>

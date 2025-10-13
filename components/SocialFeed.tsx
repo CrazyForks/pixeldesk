@@ -65,7 +65,7 @@ export default function SocialFeed({ player }: SocialFeedProps) {
     <div className="p-4 space-y-6">
       {/* 玩家信息 */}
       <div className="group relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/20 to-retro-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/20 to-retro-pink/20 opacity-0 group-hover:opacity-100 "></div>
         <div className="relative bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center">
@@ -79,7 +79,7 @@ export default function SocialFeed({ player }: SocialFeedProps) {
                 <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getStatusBadge(player?.currentStatus?.type || 'working')} text-white text-xs font-medium`}>
                   {player?.currentStatus?.status || '在线'}
                 </div>
-                <div className="w-2 h-2 bg-retro-green rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-retro-green rounded-full "></div>
               </div>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function SocialFeed({ player }: SocialFeedProps) {
       <div className="space-y-4">
         {playerStatuses.map((status) => (
           <div key={status.id} className="group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/10 to-retro-pink/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/10 to-retro-pink/10 opacity-0 group-hover:opacity-100 "></div>
             <div className="relative bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getStatusBadge(status.type)} text-white text-xs font-medium`}>
@@ -122,9 +122,9 @@ export default function SocialFeed({ player }: SocialFeedProps) {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="说点什么..."
-                    className="flex-1 px-4 py-2 bg-retro-border/30 border border-retro-border rounded-md focus:outline-none focus:ring-2 focus:ring-retro-purple focus:border-transparent text-white placeholder-retro-textMuted backdrop-blur-sm transition-all duration-200"
+                    className="flex-1 px-4 py-2 bg-retro-border/30 border border-retro-border rounded-md focus:outline-none focus:ring-2 focus:ring-retro-purple focus:border-transparent text-white placeholder-retro-textMuted backdrop-blur-sm "
                   />
-                  <button type="submit" className="bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg">
+                  <button type="submit" className="bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-md   shadow-md hover:shadow-lg">
                     发送
                   </button>
                 </form>

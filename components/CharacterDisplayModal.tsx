@@ -96,10 +96,10 @@ export default function CharacterDisplayModal({
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
       {/* 现代像素风格背景 */}
-      <div className="absolute inset-0 bg-retro-bg-darker animate-fade-in" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-retro-bg-darker " onClick={onClose}></div>
       
       {/* 模态框内容 - 现代像素艺术设计 */}
-      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 max-w-lg w-full shadow-2xl shadow-retro-purple/20 animate-slide-in-up">
+      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 max-w-lg w-full shadow-2xl shadow-retro-purple/20 ">
         {/* 装饰性光效 */}
         <div className="absolute inset-0 bg-gradient-to-br from-retro-purple/5 via-retro-blue/8 to-retro-pink/5 rounded-2xl "></div>
         <div className="absolute inset-0 border border-retro-purple/20 rounded-2xl "></div>
@@ -107,9 +107,9 @@ export default function CharacterDisplayModal({
         {/* 关闭按钮 - 像素化设计 */}
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50 transition-all duration-200 flex items-center justify-center shadow-lg group"
+          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50  flex items-center justify-center shadow-lg group"
         >
-          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100  rounded-lg"></div>
           <span className="relative font-bold">✕</span>
         </button>
         
@@ -124,7 +124,7 @@ export default function CharacterDisplayModal({
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as 'info' | 'history')}
-                className={`group relative overflow-hidden flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-300 ${
+                className={`group relative overflow-hidden flex items-center gap-2 px-4 py-3 rounded-xl border-2  ${
                   isActive
                     ? 'bg-gradient-to-r from-retro-purple/30 to-retro-blue/30 text-white border-retro-purple/50 shadow-lg shadow-retro-purple/20' 
                     : 'text-retro-textMuted hover:text-white border-retro-border hover:border-retro-blue/30 hover:bg-gradient-to-r hover:from-retro-blue/10 hover:to-retro-cyan/10'
@@ -137,7 +137,7 @@ export default function CharacterDisplayModal({
                 
                 {/* 选项卡内容 */}
                 <div className="relative flex items-center gap-2">
-                  <div className={`w-5 h-5 ${isActive ? 'bg-white/20' : 'bg-retro-textMuted/20'} rounded flex items-center justify-center transition-all duration-200`}>
+                  <div className={`w-5 h-5 ${isActive ? 'bg-white/20' : 'bg-retro-textMuted/20'} rounded flex items-center justify-center `}>
                     <span className="text-xs">{tabIcons[tab as keyof typeof tabIcons]}</span>
                   </div>
                   <span className={`text-sm font-bold tracking-wide ${isActive ? 'font-pixel' : 'font-retro'}`}>
@@ -161,17 +161,17 @@ export default function CharacterDisplayModal({
             
             {/* 角色头像和信息 - 现代像素艺术卡片 */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/10 to-retro-blue/10 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 "></div>
-              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-5 shadow-lg hover:border-retro-purple/40 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/10 to-retro-blue/10 rounded-xl opacity-0 group-hover:opacity-100  "></div>
+              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-5 shadow-lg hover:border-retro-purple/40 ">
                 <div className="flex items-center space-x-5">
                   {/* 像素化头像容器 */}
                   <div className="relative">
-                    <div className="w-20 h-20 bg-gradient-to-br from-retro-purple/20 to-retro-blue/20 border-2 border-retro-border rounded-xl overflow-hidden shadow-xl group-hover:shadow-retro-purple/30 transition-all duration-300">
+                    <div className="w-20 h-20 bg-gradient-to-br from-retro-purple/20 to-retro-blue/20 border-2 border-retro-border rounded-xl overflow-hidden shadow-xl group-hover:shadow-retro-purple/30 ">
                       <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 rounded-xl"></div>
                       <img 
                         src={characterImage}
                         alt={getCharacterName()}
-                        className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="relative w-full h-full object-cover  group-hover:scale-105"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
                           target.src = '/assets/characters/Premade_Character_48x48_01.png'
@@ -212,8 +212,8 @@ export default function CharacterDisplayModal({
             {/* 当前状态信息 - 像素艺术状态卡片 */}
             {userInfoState.currentStatus ? (
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-retro-green/5 to-retro-blue/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                <div className="relative bg-gradient-to-br from-retro-green/15 via-retro-blue/20 to-retro-cyan/15 backdrop-blur-sm border-2 border-retro-green/30 rounded-xl p-4 shadow-lg hover:border-retro-green/50 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-r from-retro-green/5 to-retro-blue/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+                <div className="relative bg-gradient-to-br from-retro-green/15 via-retro-blue/20 to-retro-cyan/15 backdrop-blur-sm border-2 border-retro-green/30 rounded-xl p-4 shadow-lg hover:border-retro-green/50 ">
                   <div className="flex items-start space-x-4">
                     {/* 状态图标 */}
                     <div className="w-12 h-12 bg-gradient-to-br from-retro-green/30 to-retro-cyan/30 rounded-lg flex items-center justify-center shadow-lg border border-white/20">
@@ -245,7 +245,7 @@ export default function CharacterDisplayModal({
               </div>
             ) : (
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-retro-textMuted/5 to-retro-border/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-retro-textMuted/5 to-retro-border/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
                 <div className="relative bg-gradient-to-br from-retro-textMuted/10 to-retro-border/15 backdrop-blur-sm border-2 border-retro-textMuted/20 rounded-xl p-4 shadow-lg">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-retro-textMuted/20 to-retro-border/20 rounded-lg flex items-center justify-center shadow-lg border border-white/10">
@@ -305,9 +305,9 @@ export default function CharacterDisplayModal({
             <div className="relative h-56 overflow-y-auto space-y-4 pr-2 scrollbar-hide">
               {/* 当前状态 - 置顶显示 */}
               {userInfoState.currentStatus && (
-                <div className="group relative animate-fade-in">
-                  <div className="absolute inset-0 bg-gradient-to-r from-retro-green/5 to-retro-cyan/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                  <div className="relative bg-gradient-to-br from-retro-green/20 via-retro-cyan/25 to-retro-blue/20 backdrop-blur-sm border-2 border-retro-green/40 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="group relative ">
+                  <div className="absolute inset-0 bg-gradient-to-r from-retro-green/5 to-retro-cyan/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+                  <div className="relative bg-gradient-to-br from-retro-green/20 via-retro-cyan/25 to-retro-blue/20 backdrop-blur-sm border-2 border-retro-green/40 rounded-xl p-4 shadow-lg hover:shadow-xl ">
                     {/* 当前状态标识 */}
                     <div className="absolute -top-2 left-4 px-3 py-1 bg-gradient-to-r from-retro-green to-retro-cyan rounded-full border border-white/20 shadow-lg">
                       <span className="text-xs font-bold font-pixel text-white">CURRENT</span>
@@ -349,7 +349,7 @@ export default function CharacterDisplayModal({
                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <div className="relative">
                     <div className="w-12 h-12 bg-gradient-to-br from-retro-purple/20 to-retro-pink/20 rounded-xl flex items-center justify-center border-2 border-retro-purple/30 ">
-                      <div className="w-6 h-6 border-2 border-retro-purple border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-2 border-retro-purple border-t-transparent rounded-full "></div>
                     </div>
                     <div className="absolute inset-0 border-2 border-retro-purple/20 rounded-xl "></div>
                   </div>
@@ -361,9 +361,9 @@ export default function CharacterDisplayModal({
               ) : realStatusHistory.length > 0 ? (
                 /* 历史状态记录 */
                 realStatusHistory.map((status, index) => (
-                  <div key={index} className="group relative animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/5 to-retro-pink/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                    <div className="relative bg-gradient-to-br from-retro-bg-dark/60 to-retro-bg-darker/60 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-purple/40 hover:shadow-xl transition-all duration-300">
+                  <div key={index} className="group relative " style={{ animationDelay: `${index * 100}ms` }}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/5 to-retro-pink/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+                    <div className="relative bg-gradient-to-br from-retro-bg-dark/60 to-retro-bg-darker/60 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-purple/40 hover:shadow-xl ">
                       <div className="flex items-start space-x-4">
                         {/* 历史状态图标 */}
                         <div className="w-10 h-10 bg-gradient-to-br from-retro-purple/30 to-retro-pink/30 rounded-lg flex items-center justify-center shadow-lg border border-white/10">
@@ -437,8 +437,8 @@ export default function CharacterDisplayModal({
               <div className="relative pt-4 border-t border-retro-border/30">
                 <div className="grid grid-cols-2 gap-4">
                   {/* 总记录数统计 */}
-                  <div className="group relative bg-gradient-to-br from-retro-blue/15 to-retro-cyan/15 backdrop-blur-sm border-2 border-retro-blue/30 rounded-lg p-4 hover:border-retro-blue/50 transition-all duration-300 shadow-lg hover:shadow-xl">
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                  <div className="group relative bg-gradient-to-br from-retro-blue/15 to-retro-cyan/15 backdrop-blur-sm border-2 border-retro-blue/30 rounded-lg p-4 hover:border-retro-blue/50  shadow-lg hover:shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100  rounded-lg"></div>
                     <div className="relative text-center space-y-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-retro-blue/40 to-retro-cyan/40 rounded-lg flex items-center justify-center mx-auto shadow-lg">
                         <span className="text-sm">📈</span>
@@ -451,8 +451,8 @@ export default function CharacterDisplayModal({
                   </div>
                   
                   {/* 最新活动时间 */}
-                  <div className="group relative bg-gradient-to-br from-retro-purple/15 to-retro-pink/15 backdrop-blur-sm border-2 border-retro-purple/30 rounded-lg p-4 hover:border-retro-purple/50 transition-all duration-300 shadow-lg hover:shadow-xl">
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                  <div className="group relative bg-gradient-to-br from-retro-purple/15 to-retro-pink/15 backdrop-blur-sm border-2 border-retro-purple/30 rounded-lg p-4 hover:border-retro-purple/50  shadow-lg hover:shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100  rounded-lg"></div>
                     <div className="relative text-center space-y-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-retro-purple/40 to-retro-pink/40 rounded-lg flex items-center justify-center mx-auto shadow-lg">
                         <span className="text-sm">⏰</span>

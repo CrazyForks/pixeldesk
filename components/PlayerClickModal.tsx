@@ -83,12 +83,12 @@ const PlayerClickModal = memo(({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* 现代像素风格背景 */}
       <div
-        className="absolute inset-0 bg-retro-bg-darker animate-fade-in"
+        className="absolute inset-0 bg-retro-bg-darker "
         onClick={handleClose}
       />
       
       {/* 模态框容器 - 现代像素艺术设计 */}
-      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 w-full max-w-lg shadow-2xl shadow-retro-purple/20 animate-slide-in-up">
+      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 w-full max-w-lg shadow-2xl shadow-retro-purple/20 ">
         {/* 装饰性光效 */}
         <div className="absolute inset-0 bg-gradient-to-br from-retro-purple/5 via-retro-blue/8 to-retro-pink/5 rounded-2xl "></div>
         <div className="absolute inset-0 border border-retro-purple/20 rounded-2xl "></div>
@@ -96,9 +96,9 @@ const PlayerClickModal = memo(({
         {/* 关闭按钮 - 像素化设计 */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50 transition-all duration-200 flex items-center justify-center shadow-lg group"
+          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50  flex items-center justify-center shadow-lg group"
         >
-          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100  rounded-lg"></div>
           <span className="relative font-bold">✕</span>
         </button>
 
@@ -111,7 +111,7 @@ const PlayerClickModal = memo(({
             <div className="flex items-center gap-5 mb-4">
               {/* 像素化头像容器 */}
               <div className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-retro-purple via-retro-pink to-retro-blue rounded-xl flex items-center justify-center shadow-xl border-2 border-white/20 group-hover:shadow-retro-purple/50 transition-all duration-300">
+                <div className="w-20 h-20 bg-gradient-to-br from-retro-purple via-retro-pink to-retro-blue rounded-xl flex items-center justify-center shadow-xl border-2 border-white/20 group-hover:shadow-retro-purple/50 ">
                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 rounded-xl"></div>
                   <span className="relative text-2xl font-bold text-white font-pixel drop-shadow-lg">
                     {player.name?.charAt(0) || 'P'}
@@ -160,7 +160,7 @@ const PlayerClickModal = memo(({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`group relative overflow-hidden flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-300 ${
+                className={`group relative overflow-hidden flex items-center gap-2 px-4 py-3 rounded-xl border-2  ${
                   isActive
                     ? 'bg-gradient-to-r from-retro-purple/30 to-retro-blue/30 text-white border-retro-purple/50 shadow-lg shadow-retro-purple/20' 
                     : 'text-retro-textMuted hover:text-white border-retro-border hover:border-retro-blue/30 hover:bg-gradient-to-r hover:from-retro-blue/10 hover:to-retro-cyan/10'
@@ -173,7 +173,7 @@ const PlayerClickModal = memo(({
                 
                 {/* 选项卡内容 */}
                 <div className="relative flex items-center gap-2">
-                  <div className={`w-5 h-5 ${isActive ? 'bg-white/20' : 'bg-retro-textMuted/20'} rounded flex items-center justify-center transition-all duration-200`}>
+                  <div className={`w-5 h-5 ${isActive ? 'bg-white/20' : 'bg-retro-textMuted/20'} rounded flex items-center justify-center `}>
                     <span className="text-xs">{tab.icon}</span>
                   </div>
                   <span className={`text-sm font-bold tracking-wide ${isActive ? 'font-pixel' : 'font-retro'}`}>
@@ -212,9 +212,9 @@ const PlayerClickModal = memo(({
               {/* 状态历史列表 */}
               <div className="space-y-4 max-h-72 overflow-y-auto pr-2 scrollbar-hide">
                 {playerHistory.map((history, index) => (
-                  <div key={history.id} className="group relative animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/5 to-retro-pink/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                    <div className="relative bg-gradient-to-br from-retro-bg-dark/60 to-retro-bg-darker/60 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-purple/40 hover:shadow-xl transition-all duration-300">
+                  <div key={history.id} className="group relative " style={{ animationDelay: `${index * 100}ms` }}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/5 to-retro-pink/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+                    <div className="relative bg-gradient-to-br from-retro-bg-dark/60 to-retro-bg-darker/60 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-purple/40 hover:shadow-xl ">
                       <div className="flex items-start justify-between mb-3">
                         {/* 状态标签 */}
                         <div className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r ${getStatusBadge(history.type)} border border-white/20 shadow-lg`}>
@@ -274,9 +274,9 @@ const PlayerClickModal = memo(({
                     ].map((action) => (
                       <button
                         key={action.action}
-                        className={`group relative overflow-hidden bg-gradient-to-br ${action.color} hover:shadow-lg text-white py-3 px-4 rounded-xl border-2 transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 active:scale-95 backdrop-blur-sm`}
+                        className={`group relative overflow-hidden bg-gradient-to-br ${action.color} hover:shadow-lg text-white py-3 px-4 rounded-xl border-2  shadow-md hover:shadow-xl transform hover:scale-105 active:scale-95 backdrop-blur-sm`}
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100 "></div>
                         <div className="relative flex flex-col items-center gap-2">
                           <div className="w-6 h-6 bg-white/20 rounded flex items-center justify-center">
                             <span className="text-sm">{action.emoji}</span>
@@ -301,17 +301,17 @@ const PlayerClickModal = memo(({
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-1 relative group">
-                      <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/10 to-retro-pink/10 rounded-xl opacity-0 group-focus-within:opacity-100 transition-all duration-300 blur-sm"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/10 to-retro-pink/10 rounded-xl opacity-0 group-focus-within:opacity-100  blur-sm"></div>
                       <input
                         type="text"
                         placeholder="Type your message..."
-                        className="relative w-full bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border-2 border-retro-border focus:border-retro-purple rounded-xl px-4 py-3 text-white placeholder-retro-textMuted focus:outline-none backdrop-blur-md transition-all duration-300 font-retro text-sm focus:shadow-lg focus:shadow-retro-purple/20"
+                        className="relative w-full bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border-2 border-retro-border focus:border-retro-purple rounded-xl px-4 py-3 text-white placeholder-retro-textMuted focus:outline-none backdrop-blur-md  font-retro text-sm focus:shadow-lg focus:shadow-retro-purple/20"
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => e.stopPropagation()}
                       />
                     </div>
-                    <button className="group relative overflow-hidden bg-gradient-to-br from-retro-purple/30 to-retro-pink/30 hover:from-retro-purple/40 hover:to-retro-pink/40 text-white px-6 py-3 rounded-xl border-2 border-retro-purple/40 hover:border-retro-purple/60 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 backdrop-blur-sm">
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <button className="group relative overflow-hidden bg-gradient-to-br from-retro-purple/30 to-retro-pink/30 hover:from-retro-purple/40 hover:to-retro-pink/40 text-white px-6 py-3 rounded-xl border-2 border-retro-purple/40 hover:border-retro-purple/60  shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 backdrop-blur-sm">
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/20 opacity-0 group-hover:opacity-100 "></div>
                       <div className="relative flex items-center gap-2">
                         <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
                           <span className="text-xs">🚀</span>
@@ -346,8 +346,8 @@ const PlayerClickModal = memo(({
                       { label: 'STATUS MESSAGE', value: player.currentStatus?.message || '无', icon: '💬' },
                       { label: 'LAST UPDATE', value: new Date(player.currentStatus?.timestamp).toLocaleTimeString() || '刚刚', icon: '⏰' }
                     ].map((info, index) => (
-                      <div key={index} className="group relative bg-gradient-to-r from-retro-bg-darker/30 to-retro-bg-dark/30 rounded-lg p-3 border border-retro-border/30 hover:border-retro-cyan/40 transition-all duration-300">
-                        <div className="absolute inset-0 bg-gradient-to-r from-retro-cyan/3 to-retro-blue/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                      <div key={index} className="group relative bg-gradient-to-r from-retro-bg-darker/30 to-retro-bg-dark/30 rounded-lg p-3 border border-retro-border/30 hover:border-retro-cyan/40 ">
+                        <div className="absolute inset-0 bg-gradient-to-r from-retro-cyan/3 to-retro-blue/3 opacity-0 group-hover:opacity-100  rounded-lg"></div>
                         <div className="relative flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-gradient-to-br from-retro-cyan/30 to-retro-blue/30 rounded-lg flex items-center justify-center shadow-lg">
@@ -376,14 +376,14 @@ const PlayerClickModal = memo(({
           {/* 关闭按钮 */}
           <button
             onClick={handleClose}
-            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-4 px-6 rounded-xl border-2 border-retro-border hover:border-retro-red/60 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm transform hover:scale-[1.02] active:scale-[0.98]"
+            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-4 px-6 rounded-xl border-2 border-retro-border hover:border-retro-red/60  shadow-lg hover:shadow-xl backdrop-blur-sm "
           >
             {/* 按钮光效 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-retro-red/5 to-retro-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-retro-red/5 to-retro-orange/5 opacity-0 group-hover:opacity-100 "></div>
             
             {/* 按钮内容 */}
             <div className="relative flex items-center justify-center gap-3">
-              <div className="w-6 h-6 bg-retro-red/20 rounded-lg flex items-center justify-center group-hover:bg-retro-red/30 transition-all duration-200">
+              <div className="w-6 h-6 bg-retro-red/20 rounded-lg flex items-center justify-center group-hover:bg-retro-red/30 ">
                 <span className="text-sm">✕</span>
               </div>
               <span className="font-pixel text-base tracking-wide">CLOSE</span>
@@ -396,15 +396,15 @@ const PlayerClickModal = memo(({
               // 这里可以添加关注功能
               console.log('关注玩家:', player.name)
             }}
-            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green text-white font-bold py-4 px-6 rounded-xl border-2 border-white/20 hover:border-white/40 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm"
+            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green text-white font-bold py-4 px-6 rounded-xl border-2 border-white/20 hover:border-white/40  shadow-lg hover:shadow-2xl  backdrop-blur-sm"
           >
             {/* 按钮光效 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/20 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-all duration-200"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/20 to-white/10 opacity-0 group-hover:opacity-100 "></div>
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 "></div>
             
             {/* 按钮内容 */}
             <div className="relative flex items-center justify-center gap-3">
-              <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-all duration-200">
+              <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 ">
                 <span className="text-sm">➕</span>
               </div>
               <span className="font-pixel text-base tracking-wide drop-shadow-lg">FOLLOW</span>

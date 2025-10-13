@@ -169,18 +169,18 @@ export default function PostDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 In"
       style={{
         background: 'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(30,20,60,0.98) 50%, rgba(0,0,0,0.95) 100%)'
       }}
     >
       {/* 背景装饰 */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl "></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-full blur-3xl  delay-1000"></div>
       </div>
 
-      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-slideUp border border-gray-200/20 dark:border-gray-800/50">
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden Up border border-gray-200/20 dark:border-gray-800/50">
         {/* 现代化头部设计 */}
         <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200/50 dark:border-gray-700/50">
           {/* 头部装饰线 */}
@@ -194,7 +194,7 @@ export default function PostDetailModal({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-gray-900 "></div>
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">帖子详情</h2>
@@ -207,7 +207,7 @@ export default function PostDetailModal({
               {onNavigateToPage && postId && (
                 <button
                   onClick={() => onNavigateToPage(postId)}
-                  className="group relative overflow-hidden px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="group relative overflow-hidden px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 "
                   title="在新页面中打开"
                 >
                   <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -223,9 +223,9 @@ export default function PostDetailModal({
               {/* 关闭按钮 - 现代化设计 */}
               <button
                 onClick={onClose}
-                className="group p-2.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 hover:scale-110"
+                className="group p-2.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-xl  hover:scale-110"
               >
-                <svg className="w-5 h-5 transform group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 transform group-hover:rotate-90 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -253,7 +253,7 @@ export default function PostDetailModal({
               <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">{error}</p>
               <button
                 onClick={() => postId && fetchPostDetail(postId)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 "
               >
                 重新加载
               </button>
@@ -316,7 +316,7 @@ export default function PostDetailModal({
                         <img
                           src={post.imageUrl}
                           alt="Post image"
-                          className="w-full max-h-96 object-cover hover:scale-105 transition-transform duration-300"
+                          className="w-full max-h-96 object-cover hover:scale-105 "
                         />
                       </div>
                     )}
@@ -350,15 +350,15 @@ export default function PostDetailModal({
                       <button
                         onClick={handleLike}
                         disabled={isLiking}
-                        className={`group flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 font-medium shadow-sm ${
+                        className={`group flex items-center space-x-3 px-4 py-2.5 rounded-xl  font-medium shadow-sm ${
                           post.isLiked
                             ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-lg'
                             : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:shadow-md'
                         } ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
                       >
-                        <div className={`w-8 h-8 ${post.isLiked ? 'bg-white/20' : 'bg-gradient-to-br from-pink-100 to-red-100 dark:from-pink-900/30 dark:to-red-900/30'} rounded-xl flex items-center justify-center transition-all duration-300`}>
+                        <div className={`w-8 h-8 ${post.isLiked ? 'bg-white/20' : 'bg-gradient-to-br from-pink-100 to-red-100 dark:from-pink-900/30 dark:to-red-900/30'} rounded-xl flex items-center justify-center `}>
                           <svg
-                            className={`w-4 h-4 ${post.isLiked ? 'text-white fill-current' : 'text-pink-600 dark:text-pink-400'} transition-all duration-300 ${!post.isLiked && 'group-hover:scale-110'}`}
+                            className={`w-4 h-4 ${post.isLiked ? 'text-white fill-current' : 'text-pink-600 dark:text-pink-400'}  ${!post.isLiked && 'group-hover:scale-110'}`}
                             fill={post.isLiked ? 'currentColor' : 'none'}
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -428,9 +428,9 @@ export default function PostDetailModal({
                     <div className="flex items-center justify-center py-12">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="w-3 h-3 bg-gradient-to-r from-pink-500 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full " style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full " style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-3 h-3 bg-gradient-to-r from-pink-500 to-red-500 rounded-full " style={{ animationDelay: '300ms' }}></div>
                         </div>
                         <p className="text-gray-500 dark:text-gray-400 font-medium">正在加载回复...</p>
                       </div>
@@ -441,7 +441,7 @@ export default function PostDetailModal({
                   {replies.length > 0 && (
                     <div className="space-y-4">
                       {replies.map((reply, index) => (
-                        <div key={reply.id} className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-lg transition-all duration-200" style={{ animationDelay: `${index * 100}ms` }}>
+                        <div key={reply.id} className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-lg " style={{ animationDelay: `${index * 100}ms` }}>
                           <div className="flex items-start space-x-4">
                             {/* 回复者头像 */}
                             <div className="flex-shrink-0">
@@ -506,13 +506,13 @@ export default function PostDetailModal({
                       <button
                         onClick={loadMoreReplies}
                         disabled={isLoadingReplies}
-                        className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                        className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105  disabled:opacity-50"
                       >
                         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="relative flex items-center space-x-2">
                           {isLoadingReplies ? (
                             <>
-                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full "></div>
                               <span>加载中...</span>
                             </>
                           ) : (

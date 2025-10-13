@@ -77,7 +77,7 @@ export default function TimeStats({ userId }: TimeStatsProps) {
       {/* 今日统计 */}
       {todayStats && (
         <div className="group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/20 to-retro-purple/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/20 to-retro-purple/20 opacity-0 group-hover:opacity-100 "></div>
           <div className="relative bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-medium">今日时间统计</h3>
@@ -116,7 +116,7 @@ export default function TimeStats({ userId }: TimeStatsProps) {
       {/* 7天概览 */}
       {timeStats && (
         <div className="group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-retro-green/20 to-retro-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-retro-green/20 to-retro-blue/20 opacity-0 group-hover:opacity-100 "></div>
           <div className="relative bg-retro-bg-darker/80 backdrop-blur-sm border border-retro-border rounded-md p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-medium">7天时间概览</h3>
@@ -147,7 +147,7 @@ export default function TimeStats({ userId }: TimeStatsProps) {
       {/* 刷新按钮 */}
       <button
         onClick={loadTimeStats}
-        className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-xl transition-all duration-300 border border-white/10 hover:border-white/20"
+        className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-xl  border border-white/10 hover:border-white/20"
       >
         刷新统计
       </button>

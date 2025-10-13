@@ -177,11 +177,11 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
       {userData && (
         <div className="group relative overflow-hidden">
           {/* 背景光效 */}
-          <div className="absolute inset-0 bg-gradient-135 from-retro-blue/10 via-retro-purple/15 to-retro-pink/10 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-retro-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 animate-shimmer"></div>
+          <div className="absolute inset-0 bg-gradient-135 from-retro-blue/10 via-retro-purple/15 to-retro-pink/10 opacity-0 group-hover:opacity-100 "></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-retro-cyan/5 to-transparent opacity-0 group-hover:opacity-100  "></div>
 
           {/* 主卡片 - 紧凑版 */}
-          <div className="relative bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-darker/90 to-retro-bg-dark/95 backdrop-blur-md border-2 border-retro-border rounded-lg p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-retro-blue/50">
+          <div className="relative bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-darker/90 to-retro-bg-dark/95 backdrop-blur-md border-2 border-retro-border rounded-lg p-3 shadow-xl hover:shadow-2xl  hover:border-retro-blue/50">
             {/* 用户头像和基本信息 - 紧凑布局 */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -194,7 +194,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                   </div>
                   {/* 小型在线状态指示器 */}
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-retro-green rounded-full border border-retro-bg-darker">
-                    <div className="w-full h-full bg-retro-green rounded-full animate-ping opacity-75"></div>
+                    <div className="w-full h-full bg-retro-green rounded-full  opacity-75"></div>
                   </div>
                 </div>
 
@@ -231,7 +231,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                   {userData.workstationId ? (
                     <>
                       <div className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 bg-retro-green rounded-full animate-pulse"></div>
+                        <div className="w-1.5 h-1.5 bg-retro-green rounded-full "></div>
                         <span className="text-retro-green text-xs font-bold font-pixel">
                           {userData.workstationId}
                         </span>
@@ -250,7 +250,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                             })
                           }
                         }}
-                        className="group relative overflow-hidden bg-gradient-to-r from-retro-blue/80 to-retro-cyan/80 hover:from-retro-blue hover:to-retro-cyan text-white font-bold px-2 py-1 rounded text-xs transition-all duration-200 transform hover:scale-[1.05] active:scale-[0.95] shadow-sm hover:shadow-md border border-white/20 hover:border-white/40"
+                        className="group relative overflow-hidden bg-gradient-to-r from-retro-blue/80 to-retro-cyan/80 hover:from-retro-blue hover:to-retro-cyan text-white font-bold px-2 py-1 rounded text-xs   shadow-sm hover:shadow-md border border-white/20 hover:border-white/40"
                         title="快速回到工位 (消耗1积分)"
                       >
                         <div className="flex items-center gap-1">
@@ -264,7 +264,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                     </>
                   ) : (
                     <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 bg-retro-orange rounded-full animate-pulse"></div>
+                      <div className="w-1.5 h-1.5 bg-retro-orange rounded-full "></div>
                       <span className="text-retro-orange text-xs font-bold font-pixel">
                         未绑定
                       </span>
@@ -281,7 +281,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
       {currentStatus && (
         <div className="group relative overflow-hidden">
           {/* 状态卡片 - 紧凑布局 */}
-          <div className="relative bg-gradient-to-br from-retro-bg-darker/90 to-retro-bg-dark/85 backdrop-blur-md border-2 border-retro-border rounded-lg p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-retro-purple/60">
+          <div className="relative bg-gradient-to-br from-retro-bg-darker/90 to-retro-bg-dark/85 backdrop-blur-md border-2 border-retro-border rounded-lg p-3 shadow-xl hover:shadow-2xl  hover:border-retro-purple/60">
             <div className="flex items-center gap-3">
               {/* 紧凑状态图标 */}
               <div className="relative">
@@ -290,7 +290,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                 </div>
                 {/* 小型活跃指示器 */}
                 <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-retro-green rounded-full border border-retro-bg-darker">
-                  <div className="w-full h-full bg-retro-green rounded-full animate-pulse"></div>
+                  <div className="w-full h-full bg-retro-green rounded-full "></div>
                 </div>
               </div>
 
@@ -305,7 +305,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
               </div>
 
               {/* 简化活动指示 */}
-              <div className="w-2 h-2 bg-retro-green rounded-full animate-ping"></div>
+              <div className="w-2 h-2 bg-retro-green rounded-full "></div>
             </div>
           </div>
         </div>
@@ -316,7 +316,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
         {/* 更新状态按钮 - 紧凑版 */}
         <button
           onClick={memoizedHandleToggle}
-          className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green text-white font-bold py-2.5 px-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl border border-white/20 hover:border-white/40"
+          className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green text-white font-bold py-2.5 px-3 rounded-lg   shadow-lg hover:shadow-xl border border-white/20 hover:border-white/40"
         >
           {/* 按钮内容 - 紧凑版 */}
           <div className="relative flex items-center justify-center gap-2">
@@ -331,7 +331,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
         {userId && (
           <button
             onClick={memoizedHandleToggleHistory}
-            className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-2.5 px-3 rounded-lg transition-all duration-200 border border-retro-border hover:border-retro-blue/60 shadow-lg hover:shadow-xl backdrop-blur-sm"
+            className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-2.5 px-3 rounded-lg  border border-retro-border hover:border-retro-blue/60 shadow-lg hover:shadow-xl backdrop-blur-sm"
           >
             {/* 按钮内容 - 紧凑版 */}
             <div className="relative flex items-center justify-center gap-2">
@@ -351,7 +351,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
       {/* 详细状态设置 - 超紧凑面板 */}
       {isExpanded && (
         <div
-          className="space-y-2 bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-dark/90 to-retro-bg-darker/95 backdrop-blur-lg border-2 border-retro-border rounded-lg p-3 shadow-2xl animate-slide-in-up"
+          className="space-y-2 bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-dark/90 to-retro-bg-darker/95 backdrop-blur-lg border-2 border-retro-border rounded-lg p-3 shadow-2xl "
           onClick={(e) => {
             // 阻止点击事件冒泡到Phaser游戏
             e.stopPropagation()
@@ -381,7 +381,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                 <button
                   key={status.id}
                   onClick={() => memoizedHandleStatusSelect(status.id)}
-                  className={`group relative overflow-hidden p-2 rounded-lg border transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] ${
+                  className={`group relative overflow-hidden p-2 rounded-lg border   ${
                     selectedStatus === status.id
                       ? `border-white/40 bg-gradient-to-br ${status.color} text-white shadow-lg`
                       : "border-retro-border bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 hover:border-retro-purple/50 shadow-md"
@@ -389,7 +389,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                 >
                   {/* 选择状态的光效 */}
                   {selectedStatus === status.id && (
-                    <div className="absolute inset-0 bg-white/10 rounded-lg animate-pulse"></div>
+                    <div className="absolute inset-0 bg-white/10 rounded-lg "></div>
                   )}
 
                   {/* 按钮内容 - 超紧凑 */}
@@ -403,7 +403,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                   {/* 选中指示器 */}
                   {selectedStatus === status.id && (
                     <div className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full shadow-lg">
-                      <div className="w-full h-full bg-retro-green rounded-full animate-ping opacity-75"></div>
+                      <div className="w-full h-full bg-retro-green rounded-full  opacity-75"></div>
                     </div>
                   )}
                 </button>
@@ -433,7 +433,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                   e.stopPropagation()
                 }}
                 placeholder="Share what you're doing..."
-                className="relative w-full p-2 bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border border-retro-border rounded-lg resize-none focus:outline-none focus:border-retro-purple focus:shadow-lg focus:shadow-retro-purple/25 text-white placeholder-retro-textMuted backdrop-blur-md transition-all duration-300 font-retro text-sm leading-relaxed"
+                className="relative w-full p-2 bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border border-retro-border rounded-lg resize-none focus:outline-none focus:border-retro-purple focus:shadow-lg focus:shadow-retro-purple/25 text-white placeholder-retro-textMuted backdrop-blur-md  font-retro text-sm leading-relaxed"
                 rows={3}
               />
               {/* 字符计数器 */}
@@ -448,11 +448,11 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
             {/* 发布按钮 */}
             <button
               onClick={memoizedHandleSubmit}
-              className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-green via-retro-blue to-retro-cyan hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green text-white font-bold py-2 px-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl border border-white/20 hover:border-white/40"
+              className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-green via-retro-blue to-retro-cyan hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green text-white font-bold py-2 px-3 rounded-lg   shadow-lg hover:shadow-xl border border-white/20 hover:border-white/40"
             >
               {/* 发布按钮内容 */}
               <div className="relative flex items-center justify-center gap-2">
-                <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center group-hover:bg-white/30 transition-all duration-200">
+                <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center group-hover:bg-white/30 ">
                   <span className="text-xs">🚀</span>
                 </div>
                 <span className="font-pixel text-xs tracking-wider">
@@ -464,11 +464,11 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
             {/* 取消按钮 */}
             <button
               onClick={memoizedHandleCancel}
-              className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-2 px-3 rounded-lg transition-all duration-200 border border-retro-border hover:border-retro-red/60 shadow-lg hover:shadow-xl backdrop-blur-sm"
+              className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-2 px-3 rounded-lg  border border-retro-border hover:border-retro-red/60 shadow-lg hover:shadow-xl backdrop-blur-sm"
             >
               {/* 取消按钮内容 */}
               <div className="relative flex items-center justify-center gap-2">
-                <div className="w-4 h-4 bg-retro-red/20 rounded flex items-center justify-center group-hover:bg-retro-red/30 transition-all duration-200">
+                <div className="w-4 h-4 bg-retro-red/20 rounded flex items-center justify-center group-hover:bg-retro-red/30 ">
                   <span className="text-xs">✕</span>
                 </div>
                 <span className="font-pixel text-xs tracking-wide">CANCEL</span>
@@ -480,7 +480,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
 
       {/* 状态历史显示 - 紧凑像素风格 */}
       {showHistory && userId && (
-        <div className="space-y-3 bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-dark/90 to-retro-bg-darker/95 backdrop-blur-lg border-2 border-retro-border rounded-lg p-3 shadow-2xl animate-slide-in-up">
+        <div className="space-y-3 bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-dark/90 to-retro-bg-darker/95 backdrop-blur-lg border-2 border-retro-border rounded-lg p-3 shadow-2xl ">
           {/* 历史记录标题 */}
           <div className="flex items-center justify-between pb-2 border-b border-retro-border/50">
             <div className="flex items-center gap-2">
@@ -492,7 +492,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
               </h3>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 bg-retro-cyan rounded-full animate-pulse"></div>
+              <div className="w-1.5 h-1.5 bg-retro-cyan rounded-full "></div>
               <span className="text-xs text-retro-textMuted font-retro tracking-wide">
                 {statusHistory.length}
               </span>
@@ -519,7 +519,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
               statusHistory.map((history, index) => (
                 <div
                   key={history.id || index}
-                  className="group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/60 to-retro-bg-darker/60 rounded-lg p-2.5 border border-retro-border/50 hover:border-retro-cyan/50 transition-all duration-300 hover:shadow-lg backdrop-blur-sm"
+                  className="group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/60 to-retro-bg-darker/60 rounded-lg p-2.5 border border-retro-border/50 hover:border-retro-cyan/50  hover:shadow-lg backdrop-blur-sm"
                 >
                   {/* 记录内容 */}
                   <div className="relative space-y-2">

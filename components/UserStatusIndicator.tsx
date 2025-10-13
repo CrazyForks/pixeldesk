@@ -61,7 +61,7 @@ export default function UserStatusIndicator({
       <div className={`flex items-center space-x-2 ${className}`}>
         <div className={`${sizeClasses[size]} rounded-full border border-retro-bg-darker ${
           isOnline 
-            ? 'bg-retro-green animate-pulse' 
+            ? 'bg-retro-green ' 
             : 'bg-retro-textMuted'
         }`} />
         <span className={`${textSizeClasses[size]} ${
@@ -79,7 +79,7 @@ export default function UserStatusIndicator({
     <div 
       className={`${sizeClasses[size]} rounded-full border border-retro-bg-darker ${
         isOnline 
-          ? 'bg-retro-green animate-pulse' 
+          ? 'bg-retro-green ' 
           : 'bg-retro-textMuted'
       } ${className}`}
       title={isOnline ? '在线' : formatLastSeen || '离线'}

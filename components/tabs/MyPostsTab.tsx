@@ -106,7 +106,7 @@ export default function MyPostsTab({
       <div className="flex-shrink-0 p-4 border-b-2 border-retro-border/50 bg-gradient-to-r from-retro-bg-darker/60 to-retro-bg-dark/60 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-retro-purple via-retro-pink to-retro-blue rounded-xl flex items-center justify-center shadow-xl border-2 border-white/20 animate-pixel-glow">
+            <div className="w-10 h-10 bg-gradient-to-br from-retro-purple via-retro-pink to-retro-blue rounded-xl flex items-center justify-center shadow-xl border-2 border-white/20 ">
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 rounded-xl"></div>
               <svg className="relative w-5 h-5 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m10 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V8m0 0V6a2 2 0 012-2h8a2 2 0 012 2v2" />
@@ -115,13 +115,13 @@ export default function MyPostsTab({
             <div className="flex-1">
               <h3 className="text-white text-xl font-bold font-pixel tracking-wide drop-shadow-sm">MY POSTS</h3>
               <div className="flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 bg-retro-purple rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-retro-purple rounded-full "></div>
                 <span className="text-retro-textMuted text-xs font-retro tracking-wide">我的发布记录</span>
                 {isRefreshing && (
                   <div className="flex items-center gap-1 ml-2">
-                    <div className="w-2 h-2 bg-retro-cyan rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-retro-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-retro-purple rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="w-2 h-2 bg-retro-cyan rounded-full " style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-retro-blue rounded-full " style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-retro-purple rounded-full " style={{ animationDelay: '300ms' }}></div>
                   </div>
                 )}
               </div>
@@ -132,10 +132,10 @@ export default function MyPostsTab({
           <button
             onClick={refreshPosts}
             disabled={isRefreshing}
-            className="p-2 text-retro-cyan hover:text-retro-blue hover:bg-retro-blue/10 rounded-lg transition-all duration-200 disabled:opacity-50"
+            className="p-2 text-retro-cyan hover:text-retro-blue hover:bg-retro-blue/10 rounded-lg  disabled:opacity-50"
             title="刷新我的帖子"
           >
-            <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : 'hover:rotate-180'} transition-transform duration-300`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-4 h-4 ${isRefreshing ? '' : 'hover:rotate-180'} `} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
@@ -195,7 +195,7 @@ export default function MyPostsTab({
                   <button
                     onClick={handleLoadMore}
                     disabled={isRefreshing}
-                    className="px-4 py-2 bg-retro-surface text-white rounded-lg hover:bg-retro-surface/80 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-retro-surface text-white rounded-lg hover:bg-retro-surface/80  disabled:opacity-50"
                   >
                     {isRefreshing ? '加载中...' : '加载更多'}
                   </button>

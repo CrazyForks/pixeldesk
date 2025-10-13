@@ -182,7 +182,7 @@ export default function DataMigrationPage() {
           }`}>
             <div className={`w-2 h-2 rounded-full mr-2 ${
               migrationStatus === 'idle' ? 'bg-gray-400' :
-              migrationStatus === 'running' ? 'bg-blue-400 animate-pulse' :
+              migrationStatus === 'running' ? 'bg-blue-400 ' :
               migrationStatus === 'completed' ? 'bg-green-400' :
               'bg-red-400'
             }`}></div>

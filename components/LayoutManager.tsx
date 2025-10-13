@@ -6,10 +6,12 @@ import { useState, useEffect, ReactNode, useCallback, useMemo } from 'react'
  * Props for the LayoutManager component
  */
 export interface LayoutManagerProps {
-  /** Game component to be displayed in the main area */
+  /** Game component to be displayed in the center area */
   gameComponent: ReactNode
-  /** Information panel component to be displayed in the side area */
-  infoPanel: ReactNode
+  /** Left panel component (profile, workstation info) */
+  leftPanel: ReactNode
+  /** Right panel component (social, posts) */
+  rightPanel: ReactNode
   /** Optional CSS class name for custom styling */
   className?: string
   /** Optional callback when layout changes */
@@ -51,16 +53,19 @@ interface PanelConfig extends AreaConfig {
  */
 export interface LayoutConfig {
   desktop: {
+    leftPanel: PanelConfig
     gameArea: AreaConfig
-    infoPanel: PanelConfig
+    rightPanel: PanelConfig
   }
   tablet: {
+    leftPanel: PanelConfig
     gameArea: AreaConfig
-    infoPanel: PanelConfig
+    rightPanel: PanelConfig
   }
   mobile: {
     gameArea: AreaConfig
-    infoPanel: PanelConfig
+    leftPanel: PanelConfig
+    rightPanel: PanelConfig
   }
 }
 
@@ -76,27 +81,37 @@ export interface ScreenSize {
 
 /**
  * Default layout configuration for different device types
- * These values provide optimal user experience across devices
+ * Three-column layout: Left Panel | Game Area | Right Panel
  */
 const DEFAULT_LAYOUT_CONFIG: LayoutConfig = {
   desktop: {
+    leftPanel: {
+      width: '360px',
+      height: '100vh',
+      position: 'left'
+    },
     gameArea: {
-      width: 'calc(100% - 400px)',
+      width: 'calc(100% - 760px)',
       height: '100vh'
     },
-    infoPanel: {
+    rightPanel: {
       width: '400px',
       height: '100vh',
       position: 'right'
     }
   },
   tablet: {
+    leftPanel: {
+      width: '300px',
+      height: '100vh',
+      position: 'left'
+    },
     gameArea: {
-      width: 'calc(100% - 320px)',
+      width: 'calc(100% - 640px)',
       height: '100vh'
     },
-    infoPanel: {
-      width: '320px',
+    rightPanel: {
+      width: '340px',
       height: '100vh',
       position: 'right'
     }
@@ -104,11 +119,16 @@ const DEFAULT_LAYOUT_CONFIG: LayoutConfig = {
   mobile: {
     gameArea: {
       width: '100%',
-      height: '60vh'
+      height: '50vh'
     },
-    infoPanel: {
-      width: '100%',
-      height: '40vh',
+    leftPanel: {
+      width: '50%',
+      height: '50vh',
+      position: 'bottom'
+    },
+    rightPanel: {
+      width: '50%',
+      height: '50vh',
       position: 'bottom'
     }
   }
@@ -116,12 +136,12 @@ const DEFAULT_LAYOUT_CONFIG: LayoutConfig = {
 
 /**
  * Responsive breakpoints for device detection
- * Based on common device sizes and best practices
+ * Optimized for three-column layout
  */
 export const BREAKPOINTS = {
-  mobile: 640,
-  tablet: 1024,
-  desktop: 1280
+  mobile: 768,    // 小于768px为移动设备
+  tablet: 1024,   // 768px-1024px为平板设备
+  desktop: 1200   // 大于1200px为桌面设备
 } as const
 
 /**
@@ -135,18 +155,20 @@ const ANIMATION_CONFIG = {
 
 /**
  * LayoutManager Component
- * 
- * Manages responsive layout for game and information panel components.
+ *
+ * Manages responsive three-column layout for game and panel components.
+ * Layout: Left Panel | Game Area | Right Panel
  * Automatically adapts to different screen sizes and orientations.
- * 
+ *
  * @param props - LayoutManager props
  * @returns JSX element with responsive layout
  */
-export default function LayoutManager({ 
-  gameComponent, 
-  infoPanel, 
+export default function LayoutManager({
+  gameComponent,
+  leftPanel,
+  rightPanel,
   className = '',
-  onLayoutChange 
+  onLayoutChange
 }: LayoutManagerProps) {
   // State management
   const [screenSize, setScreenSize] = useState<ScreenSize>({
@@ -156,7 +178,6 @@ export default function LayoutManager({
     orientation: 'landscape'
   })
   const [layoutConfig] = useState<LayoutConfig>(DEFAULT_LAYOUT_CONFIG)
-  const [isTransitioning, setIsTransitioning] = useState(false)
 
 
 
@@ -165,7 +186,7 @@ export default function LayoutManager({
    */
   const getDeviceType = useCallback((width: number): DeviceType => {
     if (width < BREAKPOINTS.mobile) return 'mobile'
-    if (width < BREAKPOINTS.tablet) return 'tablet'
+    if (width < BREAKPOINTS.desktop) return 'tablet'
     return 'desktop'
   }, [])
 
@@ -229,16 +250,9 @@ export default function LayoutManager({
         // Only update if change is significant
         setScreenSize(prevScreenSize => {
           if (isSignificantSizeChange(newScreenSize, prevScreenSize)) {
-            setIsTransitioning(true)
-            
             // Notify parent component of layout change
             onLayoutChange?.(newScreenSize.deviceType)
-            
-            // Clear transition state after animation completes
-            setTimeout(() => {
-              setIsTransitioning(false)
-            }, ANIMATION_CONFIG.transitionDuration)
-            
+
             return newScreenSize
           }
           return prevScreenSize
@@ -261,124 +275,123 @@ export default function LayoutManager({
     return layoutConfig[screenSize.deviceType]
   }, [screenSize.deviceType, layoutConfig])
 
-  // Memoized CSS classes for smooth transitions
+  // CSS classes without animations
   const layoutClasses = useMemo(() => {
-    const baseClasses = 'transition-all duration-300 ease-in-out'
-    const transitionClasses = isTransitioning ? 'opacity-90 scale-[0.99]' : 'opacity-100 scale-100'
-    
     return {
-      container: `${baseClasses} ${transitionClasses} ${className}`,
-      gameArea: `${baseClasses} relative overflow-hidden`,
-      infoPanel: `${baseClasses} overflow-hidden`
+      container: className,
+      gameArea: 'relative overflow-hidden',
+      infoPanel: 'overflow-hidden'
     }
-  }, [isTransitioning, className])
+  }, [className])
 
   /**
    * Render mobile layout component
    */
   const renderMobileLayout = useCallback(() => {
-    // Mobile landscape: try to fit side-by-side if screen is wide enough
-    if (screenSize.orientation === 'landscape' && screenSize.width >= BREAKPOINTS.mobile) {
-      return (
-        <div className={`flex h-screen bg-gradient-to-br from-retro-bg-darker via-retro-bg-dark to-retro-bg-darker ${layoutClasses.container}`}>
-          <div 
-            className={`${layoutClasses.gameArea} bg-black/30`}
-            style={{
-              width: 'calc(100% - 280px)',
-              height: currentLayoutConfig.gameArea.height
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-purple-900/10 pointer-events-none"></div>
-            {gameComponent}
-          </div>
-          
-          <div 
-            className={`${layoutClasses.infoPanel} bg-retro-bg-darker/90 backdrop-blur-lg border-l border-retro-border flex flex-col`}
-            style={{
-              width: '280px',
-              height: currentLayoutConfig.infoPanel.height
-            }}
-          >
-            {infoPanel}
-          </div>
-        </div>
-      )
-    }
-    
-    // Mobile portrait: game on top, info on bottom
+    // Mobile layout: game on top, two panels below side by side
     return (
-      <div className={`flex flex-col h-screen bg-gradient-to-b from-retro-bg-darker via-retro-bg-dark to-retro-bg-darker ${layoutClasses.container}`}>
-        <div 
-          className={`${layoutClasses.gameArea} bg-black/30`}
+      <div className={`flex flex-col h-screen bg-gray-950 ${layoutClasses.container}`}>
+        {/* Game area with inset shadow */}
+        <div
+          className={`${layoutClasses.gameArea} bg-gray-900 p-3 border-b border-gray-800 relative overflow-hidden`}
           style={{
             width: currentLayoutConfig.gameArea.width,
             height: currentLayoutConfig.gameArea.height
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-purple-900/10 pointer-events-none"></div>
-          {gameComponent}
+          <div className="w-full h-full bg-gray-800 rounded-lg shadow-inner shadow-gray-950/50 border border-gray-800/50">
+            <div className="relative z-10 h-full rounded-lg overflow-hidden">
+              {gameComponent}
+            </div>
+          </div>
         </div>
-        
-        <div 
-          className={`${layoutClasses.infoPanel} ui-container bg-retro-bg-darker/90 backdrop-blur-lg border-t border-retro-border flex flex-col`}
-          style={{
-            width: currentLayoutConfig.infoPanel.width,
-            height: currentLayoutConfig.infoPanel.height
-          }}
-          data-ui-element="info-panel"
-        >
-          {infoPanel}
+
+        {/* Bottom panels side by side */}
+        <div className="flex flex-1 bg-gray-950 gap-1">
+          <div
+            className={`${layoutClasses.infoPanel} ui-container bg-gray-900/95 border-r border-gray-800 flex flex-col overflow-hidden backdrop-blur-sm`}
+            style={{
+              width: currentLayoutConfig.leftPanel.width,
+              height: currentLayoutConfig.leftPanel.height
+            }}
+            data-ui-element="left-panel"
+          >
+            {leftPanel}
+          </div>
+
+          <div
+            className={`${layoutClasses.infoPanel} ui-container bg-gray-900/95 flex flex-col overflow-hidden backdrop-blur-sm`}
+            style={{
+              width: currentLayoutConfig.rightPanel.width,
+              height: currentLayoutConfig.rightPanel.height
+            }}
+            data-ui-element="right-panel"
+          >
+            {rightPanel}
+          </div>
         </div>
       </div>
     )
-  }, [screenSize, currentLayoutConfig, layoutClasses, gameComponent, infoPanel])
+  }, [screenSize, currentLayoutConfig, layoutClasses, gameComponent, leftPanel, rightPanel])
 
   /**
-   * Render desktop/tablet layout component
+   * Render desktop/tablet three-column layout
    */
-  const renderDesktopLayout = useCallback((opacity: string) => {
+  const renderThreeColumnLayout = useCallback(() => {
     return (
-      <div className={`flex h-screen bg-gradient-to-br from-retro-bg-darker via-retro-bg-dark to-retro-bg-darker ${layoutClasses.container}`}>
-        <div 
-          className={`${layoutClasses.gameArea} bg-black/30`}
+      <div className={`flex h-screen bg-gray-950 ${layoutClasses.container}`}>
+        {/* Left Panel - Profile & Workstation Info */}
+        <div
+          className={`${layoutClasses.infoPanel} ui-container bg-gray-900/95 border-r border-gray-800 flex flex-col backdrop-blur-sm`}
+          style={{
+            width: currentLayoutConfig.leftPanel.width,
+            height: currentLayoutConfig.leftPanel.height
+          }}
+          data-ui-element="left-panel"
+        >
+          <div className="relative z-10 h-full">
+            {leftPanel}
+          </div>
+        </div>
+
+        {/* Center Game Area - Inset Shadow Effect */}
+        <div
+          className={`${layoutClasses.gameArea} bg-gray-900 relative p-4`}
           style={{
             width: currentLayoutConfig.gameArea.width,
             height: currentLayoutConfig.gameArea.height
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-purple-900/10 pointer-events-none"></div>
-          {gameComponent}
+          <div className="w-full h-full bg-gray-800 rounded-lg shadow-inner shadow-gray-950/50 border border-gray-800/50">
+            <div className="relative z-10 h-full rounded-lg overflow-hidden">
+              {gameComponent}
+            </div>
+          </div>
         </div>
-        
-        <div 
-          className={`${layoutClasses.infoPanel} ui-container bg-retro-bg-darker/${opacity} backdrop-blur-lg border-l border-retro-border flex flex-col`}
+
+        {/* Right Panel - Social & Posts */}
+        <div
+          className={`${layoutClasses.infoPanel} ui-container bg-gray-900/95 border-l border-gray-800 flex flex-col backdrop-blur-sm`}
           style={{
-            width: currentLayoutConfig.infoPanel.width,
-            height: currentLayoutConfig.infoPanel.height
+            width: currentLayoutConfig.rightPanel.width,
+            height: currentLayoutConfig.rightPanel.height
           }}
-          data-ui-element="info-panel"
+          data-ui-element="right-panel"
         >
-          {infoPanel}
+          <div className="relative z-10 h-full">
+            {rightPanel}
+          </div>
         </div>
       </div>
     )
-  }, [currentLayoutConfig, layoutClasses, gameComponent, infoPanel])
+  }, [currentLayoutConfig, layoutClasses, gameComponent, leftPanel, rightPanel])
 
   /**
-   * Render transition indicator
+   * Render transition indicator (disabled)
    */
   const renderTransitionIndicator = useCallback(() => {
-    if (!isTransitioning) return null
-
-    return (
-      <div className="fixed top-4 right-4 z-50 bg-retro-bg-darker/90 backdrop-blur-sm border border-retro-border rounded-lg px-3 py-2">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-retro-blue rounded-full animate-pulse"></div>
-          <span className="text-xs text-retro-text">调整布局中...</span>
-        </div>
-      </div>
-    )
-  }, [isTransitioning])
+    return null
+  }, [])
 
   // Render appropriate layout based on device type
   switch (screenSize.deviceType) {
@@ -389,20 +402,13 @@ export default function LayoutManager({
           {renderTransitionIndicator()}
         </>
       )
-    
+
     case 'tablet':
-      return (
-        <>
-          {renderDesktopLayout('85')}
-          {renderTransitionIndicator()}
-        </>
-      )
-    
     case 'desktop':
     default:
       return (
         <>
-          {renderDesktopLayout('80')}
+          {renderThreeColumnLayout()}
           {renderTransitionIndicator()}
         </>
       )

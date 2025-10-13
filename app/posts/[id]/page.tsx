@@ -139,7 +139,7 @@ export default function PostDetailPage() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.back()}
-                className="p-2 text-retro-textMuted hover:text-white hover:bg-retro-purple/20 rounded-lg transition-all duration-200"
+                className="p-2 text-retro-textMuted hover:text-white hover:bg-retro-purple/20 rounded-lg "
                 title="返回"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +162,7 @@ export default function PostDetailPage() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => window.location.href = '/'}
-                className="px-4 py-2 bg-retro-blue/20 hover:bg-retro-blue/30 text-retro-blue rounded-lg border border-retro-blue/30 hover:border-retro-blue/50 transition-all duration-200 text-sm font-medium"
+                className="px-4 py-2 bg-retro-blue/20 hover:bg-retro-blue/30 text-retro-blue rounded-lg border border-retro-blue/30 hover:border-retro-blue/50  text-sm font-medium"
               >
                 返回主页
               </button>
@@ -188,7 +188,7 @@ export default function PostDetailPage() {
             <p className="text-retro-textMuted text-lg mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-retro-blue/20 hover:bg-retro-blue/30 text-retro-blue rounded-lg border border-retro-blue/30 hover:border-retro-blue/50 transition-all duration-200 font-medium"
+              className="px-6 py-3 bg-retro-blue/20 hover:bg-retro-blue/30 text-retro-blue rounded-lg border border-retro-blue/30 hover:border-retro-blue/50  font-medium"
             >
               重新加载
             </button>
@@ -273,15 +273,15 @@ export default function PostDetailPage() {
                     <button
                       onClick={handleLike}
                       disabled={isLiking}
-                      className={`flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-300 font-medium shadow-sm ${
+                      className={`flex items-center space-x-3 px-4 py-2 rounded-xl  font-medium shadow-sm ${
                         post.isLiked
                           ? 'text-retro-pink bg-retro-pink/15 border border-retro-pink/40 shadow-retro-pink/20'
                           : 'text-retro-textMuted hover:text-retro-pink hover:bg-retro-pink/10 border border-retro-border/30 hover:border-retro-pink/30 hover:shadow-md'
                       } ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
                     >
-                      <div className={`w-6 h-6 ${post.isLiked ? 'bg-retro-pink/30' : 'bg-retro-textMuted/20'} rounded-lg flex items-center justify-center transition-all duration-200`}>
+                      <div className={`w-6 h-6 ${post.isLiked ? 'bg-retro-pink/30' : 'bg-retro-textMuted/20'} rounded-lg flex items-center justify-center `}>
                         <svg
-                          className={`w-4 h-4 ${post.isLiked ? 'fill-current text-retro-pink' : ''} transition-all duration-200`}
+                          className={`w-4 h-4 ${post.isLiked ? 'fill-current text-retro-pink' : ''} `}
                           fill={post.isLiked ? 'currentColor' : 'none'}
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -335,9 +335,9 @@ export default function PostDetailPage() {
                 {isLoadingReplies && replies.length === 0 && (
                   <div className="flex items-center justify-center py-12">
                     <div className="flex items-center gap-4">
-                      <div className="w-4 h-4 bg-retro-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-4 h-4 bg-retro-cyan rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-4 h-4 bg-retro-green rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-4 h-4 bg-retro-blue rounded-full " style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-4 h-4 bg-retro-cyan rounded-full " style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-4 h-4 bg-retro-green rounded-full " style={{ animationDelay: '300ms' }}></div>
                     </div>
                   </div>
                 )}
@@ -399,7 +399,7 @@ export default function PostDetailPage() {
                     <button
                       onClick={loadMoreReplies}
                       disabled={isLoadingReplies}
-                      className="px-8 py-3 bg-retro-purple/10 hover:bg-retro-purple/20 text-retro-purple rounded-xl border border-retro-purple/30 hover:border-retro-purple/50 transition-all duration-200 disabled:opacity-50 font-medium"
+                      className="px-8 py-3 bg-retro-purple/10 hover:bg-retro-purple/20 text-retro-purple rounded-xl border border-retro-purple/30 hover:border-retro-purple/50  disabled:opacity-50 font-medium"
                     >
                       {isLoadingReplies ? '加载中...' : `加载更多回复 (${repliesPagination.totalPages - repliesPagination.page})`}
                     </button>

@@ -110,7 +110,7 @@ export default function InfoPanel({
       <div className="p-4 border-t border-retro-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-green-400 rounded-full "></div>
             <span className="text-xs text-retro-textMuted">在线</span>
           </div>
           <div className="text-xs text-gray-500">
