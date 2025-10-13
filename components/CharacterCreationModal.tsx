@@ -95,7 +95,7 @@ export default function CharacterCreationModal({ isOpen, userName, onComplete, o
                   key={sprite}
                   onClick={() => setSelectedCharacter(sprite)}
                   className={`
-                    relative aspect-square rounded-lg border-2 cursor-pointer transition-all duration-200 overflow-hidden
+                    relative aspect-square rounded-lg border-2 cursor-pointer  overflow-hidden
                     ${selectedCharacter === sprite 
                       ? 'border-retro-purple bg-retro-purple/20 shadow-lg shadow-retro-purple/30' 
                       : 'border-retro-border/50 bg-retro-bg-dark/30 hover:border-retro-purple/50 hover:bg-retro-purple/10'
@@ -153,7 +153,7 @@ export default function CharacterCreationModal({ isOpen, userName, onComplete, o
                 type="button"
                 onClick={onSkip}
                 disabled={isLoading}
-                className="text-retro-textMuted hover:text-white text-sm transition-colors disabled:opacity-50"
+                className="text-retro-textMuted hover:text-white text-sm  disabled:opacity-50"
               >
                 跳过 (稍后创建)
               </button>
@@ -165,11 +165,11 @@ export default function CharacterCreationModal({ isOpen, userName, onComplete, o
               type="button"
               onClick={handleCreateCharacter}
               disabled={isLoading || !userName.trim() || !selectedCharacter}
-              className="bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-purple-500/25 transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100"
+              className="bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-bold py-3 px-8 rounded-lg  disabled:opacity-50 shadow-lg hover:shadow-purple-500/25  disabled:scale-100"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full "></div>
                   <span>创建中...</span>
                 </span>
               ) : (

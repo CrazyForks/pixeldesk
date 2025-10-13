@@ -37,8 +37,8 @@ export default function TeleportConfirmModal({
   if (!isVisible) return null
 
   return (
-    <div className="fixed inset-0 bg-retro-bg-darker flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 w-full max-w-md shadow-2xl shadow-retro-purple/20 animate-slide-in-up">
+    <div className="fixed inset-0 bg-retro-bg-darker flex items-center justify-center z-50 p-4 ">
+      <div className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-8 w-full max-w-md shadow-2xl shadow-retro-purple/20 ">
         {/* 装饰性光效 */}
         <div className="absolute inset-0 bg-gradient-to-br from-retro-purple/5 via-retro-pink/8 to-retro-blue/5 rounded-2xl "></div>
         <div className="absolute inset-0 border border-retro-purple/20 rounded-2xl "></div>
@@ -68,8 +68,8 @@ export default function TeleportConfirmModal({
 
         {/* 积分消费信息 - 像素化信息面板 */}
         <div className="relative group mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-retro-yellow/5 to-retro-orange/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-          <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-5 shadow-lg hover:border-retro-yellow/40 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-r from-retro-yellow/5 to-retro-orange/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+          <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-5 shadow-lg hover:border-retro-yellow/40 ">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-6 h-6 bg-gradient-to-br from-retro-yellow/30 to-retro-orange/30 rounded-lg flex items-center justify-center shadow-lg">
                 <span className="text-sm">💰</span>
@@ -117,17 +117,17 @@ export default function TeleportConfirmModal({
           <button
             onClick={handleConfirm}
             disabled={isProcessing || currentPoints < 1}
-            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green disabled:from-retro-textMuted/30 disabled:to-retro-border/30 text-white font-bold py-4 px-6 rounded-xl border-2 border-white/20 hover:border-white/40 disabled:border-retro-textMuted/20 transition-all duration-300 shadow-lg hover:shadow-2xl disabled:shadow-none transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 backdrop-blur-sm disabled:cursor-not-allowed"
+            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue hover:from-retro-blue hover:via-retro-cyan hover:to-retro-green disabled:from-retro-textMuted/30 disabled:to-retro-border/30 text-white font-bold py-4 px-6 rounded-xl border-2 border-white/20 hover:border-white/40 disabled:border-retro-textMuted/20  shadow-lg hover:shadow-2xl disabled:shadow-none  disabled:scale-100 backdrop-blur-sm disabled:cursor-not-allowed"
           >
             {/* 按钮光效 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/20 to-white/10 opacity-0 group-hover:opacity-100 group-disabled:opacity-0 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/20 to-white/10 opacity-0 group-hover:opacity-100 group-disabled:opacity-0 "></div>
             
             {/* 按钮内容 */}
             <div className="relative flex items-center justify-center gap-3">
               {isProcessing ? (
                 <>
                   <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center">
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full "></div>
                   </div>
                   <span className="font-pixel text-base tracking-wide">TELEPORTING...</span>
                 </>
@@ -146,14 +146,14 @@ export default function TeleportConfirmModal({
           <button
             onClick={onCancel}
             disabled={isProcessing}
-            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 disabled:from-retro-textMuted/20 disabled:to-retro-border/20 text-white font-medium py-4 px-6 rounded-xl border-2 border-retro-border hover:border-retro-red/60 disabled:border-retro-textMuted/20 transition-all duration-300 shadow-lg hover:shadow-xl disabled:shadow-none backdrop-blur-sm disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100"
+            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 disabled:from-retro-textMuted/20 disabled:to-retro-border/20 text-white font-medium py-4 px-6 rounded-xl border-2 border-retro-border hover:border-retro-red/60 disabled:border-retro-textMuted/20  shadow-lg hover:shadow-xl disabled:shadow-none backdrop-blur-sm disabled:cursor-not-allowed  disabled:scale-100"
           >
             {/* 取消按钮光效 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-retro-red/5 to-retro-orange/5 opacity-0 group-hover:opacity-100 group-disabled:opacity-0 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-retro-red/5 to-retro-orange/5 opacity-0 group-hover:opacity-100 group-disabled:opacity-0 "></div>
             
             {/* 取消按钮内容 */}
             <div className="relative flex items-center justify-center gap-3">
-              <div className="w-5 h-5 bg-retro-red/20 rounded-lg flex items-center justify-center group-hover:bg-retro-red/30 group-disabled:bg-retro-textMuted/20 transition-all duration-200">
+              <div className="w-5 h-5 bg-retro-red/20 rounded-lg flex items-center justify-center group-hover:bg-retro-red/30 group-disabled:bg-retro-textMuted/20 ">
                 <span className="text-sm">✕</span>
               </div>
               <span className="font-pixel text-base tracking-wide">CANCEL</span>
@@ -163,7 +163,7 @@ export default function TeleportConfirmModal({
 
         {/* 积分不足警告 - 像素化警告面板 */}
         {currentPoints < 1 && (
-          <div className="relative mt-6 animate-slide-in-up">
+          <div className="relative mt-6 ">
             <div className="absolute inset-0 bg-gradient-to-r from-retro-red/10 to-retro-orange/10 rounded-xl opacity-60 pointer-events-none"></div>
             <div className="relative bg-gradient-to-br from-retro-red/15 to-retro-orange/15 backdrop-blur-sm border-2 border-retro-red/30 rounded-xl p-4 shadow-lg">
               <div className="absolute inset-0 bg-retro-red/5 rounded-xl "></div>

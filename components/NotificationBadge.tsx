@@ -63,13 +63,13 @@ export default function NotificationBadge({
   // Variant classes
   const variantClasses = {
     default: 'bg-gradient-to-r from-retro-pink to-retro-purple',
-    pulse: 'bg-gradient-to-r from-retro-pink to-retro-purple animate-pulse',
+    pulse: 'bg-gradient-to-r from-retro-pink to-retro-purple ',
     glow: 'bg-gradient-to-r from-retro-pink to-retro-purple shadow-lg shadow-retro-pink/50'
   }
 
   // Animation classes
   const animationClasses = isAnimating 
-    ? 'animate-bounce scale-110' 
+    ? ' scale-110' 
     : 'scale-100'
 
   return (
@@ -82,19 +82,19 @@ export default function NotificationBadge({
       rounded-full
       flex items-center justify-center
       text-white font-bold
-      transition-all duration-300
+      
       z-10
     `}>
       {displayCount}
       
       {/* Pulse ring for new notifications */}
       {variant === 'pulse' && count > 0 && (
-        <div className="absolute inset-0 rounded-full bg-retro-pink animate-ping opacity-75"></div>
+        <div className="absolute inset-0 rounded-full bg-retro-pink  opacity-75"></div>
       )}
       
       {/* Glow effect */}
       {variant === 'glow' && count > 0 && (
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-retro-pink to-retro-purple blur-sm opacity-60 animate-pulse"></div>
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-retro-pink to-retro-purple blur-sm opacity-60 "></div>
       )}
     </div>
   )

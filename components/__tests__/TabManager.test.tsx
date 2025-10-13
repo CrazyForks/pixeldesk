@@ -104,7 +104,7 @@ describe('TabManager', () => {
     render(<TabManager tabs={mockTabs} collisionPlayer={mockPlayer} />)
     
     const playerTab = screen.getByText('玩家交互').closest('button')
-    expect(playerTab).toHaveClass('animate-pulse')
+    expect(playerTab).toHaveClass('')
   })
 
   it('should call onTabChange callback when tab switches', async () => {

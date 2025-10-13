@@ -265,15 +265,15 @@ export default function TabManager({
               key={tab.id}
               onClick={() => handleTabSwitch(tab.id, 'manual')}
               className={`
-                relative ${tabLayout.tabButton} transition-all duration-300 transform
+                relative ${tabLayout.tabButton}  transform
                 ${isActive 
                   ? 'text-white bg-gradient-to-r from-retro-purple/30 to-retro-pink/30 border-b-2 border-retro-purple shadow-lg' 
                   : 'text-retro-textMuted hover:text-white hover:bg-retro-purple/10 hover:scale-105'
                 }
-                ${isHighlighted || isHighlightedBySwitch ? 'animate-pulse bg-gradient-to-r from-retro-pink/40 to-retro-purple/40 shadow-lg shadow-retro-pink/50' : ''}
+                ${isHighlighted || isHighlightedBySwitch ? ' bg-gradient-to-r from-retro-pink/40 to-retro-purple/40 shadow-lg shadow-retro-pink/50' : ''}
                 ${isCollisionInteraction ? 'bg-gradient-to-r from-retro-pink/30 to-retro-purple/30 shadow-lg shadow-retro-pink/30' : ''}
                 ${isClickInteraction ? 'bg-gradient-to-r from-retro-blue/30 to-retro-cyan/30 shadow-lg shadow-retro-blue/30' : ''}
-                ${isSwitching ? 'animate-bounce' : ''}
+                ${isSwitching ? '' : ''}
                 ${index === 0 ? 'rounded-tl-lg' : ''}
                 ${index === tabs.length - 1 ? 'rounded-tr-lg' : ''}
                 hover:shadow-md active:scale-95
@@ -281,10 +281,10 @@ export default function TabManager({
               `}
             >
               {/* Tab Icon with enhanced animations */}
-              <span className={`${tabLayout.tabIcon} transition-all duration-300 ${
+              <span className={`${tabLayout.tabIcon}  ${
                 isActive ? 'scale-110' : ''
               } ${
-                isHighlighted || isHighlightedBySwitch ? 'animate-bounce' : ''
+                isHighlighted || isHighlightedBySwitch ? '' : ''
               }`}>
                 {tab.icon}
               </span>
@@ -306,7 +306,7 @@ export default function TabManager({
               {/* Enhanced Collision indicator */}
               {(isHighlighted || isHighlightedBySwitch) && (
                 <>
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-retro-pink rounded-full animate-ping"></div>
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-retro-pink rounded-full "></div>
                   <div className="absolute top-1 right-1 w-2 h-2 bg-retro-pink rounded-full"></div>
                 </>
               )}
@@ -319,7 +319,7 @@ export default function TabManager({
               
               {/* Switching animation overlay */}
               {isSwitching && (
-                <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/30 to-retro-cyan/30 rounded-lg animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/30 to-retro-cyan/30 rounded-lg "></div>
               )}
             </button>
           )
@@ -342,7 +342,7 @@ export default function TabManager({
             <div
               key={tab.id}
               className={`
-                absolute inset-0 transition-all duration-300 ease-in-out
+                absolute inset-0  ease-in-out
                 ${tabState.animationState === 'switching'
                   ? `transform ${tabState.switchDirection === 'right' ? 'translate-x-full scale-95' : '-translate-x-full scale-95'} opacity-0 blur-sm`
                   : 'transform translate-x-0 scale-100 opacity-100 blur-0'
@@ -363,9 +363,9 @@ export default function TabManager({
         {tabState.animationState === 'switching' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 backdrop-blur-sm z-10">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-3 h-3 bg-retro-purple rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-3 h-3 bg-retro-pink rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-3 h-3 bg-retro-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div className="w-3 h-3 bg-retro-purple rounded-full " style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-retro-pink rounded-full " style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-retro-blue rounded-full " style={{ animationDelay: '300ms' }}></div>
             </div>
             <div className="text-center">
               <div className="text-white text-sm font-medium mb-1">切换标签页</div>
@@ -376,7 +376,7 @@ export default function TabManager({
             
             {/* Animated progress bar */}
             <div className="w-32 h-1 bg-retro-border rounded-full mt-4 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-retro-purple to-retro-pink rounded-full animate-pulse"></div>
+              <div className="h-full bg-gradient-to-r from-retro-purple to-retro-pink rounded-full "></div>
             </div>
           </div>
         )}

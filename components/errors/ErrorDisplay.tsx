@@ -79,7 +79,7 @@ export default function ErrorDisplay({
         <div className="mt-3">
           <button
             onClick={onRetry}
-            className="bg-retro-border/30 hover:bg-retro-border/50 text-retro-text text-xs px-3 py-1 rounded transition-colors border border-retro-border/50 hover:border-retro-border"
+            className="bg-retro-border/30 hover:bg-retro-border/50 text-retro-text text-xs px-3 py-1 rounded  border border-retro-border/50 hover:border-retro-border"
           >
             重试
           </button>

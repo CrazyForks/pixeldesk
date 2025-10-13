@@ -177,7 +177,7 @@ const WorkstationInfoModal = memo(({
     >
       {/* 深色背景蒙板 */}
       <div
-        className="absolute inset-0 bg-black/80 animate-fade-in"
+        className="absolute inset-0 bg-black/80 "
         onClick={handleClose}
         onMouseDown={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}
@@ -185,7 +185,7 @@ const WorkstationInfoModal = memo(({
       
       {/* 模态框容器 - 现代像素艺术设计 */}
       <div
-        className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-retro-green/20 animate-slide-in-up"
+        className="relative bg-retro-bg-darker border-2 border-retro-border rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-retro-green/20 "
         onMouseDown={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
@@ -203,10 +203,10 @@ const WorkstationInfoModal = memo(({
           }}
           onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={(e) => e.stopPropagation()}
-          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50 transition-all duration-200 flex items-center justify-center shadow-lg group z-10"
+          className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-retro-red/20 to-retro-orange/20 hover:from-retro-red/30 hover:to-retro-orange/30 text-white/80 hover:text-white rounded-lg border-2 border-retro-red/30 hover:border-retro-red/50  flex items-center justify-center shadow-lg group z-10"
           style={{ pointerEvents: 'auto' }}
         >
-          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100  rounded-lg pointer-events-none"></div>
           <span className="relative font-bold pointer-events-none">✕</span>
         </button>
 
@@ -240,7 +240,7 @@ const WorkstationInfoModal = memo(({
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-retro-green/20 to-retro-cyan/20 rounded-xl flex items-center justify-center border-2 border-retro-green/30 ">
-                <div className="w-6 h-6 border-2 border-retro-green border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-retro-green border-t-transparent rounded-full "></div>
               </div>
               <div className="absolute inset-0 border-2 border-retro-green/20 rounded-xl "></div>
             </div>
@@ -279,8 +279,8 @@ const WorkstationInfoModal = memo(({
             {/* 用户信息 - 像素艺术卡片 */}
             {userInfo && (
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/5 to-retro-pink/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-purple/40 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/5 to-retro-pink/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+                <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-purple/40 ">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-6 h-6 bg-gradient-to-br from-retro-purple/30 to-retro-pink/30 rounded-lg flex items-center justify-center shadow-lg">
                       <span className="text-sm">👤</span>
@@ -324,8 +324,8 @@ const WorkstationInfoModal = memo(({
 
             {/* 工位基本信息 - 像素化信息卡片 */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-retro-cyan/5 to-retro-blue/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-cyan/40 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-retro-cyan/5 to-retro-blue/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-cyan/40 ">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-6 h-6 bg-gradient-to-br from-retro-cyan/30 to-retro-blue/30 rounded-lg flex items-center justify-center shadow-lg">
                     <span className="text-sm">🏢</span>
@@ -352,8 +352,8 @@ const WorkstationInfoModal = memo(({
 
             {/* 时间信息 - 像素化时间卡片 */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-retro-green/5 to-retro-cyan/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-green/40 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-retro-green/5 to-retro-cyan/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-green/40 ">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-6 h-6 bg-gradient-to-br from-retro-green/30 to-retro-cyan/30 rounded-lg flex items-center justify-center shadow-lg">
                     <span className="text-sm">⏰</span>
@@ -381,12 +381,12 @@ const WorkstationInfoModal = memo(({
 
             {/* 到期警告横幅 - 像素化警告横幅 */}
             {timeInfo.isExpiringSoon && !timeInfo.isExpired && (
-              <div className="relative animate-slide-in-up">
+              <div className="relative ">
                 <div className="absolute inset-0 bg-gradient-to-r from-retro-orange/10 to-retro-red/10 rounded-xl opacity-60 pointer-events-none"></div>
-                <div className="relative bg-gradient-to-br from-retro-orange/20 to-retro-red/20 backdrop-blur-sm border-2 border-retro-orange/50 rounded-xl p-4 shadow-lg animate-pulse">
+                <div className="relative bg-gradient-to-br from-retro-orange/20 to-retro-red/20 backdrop-blur-sm border-2 border-retro-orange/50 rounded-xl p-4 shadow-lg ">
                   <div className="absolute inset-0 bg-retro-orange/5 rounded-xl"></div>
                   <div className="relative flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-retro-orange to-retro-red rounded-lg flex items-center justify-center shadow-lg animate-bounce">
+                    <div className="w-10 h-10 bg-gradient-to-br from-retro-orange to-retro-red rounded-lg flex items-center justify-center shadow-lg ">
                       <span className="text-xl">⚠️</span>
                     </div>
                     <div className="flex-1">
@@ -396,7 +396,7 @@ const WorkstationInfoModal = memo(({
                       </p>
                     </div>
                     <div className="w-6 h-6 bg-retro-red/30 rounded-full flex items-center justify-center">
-                      <div className="w-3 h-3 bg-retro-red rounded-full animate-ping"></div>
+                      <div className="w-3 h-3 bg-retro-red rounded-full "></div>
                     </div>
                   </div>
                 </div>
@@ -405,8 +405,8 @@ const WorkstationInfoModal = memo(({
 
             {/* 使用情况和进度 - 像素化进度卡片 */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/5 to-retro-purple/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-blue/40 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-retro-blue/5 to-retro-purple/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+              <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-blue/40 ">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-6 h-6 bg-gradient-to-br from-retro-blue/30 to-retro-purple/30 rounded-lg flex items-center justify-center shadow-lg">
                     <span className="text-sm">📈</span>
@@ -425,7 +425,7 @@ const WorkstationInfoModal = memo(({
                         timeInfo.isExpired
                           ? 'text-retro-red'
                           : timeInfo.isExpiringSoon
-                            ? 'text-retro-orange animate-pulse'
+                            ? 'text-retro-orange '
                             : 'text-retro-green'
                       }`}>
                         {timeInfo.timeRemaining}
@@ -446,7 +446,7 @@ const WorkstationInfoModal = memo(({
                     </div>
                     <div className="relative w-full bg-gradient-to-r from-retro-bg-darker to-retro-bg-dark rounded-full h-3 border border-retro-border/30 shadow-inner">
                       <div 
-                        className={`h-full rounded-full transition-all duration-500 shadow-lg ${
+                        className={`h-full rounded-full  shadow-lg ${
                           timeInfo.isExpired 
                             ? 'bg-gradient-to-r from-retro-red to-retro-orange' 
                             : 'bg-gradient-to-r from-retro-green via-retro-cyan to-retro-blue'
@@ -464,7 +464,7 @@ const WorkstationInfoModal = memo(({
             </div>
 
             {/* 状态指示器 - 像素化状态卡片 */}
-            <div className={`relative group bg-gradient-to-br backdrop-blur-sm rounded-xl p-4 border-2 shadow-lg transition-all duration-300 ${
+            <div className={`relative group bg-gradient-to-br backdrop-blur-sm rounded-xl p-4 border-2 shadow-lg  ${
               timeInfo.isExpired
                 ? 'from-retro-red/15 to-retro-orange/15 border-retro-red/30 hover:border-retro-red/50'
                 : timeInfo.isExpiringSoon
@@ -485,7 +485,7 @@ const WorkstationInfoModal = memo(({
                     : timeInfo.isExpiringSoon
                       ? 'bg-gradient-to-br from-retro-orange/30 to-retro-red/30'
                       : 'bg-gradient-to-br from-retro-green/30 to-retro-cyan/30'
-                } ${timeInfo.isExpiringSoon && !timeInfo.isExpired ? 'animate-pulse' : ''}`}>
+                } ${timeInfo.isExpiringSoon && !timeInfo.isExpired ? '' : ''}`}>
                   <span className="text-lg">
                     {timeInfo.isExpired
                       ? '🛑'
@@ -523,7 +523,7 @@ const WorkstationInfoModal = memo(({
                   timeInfo.isExpired
                     ? 'bg-retro-red'
                     : timeInfo.isExpiringSoon
-                      ? 'bg-retro-orange animate-ping'
+                      ? 'bg-retro-orange '
                       : 'bg-retro-green'
                 }`}></div>
               </div>
@@ -544,14 +544,14 @@ const WorkstationInfoModal = memo(({
             }}
             onMouseDown={(e) => e.stopPropagation()}
             onMouseUp={(e) => e.stopPropagation()}
-            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-3 px-4 rounded-xl border-2 border-retro-border hover:border-retro-cyan/60 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm transform hover:scale-[1.02] active:scale-[0.98]"
+            className="relative flex-1 group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-3 px-4 rounded-xl border-2 border-retro-border hover:border-retro-cyan/60  shadow-lg hover:shadow-xl backdrop-blur-sm "
           >
             {/* 按钮光效 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-retro-cyan/5 to-retro-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-retro-cyan/5 to-retro-blue/5 opacity-0 group-hover:opacity-100 "></div>
             
             {/* 按钮内容 */}
             <div className="relative flex items-center justify-center gap-2">
-              <div className="w-5 h-5 bg-retro-cyan/20 rounded-lg flex items-center justify-center group-hover:bg-retro-cyan/30 transition-all duration-200">
+              <div className="w-5 h-5 bg-retro-cyan/20 rounded-lg flex items-center justify-center group-hover:bg-retro-cyan/30 ">
                 <span className="text-sm">✅</span>
               </div>
               <span className="font-pixel text-sm tracking-wide">CLOSE</span>

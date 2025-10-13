@@ -68,11 +68,11 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-purple-500/25"
+            className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-bold py-3 px-6 rounded-lg  disabled:opacity-50 shadow-lg hover:shadow-purple-500/25"
           >
             {isLoading ? (
               <span className="flex items-center justify-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full "></div>
                 <span>登录中...</span>
               </span>
             ) : (
@@ -87,7 +87,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
               还没有账户？
               <button
                 onClick={onSwitchToRegister}
-                className="ml-1 text-retro-purple hover:text-retro-pink transition-colors font-medium"
+                className="ml-1 text-retro-purple hover:text-retro-pink  font-medium"
               >
                 立即注册
               </button>

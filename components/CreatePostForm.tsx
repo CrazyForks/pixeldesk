@@ -80,7 +80,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
               onChange={(e) => setContent(e.target.value)}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
-              className="relative w-full bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border border-retro-border focus:border-retro-purple rounded-lg px-3 py-2 text-white placeholder-retro-textMuted focus:outline-none backdrop-blur-md transition-all duration-300 font-retro text-sm resize-none focus:shadow-lg focus:shadow-retro-purple/20"
+              className="relative w-full bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border border-retro-border focus:border-retro-purple rounded-lg px-3 py-2 text-white placeholder-retro-textMuted focus:outline-none backdrop-blur-md  font-retro text-sm resize-none focus:shadow-lg focus:shadow-retro-purple/20"
               rows={isMobile ? 2 : 3}
               maxLength={2000}
               disabled={isSubmitting}
@@ -106,7 +106,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
                 setError('')
               }}
               disabled={isSubmitting}
-              className="relative group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-1.5 px-3 rounded-lg border border-retro-border hover:border-retro-yellow/60 transition-all duration-200 shadow-sm hover:shadow-md backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="relative group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-1.5 px-3 rounded-lg border border-retro-border hover:border-retro-yellow/60  shadow-sm hover:shadow-md backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               <div className="flex items-center gap-1">
                 <span className="text-xs">🧹</span>
@@ -117,12 +117,12 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
             <button
               type="submit"
               disabled={isSubmitting || !content.trim()}
-              className="relative group overflow-hidden bg-gradient-to-r from-retro-purple to-retro-blue hover:from-retro-blue hover:to-retro-cyan text-white font-bold py-1.5 px-4 rounded-lg border border-white/20 hover:border-white/40 transition-all duration-200 shadow-sm hover:shadow-lg backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 transform hover:scale-[1.02] active:scale-[0.98]"
+              className="relative group overflow-hidden bg-gradient-to-r from-retro-purple to-retro-blue hover:from-retro-blue hover:to-retro-cyan text-white font-bold py-1.5 px-4 rounded-lg border border-white/20 hover:border-white/40  shadow-sm hover:shadow-lg backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 "
             >
               <div className="flex items-center gap-1">
                 {isSubmitting ? (
                   <>
-                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full "></div>
                     <span className="font-pixel text-xs">POST...</span>
                   </>
                 ) : (
