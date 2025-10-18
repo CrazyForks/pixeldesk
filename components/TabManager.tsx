@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ReactNode, ComponentType } from 'react'
+import { useState, useEffect, useRef, useCallback, ReactNode, ComponentType } from 'react'
 import { EventBus, CollisionEvent, TabSwitchEvent } from '../lib/eventBus'
 import NotificationBadge from './NotificationBadge'
 
@@ -39,6 +39,8 @@ export default function TabManager({
   isMobile = false,
   isTablet = false
 }: TabManagerProps) {
+  console.log('🔵 [TabManager] Component rendering/re-rendering')
+
   const [tabState, setTabState] = useState<TabState>({
     activeTabId: activeTab || tabs[0]?.id || '',
     animationState: 'idle',
@@ -50,6 +52,24 @@ export default function TabManager({
   const [highlightedTab, setHighlightedTab] = useState<string | null>(null)
   const [switchingAnimation, setSwitchingAnimation] = useState(false)
   const [screenSize, setScreenSize] = useState({ width: 0, height: 0 })
+
+  // 监控 currentCollisionPlayer 变化
+  useEffect(() => {
+    console.log('🔄 [TabManager] currentCollisionPlayer changed:', currentCollisionPlayer)
+  }, [currentCollisionPlayer])
+
+  // 使用 refs 来访问最新状态和函数，避免 EventBus 监听器闭包问题
+  const tabsRef = useRef(tabs)
+  const tabStateRef = useRef(tabState)
+  const currentCollisionPlayerRef = useRef(currentCollisionPlayer)
+  const handleTabSwitchRef = useRef<any>(null)
+
+  // 更新 refs
+  useEffect(() => {
+    tabsRef.current = tabs
+    tabStateRef.current = tabState
+    currentCollisionPlayerRef.current = currentCollisionPlayer
+  }, [tabs, tabState, currentCollisionPlayer])
 
   // Detect screen size changes for responsive tab behavior - 优化防抖
   useEffect(() => {
@@ -78,7 +98,15 @@ export default function TabManager({
 
   // Handle tab switching with animation
   const handleTabSwitch = (newTabId: string, trigger: 'collision' | 'manual' | 'auto' = 'manual') => {
-    if (newTabId === tabState.activeTabId) return
+    // 如果是同一个标签页，只更新 trigger（用于点击同一标签页但不同玩家的情况）
+    if (newTabId === tabState.activeTabId) {
+      console.log('🔄 [TabManager] Same tab, updating trigger:', { tabId: newTabId, trigger })
+      setTabState(prev => ({
+        ...prev,
+        lastSwitchTrigger: trigger
+      }))
+      return
+    }
 
     const currentIndex = tabs.findIndex(tab => tab.id === tabState.activeTabId)
     const newIndex = tabs.findIndex(tab => tab.id === newTabId)
@@ -126,83 +154,106 @@ export default function TabManager({
     }
   }
 
-  // Set up event bus listeners for collision and click events
+  // 保存 handleTabSwitch 的引用到 ref
   useEffect(() => {
-    const handleCollisionStart = (event: CollisionEvent) => {
-      // 性能优化：只有在player-interaction标签页可用时才处理collision
-      const playerInteractionTab = tabs.find(tab => tab.id === 'player-interaction')
-      if (!playerInteractionTab) {
-        // Social标签页被禁用，跳过collision处理以节省CPU
-        return
-      }
+    handleTabSwitchRef.current = handleTabSwitch
+  })
 
-      console.log('🎯 [TabManager] Collision detected, switching to Social tab:', event.targetPlayer)
-      setCurrentCollisionPlayer(event.targetPlayer)
-      setHighlightedTab(playerInteractionTab.id)
-      handleTabSwitch(playerInteractionTab.id, 'collision')
+  // 使用 useCallback 定义事件处理函数，保持引用稳定
+  const handleCollisionStart = useCallback((event: CollisionEvent) => {
+    console.log('🎯 [TabManager] handleCollisionStart called with event:', event)
+    const playerInteractionTab = tabsRef.current.find(tab => tab.id === 'player-interaction')
+    if (!playerInteractionTab) {
+      console.warn('⚠️ [TabManager] player-interaction tab not found in handleCollisionStart')
+      return
     }
 
-    const handleCollisionEnd = (event: CollisionEvent) => {
-      // 性能优化：只有在player-interaction标签页可用时才处理collision end
-      const playerInteractionTab = tabs.find(tab => tab.id === 'player-interaction')
-      if (!playerInteractionTab) {
-        // Social标签页被禁用，跳过collision end处理以节省CPU
-        return
-      }
+    console.log('🎯 [TabManager] Collision detected, full event:', event)
+    console.log('🎯 [TabManager] Target player data:', event.targetPlayer)
 
-      console.log('🔚 [TabManager] Collision ended, switching back to Profile tab:', event.targetPlayer)
-      setCurrentCollisionPlayer(null)
+    setCurrentCollisionPlayer(event.targetPlayer)
+    setHighlightedTab(playerInteractionTab.id)
+    handleTabSwitchRef.current?.(playerInteractionTab.id, 'collision')
+  }, [])
 
-      // Switch back to default tab when collision ends (only if switched by collision)
-      const defaultTab = tabs.find(tab => tab.id === 'status-info')
-      if (defaultTab && tabState.activeTabId === 'player-interaction' && tabState.lastSwitchTrigger === 'collision') {
-        handleTabSwitch(defaultTab.id, 'auto')
-      }
+  const handleCollisionEnd = useCallback((event: CollisionEvent) => {
+    const playerInteractionTab = tabsRef.current.find(tab => tab.id === 'player-interaction')
+    if (!playerInteractionTab) {
+      return
     }
 
-    const handlePlayerClick = (event: any) => {
-      // 性能优化：只有在player-interaction标签页可用时才处理click
-      const playerInteractionTab = tabs.find(tab => tab.id === 'player-interaction')
-      if (!playerInteractionTab) {
-        // Social标签页被禁用，跳过click处理以节省CPU
-        return
-      }
+    console.log('🔚 [TabManager] Collision ended, switching back to Profile tab:', event.targetPlayer)
+    setCurrentCollisionPlayer(null)
 
-      // Check if there's an active collision - collision has priority over click
-      if (currentCollisionPlayer) {
-        return
-      }
+    const defaultTab = tabsRef.current.find(tab => tab.id === 'status-info')
+    if (defaultTab &&
+        tabStateRef.current.activeTabId === 'player-interaction' &&
+        tabStateRef.current.lastSwitchTrigger === 'collision') {
+      handleTabSwitchRef.current?.(defaultTab.id, 'auto')
+    }
+  }, [])
 
-      // Set the clicked player as current interaction player
-      setCurrentCollisionPlayer(event.targetPlayer)
-      setHighlightedTab(playerInteractionTab.id)
-      handleTabSwitch(playerInteractionTab.id, 'manual')
+  const handlePlayerClickEvent = useCallback((event: any) => {
+    console.log('👆 [TabManager] handlePlayerClickEvent called with event:', event)
+    console.log('👆 [TabManager] Player click detected, full event:', event)
 
-      // Auto-clear click interaction after a delay
-      setTimeout(() => {
-        if (!currentCollisionPlayer && tabState.activeTabId === 'player-interaction' && tabState.lastSwitchTrigger === 'manual') {
-          setCurrentCollisionPlayer(null)
-          const defaultTab = tabs.find(tab => tab.id === 'status-info')
-          if (defaultTab) {
-            handleTabSwitch(defaultTab.id, 'auto')
-          }
-        }
-      }, 10000)
+    const playerInteractionTab = tabsRef.current.find(tab => tab.id === 'player-interaction')
+    if (!playerInteractionTab) {
+      console.warn('⚠️ [TabManager] player-interaction tab not found, skipping')
+      return
     }
 
+    console.log('👆 [TabManager] Target player data:', event.targetPlayer)
+    console.log('👆 [TabManager] Setting currentCollisionPlayer to:', event.targetPlayer)
 
-    // Subscribe to collision and click events
+    setCurrentCollisionPlayer(event.targetPlayer)
+    setHighlightedTab(playerInteractionTab.id)
+    handleTabSwitchRef.current?.(playerInteractionTab.id, 'manual')
+
+    // 验证设置后的值
+    setTimeout(() => {
+      console.log('✅ [TabManager] currentCollisionPlayer after setState:', currentCollisionPlayerRef.current)
+    }, 100)
+  }, [])
+
+  // Set up event bus listeners - 使用稳定的 useCallback 函数
+  useEffect(() => {
+    console.log('📡 [TabManager] useEffect for EventBus registration RUNNING')
+    console.log('📡 [TabManager] Callback references:', {
+      handleCollisionStart: typeof handleCollisionStart,
+      handleCollisionEnd: typeof handleCollisionEnd,
+      handlePlayerClickEvent: typeof handlePlayerClickEvent
+    })
+
+    console.log('📡 [TabManager] Registering EventBus listeners...')
+
     EventBus.on('player:collision:start', handleCollisionStart)
-    EventBus.on('player:collision:end', handleCollisionEnd)
-    EventBus.on('player:click', handlePlayerClick)
+    console.log('📡 [TabManager] Registered player:collision:start, count:', EventBus.listenerCount('player:collision:start'))
 
-    // Cleanup on unmount
+    EventBus.on('player:collision:end', handleCollisionEnd)
+    console.log('📡 [TabManager] Registered player:collision:end, count:', EventBus.listenerCount('player:collision:end'))
+
+    EventBus.on('player:click', handlePlayerClickEvent)
+    console.log('📡 [TabManager] Registered player:click, count:', EventBus.listenerCount('player:click'))
+
+    console.log('📡 [TabManager] All EventBus listeners registered:', {
+      'player:collision:start': EventBus.listenerCount('player:collision:start'),
+      'player:collision:end': EventBus.listenerCount('player:collision:end'),
+      'player:click': EventBus.listenerCount('player:click')
+    })
+
     return () => {
+      console.log('🧹 [TabManager] Cleanup function RUNNING - removing EventBus listeners')
       EventBus.off('player:collision:start', handleCollisionStart)
       EventBus.off('player:collision:end', handleCollisionEnd)
-      EventBus.off('player:click', handlePlayerClick)
+      EventBus.off('player:click', handlePlayerClickEvent)
+      console.log('🧹 [TabManager] Cleanup complete, remaining listeners:', {
+        'player:collision:start': EventBus.listenerCount('player:collision:start'),
+        'player:collision:end': EventBus.listenerCount('player:collision:end'),
+        'player:click': EventBus.listenerCount('player:click')
+      })
     }
-  }, [tabs, tabState.activeTabId, tabState.lastSwitchTrigger, currentCollisionPlayer])
+  }, [handleCollisionStart, handleCollisionEnd, handlePlayerClickEvent])
 
   // 注意：collision处理现在完全由EventBus驱动，无需外部prop支持
 
@@ -337,6 +388,11 @@ export default function TabManager({
           }
 
           const TabComponent = tab.component;
+
+          // 调试：显示传递给组件的 collisionPlayer
+          if (tab.id === 'player-interaction' && isTabActive) {
+            console.log('🔄 [TabManager] Rendering PlayerInteractionTab with collisionPlayer:', currentCollisionPlayer)
+          }
 
           return (
             <div

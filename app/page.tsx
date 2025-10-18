@@ -281,31 +281,121 @@ export default function Home() {
         })
       }
       
-      // 设置角色点击的全局函数 - 统一使用 EventBus 和标签页系统
+      // 设置角色点击的全局函数 - 使用独立的 player:click 事件
       window.showPlayerInfo = (userId: string, userInfo: any) => {
-        console.log('[Global] showPlayerInfo called, redirecting to EventBus:', userId)
-        // 通过 EventBus 触发玩家点击事件，让 TabManager 统一处理
+        console.log('🔵 [Global] showPlayerInfo called:', { userId, userInfo })
+
+        // 构造完整的 playerData 格式
+        const targetPlayer = {
+          id: userId,
+          name: userInfo?.name || userInfo?.username || `玩家${userId.slice(-4)}`,
+          avatar: userInfo?.avatar,
+          points: userInfo?.points,
+          currentStatus: userInfo?.currentStatus || {
+            type: 'working',
+            status: '工作中',
+            emoji: '💼',
+            message: '正在工作中...',
+            timestamp: new Date().toISOString()
+          },
+          isOnline: true,
+          lastSeen: new Date().toISOString()
+        }
+
+        const mainPlayer = currentUser ? {
+          id: currentUser.id,
+          name: currentUser.name || currentUser.username,
+          avatar: currentUser.avatar,
+          currentStatus: {
+            type: 'working',
+            status: '工作中',
+            emoji: '💼',
+            message: '',
+            timestamp: new Date().toISOString()
+          },
+          isOnline: true
+        } : {
+          id: 'temp',
+          name: '我',
+          currentStatus: {
+            type: 'working',
+            status: '工作中',
+            emoji: '💼',
+            message: '',
+            timestamp: new Date().toISOString()
+          },
+          isOnline: true
+        }
+
+        // 发送独立的 player:click 事件
         const clickEvent = {
           type: 'player_click',
-          targetPlayer: { ...userInfo, id: userId },
+          targetPlayer,
+          mainPlayer,
           timestamp: Date.now(),
           position: { x: 0, y: 0 },
           trigger: 'click'
         }
+        console.log('🔵 [Global] Emitting player:click event:', clickEvent)
         EventBus.emit('player:click', clickEvent)
       }
 
-      // 设置角色点击事件的全局函数 - 统一使用 EventBus 和标签页系统
+      // 设置角色点击事件的全局函数 - 使用独立的 player:click 事件
       window.showCharacterInfo = (userId: string, userInfo: any, position: { x: number; y: number }) => {
-        console.log('[Global] showCharacterInfo called, redirecting to EventBus:', userId)
-        // 通过 EventBus 触发玩家点击事件，让 TabManager 统一处理
+        console.log('🔵 [Global] showCharacterInfo called:', { userId, userInfo, position })
+
+        // 构造完整的 playerData 格式
+        const targetPlayer = {
+          id: userId,
+          name: userInfo?.name || userInfo?.username || `玩家${userId.slice(-4)}`,
+          avatar: userInfo?.avatar,
+          points: userInfo?.points,
+          currentStatus: userInfo?.currentStatus || {
+            type: 'working',
+            status: '工作中',
+            emoji: '💼',
+            message: '正在工作中...',
+            timestamp: new Date().toISOString()
+          },
+          isOnline: true,
+          lastSeen: new Date().toISOString()
+        }
+
+        const mainPlayer = currentUser ? {
+          id: currentUser.id,
+          name: currentUser.name || currentUser.username,
+          avatar: currentUser.avatar,
+          currentStatus: {
+            type: 'working',
+            status: '工作中',
+            emoji: '💼',
+            message: '',
+            timestamp: new Date().toISOString()
+          },
+          isOnline: true
+        } : {
+          id: 'temp',
+          name: '我',
+          currentStatus: {
+            type: 'working',
+            status: '工作中',
+            emoji: '💼',
+            message: '',
+            timestamp: new Date().toISOString()
+          },
+          isOnline: true
+        }
+
+        // 发送独立的 player:click 事件
         const clickEvent = {
           type: 'player_click',
-          targetPlayer: { ...userInfo, id: userId },
+          targetPlayer,
+          mainPlayer,
           timestamp: Date.now(),
           position: position,
           trigger: 'click'
         }
+        console.log('🔵 [Global] Emitting player:click event:', clickEvent)
         EventBus.emit('player:click', clickEvent)
       }
       
@@ -531,20 +621,10 @@ export default function Home() {
   }, [])
 
 
-  // 处理玩家点击请求 - 统一使用 EventBus 和标签页系统
+  // 处理玩家点击请求 - 点击事件已在 Phaser 层面通过 EventBus 处理
   const handlePlayerClick = useCallback((playerData: any) => {
-    console.log('[HomePage] Player click handler:', playerData)
-
-    // 通过 EventBus 触发点击事件，让 TabManager 统一处理
-    // 这样点击和碰撞产生一致的用户体验
-    const clickEvent = {
-      type: 'player_click',
-      targetPlayer: playerData,
-      timestamp: Date.now(),
-      position: { x: 0, y: 0 },
-      trigger: 'click'
-    }
-    EventBus.emit('player:click', clickEvent)
+    // 保留此函数以保持向后兼容，但实际处理已在 Phaser 层完成
+    console.log('[HomePage] Player click handler (legacy, actual handling in Phaser):', playerData)
   }, [])
 
   // 处理工位绑定确认

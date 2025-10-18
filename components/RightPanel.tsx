@@ -31,11 +31,18 @@ export default function RightPanel({
   isTablet = false
 }: RightPanelProps) {
   const [activeTab, setActiveTab] = useState('social')
+  const [currentInteractionPlayer, setCurrentInteractionPlayer] = useState<any>(null)
 
-  // 监听玩家碰撞事件，自动切换到互动tab
+  // 监控 currentInteractionPlayer 变化
+  useEffect(() => {
+    console.log('🔄 [RightPanel] currentInteractionPlayer changed:', currentInteractionPlayer)
+  }, [currentInteractionPlayer])
+
+  // 监听玩家碰撞和点击事件，自动切换到互动tab
   useEffect(() => {
     const handleCollisionStart = (event: CollisionEvent) => {
       console.log('🎯 [RightPanel] Collision detected, switching to interaction tab:', event.targetPlayer)
+      setCurrentInteractionPlayer(event.targetPlayer)
       setActiveTab('interaction')
     }
 
@@ -43,18 +50,27 @@ export default function RightPanel({
       console.log('🔚 [RightPanel] Collision ended:', event.targetPlayer)
       // 碰撞结束时切换回动态tab
       if (activeTab === 'interaction') {
+        setCurrentInteractionPlayer(null)
         setActiveTab('social')
       }
     }
 
-    // 订阅碰撞事件
+    const handlePlayerClick = (event: any) => {
+      console.log('👆 [RightPanel] Player click detected, switching to interaction tab:', event.targetPlayer)
+      setCurrentInteractionPlayer(event.targetPlayer)
+      setActiveTab('interaction')
+    }
+
+    // 订阅碰撞和点击事件
     EventBus.on('player:collision:start', handleCollisionStart)
     EventBus.on('player:collision:end', handleCollisionEnd)
+    EventBus.on('player:click', handlePlayerClick)
 
     // 清理监听器
     return () => {
       EventBus.off('player:collision:start', handleCollisionStart)
       EventBus.off('player:collision:end', handleCollisionEnd)
+      EventBus.off('player:click', handlePlayerClick)
     }
   }, [activeTab])
 
@@ -120,7 +136,7 @@ export default function RightPanel({
       ),
       component: (
         <PlayerInteractionTab
-          collisionPlayer={selectedPlayer}
+          collisionPlayer={currentInteractionPlayer || selectedPlayer}
           isActive={activeTab === 'interaction'}
           isMobile={isMobile}
           isTablet={isTablet}
