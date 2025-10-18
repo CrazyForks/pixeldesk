@@ -454,26 +454,37 @@ export class Player extends Phaser.GameObjects.Container {
     // 处理玩家点击
     handlePlayerClick(pointer) {
         debugLog('玩家被点击:', this.playerData.name);
-        
-        // 创建点击事件数据
+
+        // 获取主玩家数据，确保有完整的格式
+        const mainPlayerData = this.scene.player?.playerData || {
+            id: 'temp',
+            name: '我',
+            currentStatus: {
+                type: 'working',
+                status: '工作中',
+                emoji: '💼',
+                message: '',
+                timestamp: new Date().toISOString()
+            },
+            isOnline: true
+        };
+
+        // 创建独立的点击事件
         const clickEvent = {
             type: 'player_click',
             targetPlayer: this.playerData,
+            mainPlayer: mainPlayerData,
             timestamp: Date.now(),
             position: { x: this.x, y: this.y },
             trigger: 'click'
         };
-        
-        // 使用事件总线触发点击事件
+
+        // 使用事件总线触发点击事件 - 独立处理，不与碰撞混淆
         if (window.gameEventBus) {
+            debugLog('触发玩家点击事件:', clickEvent);
             window.gameEventBus.emit('player:click', clickEvent);
         }
-        
-        // 保持向后兼容性 - 触发全局回调函数
-        if (window.onPlayerClick) {
-            window.onPlayerClick(this.playerData);
-        }
-        
+
         // 添加点击动画效果
         this.addClickAnimation();
     }
