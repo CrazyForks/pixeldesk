@@ -114,6 +114,29 @@ export default function Home() {
     }
   }, [user])
 
+  // 预加载积分配置（在应用启动时）
+  useEffect(() => {
+    const loadPointsConfig = async () => {
+      try {
+        const response = await fetch('/api/points-config')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            console.log('✅ 积分配置已预加载:', data.data)
+            // 可以将配置存储到全局状态或localStorage中
+            if (typeof window !== 'undefined') {
+              (window as any).pointsConfig = data.data
+            }
+          }
+        }
+      } catch (error) {
+        console.error('⚠️ 预加载积分配置失败:', error)
+      }
+    }
+
+    loadPointsConfig()
+  }, [])
+
   // 帖子详情弹窗状态
   const [postDetailModal, setPostDetailModal] = useState({
     isVisible: false,
