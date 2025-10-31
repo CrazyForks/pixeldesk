@@ -6,8 +6,11 @@ import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
 import { useUser } from '@/contexts/UserContext'
 import { Post, CreatePostData } from '@/types/social'
 import PostCard from '@/components/PostCard'
+import PostListItem from '@/components/PostListItem'
 import CreatePostForm from '@/components/CreatePostForm'
 import LoadingSpinner from '@/components/LoadingSpinner'
+
+type ViewMode = 'card' | 'list'
 
 interface SocialFeedTabProps {
   collisionPlayer?: any
@@ -24,6 +27,7 @@ export default function SocialFeedTab({
 }: SocialFeedTabProps) {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('card') // 视图模式：card（卡片）或 list（列表）
 
   // 使用新的用户hook获取当前用户信息
   const { currentUser, userId: currentUserId, isLoading: isUserLoading, error: userError } = useCurrentUser()
@@ -138,11 +142,41 @@ export default function SocialFeedTab({
           </div>
           
           <div className="flex items-center space-x-2">
+            {/* 视图切换按钮 */}
+            <div className="flex items-center bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode('card')}
+                className={`p-2 transition-colors ${
+                  viewMode === 'card'
+                    ? 'bg-gray-700 text-gray-200'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+                title="卡片视图"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-gray-700 text-gray-200'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+                title="列表视图"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+
             <button
               onClick={refreshPosts}
               disabled={isRefreshing}
               className="p-2 bg-gray-800 border border-gray-700 hover:bg-gray-700 rounded-lg  disabled:opacity-50"
-              title="Refresh feed"
+              title="刷新"
             >
               <svg className={`w-4 h-4 text-gray-400 ${isRefreshing ? '' : ''} `} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -261,33 +295,63 @@ export default function SocialFeedTab({
           </div>
         ) : (
           <div className="h-full overflow-y-auto">
-            <div className="space-y-4 p-4">
-              {posts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={currentUserId || ''}
-                  onLike={() => handleLikePost(post.id)}
-                  onReplyCountUpdate={handleReplyCountUpdate}
-                  isMobile={isMobile}
-                  isAuthenticated={isAuthenticated}
-                  onShowLoginPrompt={() => setShowLoginPrompt(true)}
-                />
-              ))}
-              
-              {/* 加载更多按钮 */}
-              {pagination.hasNextPage && (
-                <div className="flex justify-center py-4">
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={isRefreshing}
-                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg  disabled:opacity-50 text-sm font-mono"
-                  >
-                    {isRefreshing ? 'LOADING...' : 'LOAD MORE'}
-                  </button>
-                </div>
-              )}
-            </div>
+            {viewMode === 'card' ? (
+              /* 卡片视图 - 原有布局 */
+              <div className="space-y-4 p-4">
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={currentUserId || ''}
+                    onLike={() => handleLikePost(post.id)}
+                    onReplyCountUpdate={handleReplyCountUpdate}
+                    isMobile={isMobile}
+                    isAuthenticated={isAuthenticated}
+                    onShowLoginPrompt={() => setShowLoginPrompt(true)}
+                  />
+                ))}
+
+                {/* 加载更多按钮 */}
+                {pagination.hasNextPage && (
+                  <div className="flex justify-center py-4">
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={isRefreshing}
+                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg  disabled:opacity-50 text-sm font-mono"
+                    >
+                      {isRefreshing ? 'LOADING...' : 'LOAD MORE'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* 列表视图 - 紧凑布局 */
+              <div>
+                {posts.map((post) => (
+                  <PostListItem
+                    key={post.id}
+                    post={post}
+                    currentUserId={currentUserId || ''}
+                    onLike={() => handleLikePost(post.id)}
+                    isAuthenticated={isAuthenticated}
+                    onShowLoginPrompt={() => setShowLoginPrompt(true)}
+                  />
+                ))}
+
+                {/* 加载更多按钮 */}
+                {pagination.hasNextPage && (
+                  <div className="flex justify-center py-4 border-t border-gray-800/50">
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={isRefreshing}
+                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg  disabled:opacity-50 text-sm font-mono"
+                    >
+                      {isRefreshing ? 'LOADING...' : 'LOAD MORE'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
