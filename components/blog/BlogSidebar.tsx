@@ -115,7 +115,7 @@ export default function BlogSidebar({
       <div className="w-16 h-full bg-gray-900/95 backdrop-blur-sm border-r border-gray-800 flex flex-col items-center py-4 gap-4">
         <button
           onClick={onToggleCollapse}
-          className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+          className="cursor-pointer p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
           title="展开侧边栏"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +125,7 @@ export default function BlogSidebar({
 
         <button
           onClick={onNewBlog}
-          className="p-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 rounded-lg text-white transition-all shadow-lg shadow-cyan-500/20"
+          className="cursor-pointer p-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 rounded-lg text-white transition-all shadow-lg shadow-cyan-500/20"
           title="新建博客"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +166,7 @@ export default function BlogSidebar({
           <div className="flex items-center gap-2">
             <button
               onClick={onNewBlog}
-              className="p-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 rounded-lg text-white transition-all shadow-lg shadow-cyan-500/20"
+              className="cursor-pointer p-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 rounded-lg text-white transition-all shadow-lg shadow-cyan-500/20"
               title="新建博客"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,7 +176,7 @@ export default function BlogSidebar({
             {onToggleCollapse && (
               <button
                 onClick={onToggleCollapse}
-                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                className="cursor-pointer p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
                 title="收起侧边栏"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,7 +266,7 @@ export default function BlogSidebar({
             </p>
             <button
               onClick={onNewBlog}
-              className="mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+              className="cursor-pointer mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
             >
               创建第一篇博客
             </button>

@@ -406,7 +406,7 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
                     {tag}
                     <button
                       onClick={() => handleRemoveTag(tag)}
-                      className="hover:text-cyan-300 transition-colors"
+                      className="cursor-pointer hover:text-cyan-300 transition-colors"
                     >
                       ×
                     </button>

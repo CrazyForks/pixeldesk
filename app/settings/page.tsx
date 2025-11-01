@@ -199,7 +199,7 @@ export default function SettingsPage() {
             <p className="text-gray-400">{error || '无法加载设置'}</p>
             <button
               onClick={() => router.push('/')}
-              className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all"
+              className="cursor-pointer px-6 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all"
             >
               返回首页
             </button>
@@ -217,7 +217,7 @@ export default function SettingsPage() {
           {/* Logo */}
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,7 +300,7 @@ export default function SettingsPage() {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full md:w-auto px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg transition-all font-medium"
+                className="cursor-pointer w-full md:w-auto px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg transition-all font-medium"
               >
                 选择图片
               </button>
@@ -309,7 +309,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleAvatarUpload}
                   disabled={isSaving}
-                  className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all font-medium disabled:opacity-50"
+                  className="cursor-pointer w-full md:w-auto px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all font-medium disabled:opacity-50"
                 >
                   {isSaving ? '上传中...' : '上传头像'}
                 </button>
@@ -415,14 +415,14 @@ export default function SettingsPage() {
         <div className="flex justify-end gap-4">
           <button
             onClick={() => router.push(`/profile/${userId}`)}
-            className="px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg transition-all font-medium"
+            className="cursor-pointer px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg transition-all font-medium"
           >
             取消
           </button>
           <button
             onClick={handleUpdateProfile}
             disabled={isSaving}
-            className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all font-medium disabled:opacity-50"
+            className="cursor-pointer px-8 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all font-medium disabled:opacity-50"
           >
             {isSaving ? '保存中...' : '保存更改'}
           </button>

@@ -154,7 +154,7 @@ export default function ProfilePage() {
             <p className="text-gray-400">{error || '用户不存在'}</p>
             <button
               onClick={() => router.push('/')}
-              className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all"
+              className="cursor-pointer px-6 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg transition-all"
             >
               返回首页
             </button>
@@ -172,7 +172,7 @@ export default function ProfilePage() {
           {/* Logo */}
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,7 +257,7 @@ export default function ProfilePage() {
           <div className="flex border-b border-gray-800">
             <button
               onClick={() => setActiveTab('posts')}
-              className={`flex-1 px-6 py-4 font-medium transition-all relative ${
+              className={`flex-1 px-6 py-4 font-medium transition-all relative cursor-pointer ${
                 activeTab === 'posts'
                   ? 'text-cyan-400 bg-gray-800/50'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800/30'
@@ -277,7 +277,7 @@ export default function ProfilePage() {
 
             <button
               onClick={() => setActiveTab('blogs')}
-              className={`flex-1 px-6 py-4 font-medium transition-all relative ${
+              className={`flex-1 px-6 py-4 font-medium transition-all relative cursor-pointer ${
                 activeTab === 'blogs'
                   ? 'text-cyan-400 bg-gray-800/50'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800/30'
