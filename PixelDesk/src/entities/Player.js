@@ -46,7 +46,12 @@ export class Player extends Phaser.GameObjects.Container {
                 timestamp: new Date().toISOString()
             }
         };
-        
+
+        // 初始化数据库保存相关的定时器（用于较低频率的数据库同步）
+        this.dbSaveTimer = null;
+        this.lastDbSave = 0;
+        this.dbSaveInterval = 5000; // 每5秒保存一次到数据库
+
         // 初始化碰撞检测状态
         this.isColliding = false;
         this.collisionStartTime = null;
@@ -169,6 +174,7 @@ export class Player extends Phaser.GameObjects.Container {
         }
 
         // 高效防抖机制：只在没有pending timer时才创建，避免每帧clearTimeout操作
+        // 保存到 localStorage（高频率，200ms防抖）
         if (!this.saveStateTimer) {
             this.saveStateTimer = setTimeout(() => {
                 const state = {
@@ -179,6 +185,38 @@ export class Player extends Phaser.GameObjects.Container {
                 localStorage.setItem('playerState', JSON.stringify(state));
                 this.saveStateTimer = null;
             }, 200); // 200ms防抖延迟
+        }
+
+        // 保存到数据库（低频率，每5秒）
+        const now = Date.now();
+        if (now - this.lastDbSave > this.dbSaveInterval && !this.dbSaveTimer) {
+            this.dbSaveTimer = setTimeout(async () => {
+                const state = {
+                    x: this.x,
+                    y: this.y,
+                    direction: this.currentDirection
+                };
+
+                try {
+                    // 动态导入以避免循环依赖
+                    const { updatePlayerData } = await import('../../../lib/playerSync.js');
+
+                    await updatePlayerData({
+                        currentX: Math.round(this.x),
+                        currentY: Math.round(this.y),
+                        currentScene: 'Start',
+                        playerState: state
+                    });
+
+                    debugLog('💾 Player position saved to database:', Math.round(this.x), Math.round(this.y));
+                    this.lastDbSave = Date.now();
+                } catch (error) {
+                    debugWarn('⚠️ Failed to save player position to database:', error);
+                    // 不抛出错误，localStorage 保存仍然成功
+                }
+
+                this.dbSaveTimer = null;
+            }, 100); // 短暂延迟以批量处理
         }
     }
     
@@ -744,6 +782,12 @@ export class Player extends Phaser.GameObjects.Container {
         if (this.saveStateTimer) {
             clearTimeout(this.saveStateTimer);
             this.saveStateTimer = null;
+        }
+
+        // 清理数据库保存计时器
+        if (this.dbSaveTimer) {
+            clearTimeout(this.dbSaveTimer);
+            this.dbSaveTimer = null;
         }
 
         // 清理浮动计时器

@@ -3,6 +3,7 @@ import { Player } from "../entities/Player.js"
 import { WashroomManager } from "../logic/WashroomManager.js"
 import { ZoomControl } from "../components/ZoomControl.js"
 import { WorkstationBindingUI } from "../components/WorkstationBindingUI.js"
+import { fetchPlayerData } from "../../../lib/playerSync.js"
 
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
@@ -43,8 +44,8 @@ export class Start extends Phaser.Scene {
     this.loadLibraryImages()
   }
 
-  create() {
-    // Phaser scene creation
+  async create() {
+    // Phaser scene creation (async to load player position from database)
     
     // 保存场景引用到全局变量，供Next.js调用
     if (typeof window !== "undefined") {
@@ -369,8 +370,26 @@ export class Start extends Phaser.Scene {
     // 创建floor图层
     this.renderObjectLayer(map, "floor")
 
-    // 创建玩家
-    this.createPlayer(map)
+    // 从数据库加载玩家保存的位置
+    let playerStartX = null
+    let playerStartY = null
+
+    try {
+      debugLog('🔍 Loading player position from database...')
+      const playerData = await fetchPlayerData()
+      if (playerData.success && playerData.hasPlayer && playerData.playerData) {
+        playerStartX = playerData.playerData.x
+        playerStartY = playerData.playerData.y
+        debugLog('✅ Loaded player position from database:', playerStartX, playerStartY)
+      } else {
+        debugLog('ℹ️ No saved position found, will use Tiled map default')
+      }
+    } catch (error) {
+      debugWarn('⚠️ Failed to load player position from database, using default:', error)
+    }
+
+    // 创建玩家 - 传入保存的位置（如果有）
+    this.createPlayer(map, playerStartX, playerStartY)
 
     // 设置输入
     this.setupInput()
@@ -462,8 +481,8 @@ export class Start extends Phaser.Scene {
   // 已删除无用的优化碰撞检测函数
 
   // ===== 玩家相关方法 =====
-  createPlayer(map) {
-    // 从对象层获取玩家位置
+  createPlayer(map, savedX = null, savedY = null) {
+    // 从对象层获取玩家位置（作为默认fallback）
     const userLayer = map.getObjectLayer("player_objs")
     if (!userLayer) {
       debugWarn("User objects layer not found")
@@ -472,6 +491,13 @@ export class Start extends Phaser.Scene {
 
     // 找到玩家身体对象
     const userBody = userLayer.objects.find((obj) => obj.name === "user_body")
+
+    // 使用保存的位置，如果没有则使用Tiled地图的默认位置
+    const startX = savedX !== null ? savedX : userBody.x
+    const startY = savedY !== null ? savedY : (userBody.y - userBody.height)
+
+    debugLog('🎮 Creating player at position:', startX, startY,
+      savedX !== null ? '(from database)' : '(from Tiled map default)')
 
     // 创建玩家实例，启用移动和状态保存
     const playerSpriteKey =
@@ -492,8 +518,8 @@ export class Start extends Phaser.Scene {
 
     this.player = new Player(
       this,
-      userBody.x,
-      userBody.y - userBody.height,
+      startX,
+      startY,
       playerSpriteKey,
       true,
       true,
