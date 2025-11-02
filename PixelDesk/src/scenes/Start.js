@@ -3,7 +3,6 @@ import { Player } from "../entities/Player.js"
 import { WashroomManager } from "../logic/WashroomManager.js"
 import { ZoomControl } from "../components/ZoomControl.js"
 import { WorkstationBindingUI } from "../components/WorkstationBindingUI.js"
-import { fetchPlayerData } from "../../../lib/playerSync.js"
 
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
@@ -376,13 +375,24 @@ export class Start extends Phaser.Scene {
 
     try {
       debugLog('🔍 Loading player position from database...')
-      const playerData = await fetchPlayerData()
-      if (playerData.success && playerData.hasPlayer && playerData.playerData) {
-        playerStartX = playerData.playerData.x
-        playerStartY = playerData.playerData.y
-        debugLog('✅ Loaded player position from database:', playerStartX, playerStartY)
+
+      // 直接使用 fetch 调用 API
+      const response = await fetch('/api/player', {
+        method: 'GET',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.hasPlayer && data.data?.player) {
+          playerStartX = data.data.player.currentX
+          playerStartY = data.data.player.currentY
+          debugLog('✅ Loaded player position from database:', playerStartX, playerStartY)
+        } else {
+          debugLog('ℹ️ No saved position found, will use Tiled map default')
+        }
       } else {
-        debugLog('ℹ️ No saved position found, will use Tiled map default')
+        debugLog('ℹ️ Failed to fetch player data, status:', response.status)
       }
     } catch (error) {
       debugWarn('⚠️ Failed to load player position from database, using default:', error)
