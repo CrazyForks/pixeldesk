@@ -198,18 +198,27 @@ export class Player extends Phaser.GameObjects.Container {
                 };
 
                 try {
-                    // 动态导入以避免循环依赖
-                    const { updatePlayerData } = await import('../../../lib/playerSync.js');
-
-                    await updatePlayerData({
-                        currentX: Math.round(this.x),
-                        currentY: Math.round(this.y),
-                        currentScene: 'Start',
-                        playerState: state
+                    // 直接使用 fetch 调用 API，避免模块导入问题
+                    const response = await fetch('/api/player', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            currentX: Math.round(this.x),
+                            currentY: Math.round(this.y),
+                            currentScene: 'Start',
+                            playerState: state
+                        })
                     });
 
-                    debugLog('💾 Player position saved to database:', Math.round(this.x), Math.round(this.y));
-                    this.lastDbSave = Date.now();
+                    if (response.ok) {
+                        debugLog('💾 Player position saved to database:', Math.round(this.x), Math.round(this.y));
+                        this.lastDbSave = Date.now();
+                    } else {
+                        debugWarn('⚠️ Failed to save player position, status:', response.status);
+                    }
                 } catch (error) {
                     debugWarn('⚠️ Failed to save player position to database:', error);
                     // 不抛出错误，localStorage 保存仍然成功
