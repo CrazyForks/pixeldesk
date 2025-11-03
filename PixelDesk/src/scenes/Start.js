@@ -1269,11 +1269,9 @@ export class Start extends Phaser.Scene {
         // 缩放完成后重新计算死区
         this.updateDeadzone()
 
-        // 🔧 关键修复：zoom变化后立即更新区块加载
-        if (this.chunkManager) {
-          debugLog(`🔍 Zoom调整完成 (${currentZoom.toFixed(2)} -> ${newZoom.toFixed(2)})，触发区块更新`)
-          this.chunkManager.updateActiveChunks()
-        }
+        // 🔧 移除手动触发：ChunkManager的定时器会自动检测zoom变化
+        // 避免重复调用导致CPU飙升
+        // ChunkManager会在下一个500ms更新周期中检测到zoom变化并自动加载
       },
     })
 

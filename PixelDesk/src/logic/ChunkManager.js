@@ -39,6 +39,8 @@ export class ChunkManager {
     this.lastCameraChunk = null
     this.lastCameraZoom = null  // 追踪zoom变化
     this.updateTimer = null
+    this.lastUpdateTime = 0     // 🔧 防抖：记录上次更新时间
+    this.minUpdateInterval = 200 // 🔧 防抖：最小更新间隔（毫秒）
 
     // 统计数据
     this.stats = {
@@ -135,6 +137,13 @@ export class ChunkManager {
   updateActiveChunks() {
     if (!this.scene.cameras || !this.scene.cameras.main) return
 
+    // 🔧 防抖：避免频繁更新导致CPU占用过高
+    const now = Date.now()
+    if (now - this.lastUpdateTime < this.minUpdateInterval) {
+      // debugLog(`⏸️ 更新过于频繁，跳过 (距离上次 ${now - this.lastUpdateTime}ms)`)
+      return
+    }
+
     const camera = this.scene.cameras.main
     const centerX = camera.scrollX + camera.width / 2
     const centerY = camera.scrollY + camera.height / 2
@@ -144,9 +153,9 @@ export class ChunkManager {
 
     // 🔧 修复：检查相机区块或zoom是否变化
     const zoomChanged = this.lastCameraZoom !== null &&
-                        Math.abs(currentZoom - this.lastCameraZoom) > 0.01
+                        Math.abs(currentZoom - this.lastCameraZoom) > 0.05  // 提高阈值到0.05
 
-    // 如果相机仍在同一区块内且zoom没变化，跳过更新
+    // 如果相机仍在同一区块内且zoom没明显变化，跳过更新
     if (currentChunkKey === this.lastCameraChunk && !zoomChanged) {
       return
     }
@@ -157,22 +166,50 @@ export class ChunkManager {
 
     this.lastCameraChunk = currentChunkKey
     this.lastCameraZoom = currentZoom
+    this.lastUpdateTime = now  // 🔧 更新时间戳
 
     // 🔧 根据zoom动态调整加载半径
     // zoom越小（地图缩小），视野越大，需要加载更多区块
     const dynamicLoadRadius = this.calculateLoadRadius(currentZoom)
+    debugLog(`📏 当前zoom: ${currentZoom.toFixed(2)}, 加载半径: ${dynamicLoadRadius}圈`)
 
     // 计算需要激活的区块
     const newActiveChunks = this.getChunksInRadius(centerX, centerY, dynamicLoadRadius)
+
+    // 🔧 安全限制：避免一次加载太多区块
+    const MAX_CHUNKS = 100  // 最多同时加载100个区块
+    if (newActiveChunks.length > MAX_CHUNKS) {
+      debugWarn(`⚠️ 计算出的区块数量过多 (${newActiveChunks.length})，限制为${MAX_CHUNKS}`)
+      // 只加载距离最近的区块
+      newActiveChunks.splice(MAX_CHUNKS)
+    }
 
     // 找出需要加载和卸载的区块
     const toLoad = newActiveChunks.filter(key => !this.activeChunks.has(key))
     const toUnload = Array.from(this.activeChunks).filter(key => !newActiveChunks.includes(key))
 
+    debugLog(`🔄 区块更新: 加载${toLoad.length}个, 卸载${toUnload.length}个`)
+
+    // 🔧 批量加载：限制每次最多加载的区块数，避免卡顿
+    const MAX_LOAD_PER_UPDATE = 20
+    const chunksToLoadNow = toLoad.slice(0, MAX_LOAD_PER_UPDATE)
+
     // 加载新区块
-    toLoad.forEach(chunkKey => {
+    chunksToLoadNow.forEach(chunkKey => {
       this.loadChunk(chunkKey)
     })
+
+    // 如果还有更多区块需要加载，延迟加载
+    if (toLoad.length > MAX_LOAD_PER_UPDATE) {
+      const remainingChunks = toLoad.slice(MAX_LOAD_PER_UPDATE)
+      debugLog(`📦 剩余${remainingChunks.length}个区块将延迟加载`)
+
+      this.scene.time.delayedCall(100, () => {
+        remainingChunks.forEach(chunkKey => {
+          this.loadChunk(chunkKey)
+        })
+      })
+    }
 
     // 延迟卸载区块（避免频繁加载/卸载）
     toUnload.forEach(chunkKey => {
@@ -190,19 +227,24 @@ export class ChunkManager {
    * 🔧 新增：根据zoom级别计算合适的加载半径
    */
   calculateLoadRadius(zoom) {
-    // zoom范围通常在 0.5 - 2.0
-    // zoom = 2.0 (放大): 视野小，加载1圈区块
-    // zoom = 1.0 (标准): 加载1圈区块
-    // zoom = 0.5 (缩小): 视野大，加载2圈区块
+    // zoom范围通常在 0.1 - 2.0
+    // zoom = 2.0 (放大): 视野小，加载1圈区块 (3x3=9个区块)
+    // zoom = 1.0 (标准): 加载1-2圈区块 (3x3 or 5x5)
+    // zoom = 0.5 (缩小): 视野大，加载3圈区块 (7x7=49个区块)
+    // zoom = 0.1 (极度缩小): 加载4圈区块 (9x9=81个区块)
 
     if (zoom >= 1.5) {
-      return 1  // 放大时只加载1圈
+      return 1  // 放大时只加载1圈 (9个区块)
     } else if (zoom >= 1.0) {
-      return 1  // 标准缩放加载1圈
+      return 2  // 标准缩放加载2圈 (25个区块)
     } else if (zoom >= 0.7) {
-      return 2  // 缩小一些，加载2圈
+      return 3  // 缩小一些，加载3圈 (49个区块)
+    } else if (zoom >= 0.5) {
+      return 3  // 缩小较多，加载3圈 (49个区块)
+    } else if (zoom >= 0.3) {
+      return 4  // 极度缩小，加载4圈 (81个区块)
     } else {
-      return 2  // 缩小很多，加载2圈（避免加载太多）
+      return 4  // 最小zoom，加载4圈（避免加载太多）
     }
   }
 

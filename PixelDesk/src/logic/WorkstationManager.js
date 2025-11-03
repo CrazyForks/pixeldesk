@@ -131,10 +131,10 @@ export class WorkstationManager {
         workstation.sprite.on('pointerover', () => this.onWorkstationHover(workstation.id));
         workstation.sprite.on('pointerout', () => this.onWorkstationOut(workstation.id));
 
-        // 为未占用的工位添加交互图标
-        if (!workstation.isOccupied) {
-            this.addInteractionIcon(workstation);
-        }
+        // 🔧 修复：不再添加蓝色交互图标，减少视觉干扰
+        // if (!workstation.isOccupied) {
+        //     this.addInteractionIcon(workstation);
+        // }
     }
 
     // ===== 事件处理 =====
