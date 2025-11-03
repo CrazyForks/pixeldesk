@@ -42,6 +42,8 @@ export class Start extends Phaser.Scene {
 
     // 🔧 碰撞器管理
     this.playerDeskCollider = null // 玩家与工位group的碰撞器
+    this.otherPlayersGroup = null  // 其他玩家的物理group
+    this.playerCharacterCollider = null // 玩家与角色group的碰撞器
   }
 
   preload() {
@@ -364,6 +366,12 @@ export class Start extends Phaser.Scene {
 
     this.setupWorkstationEvents()
     this.setupUserEvents()
+
+    // 🔧 性能优化：创建其他玩家/角色的物理group（用于碰撞检测）
+    this.otherPlayersGroup = this.physics.add.group({
+      collideWorldBounds: false
+    })
+    debugLog('✅ 其他玩家group已创建')
 
     const map = this.createTilemap()
     this.mapLayers = this.createTilesetLayers(map)
@@ -1189,6 +1197,12 @@ export class Start extends Phaser.Scene {
     if (workstation) {
       // 🔧 修复：移除角色精灵（如果有）
       if (workstation.characterSprite) {
+        // 🔧 性能优化：从玩家group中移除
+        if (this.otherPlayersGroup && workstation.characterSprite.body) {
+          this.otherPlayersGroup.remove(workstation.characterSprite, true, true)
+          console.log(`🗑️ 角色已从玩家group移除`)
+        }
+
         workstation.characterSprite.destroy()
         workstation.characterSprite = null
         debugLog(`🗑️ 卸载工位 ${obj.id} 的角色精灵`)
@@ -2071,24 +2085,53 @@ export class Start extends Phaser.Scene {
     })
   }
 
-  // 为新创建的工位角色添加碰撞检测
+  // 🔧 性能优化：为新创建的工位角色添加到group（不单独创建碰撞检测）
   addCollisionForWorkstationCharacter(character) {
-    if (character && character.isOtherPlayer && this.player) {
-      this.physics.add.overlap(
-        this.player,
-        character,
-        (player1, player2) => {
-          // 确保是其他玩家触发了碰撞
-          if (player2.isOtherPlayer) {
-            this.handlePlayerCollision(player1, player2)
-          }
-        },
-        null,
-        this
-      )
+    if (character && character.isOtherPlayer) {
+      // 添加到其他玩家group
+      if (this.otherPlayersGroup) {
+        this.otherPlayersGroup.add(character)
+        console.log(`👤 角色 ${character.playerData.name} 已添加到玩家group，当前group大小: ${this.otherPlayersGroup.getLength()}`)
 
-      debugLog("为新工位角色添加碰撞检测:", character.playerData.name)
+        // 确保group overlap检测器已创建
+        this.ensurePlayerCharacterOverlap()
+      }
     }
+  }
+
+  // 🔧 新增：确保玩家与角色group的overlap检测器已创建（只创建一次）
+  ensurePlayerCharacterOverlap() {
+    // 如果已创建，跳过
+    if (this.playerCharacterCollider) {
+      return
+    }
+
+    // 检查前提条件
+    if (!this.player || !this.otherPlayersGroup) {
+      return
+    }
+
+    // 检查group中是否有角色
+    if (this.otherPlayersGroup.getLength() === 0) {
+      console.log('⏸️ otherPlayersGroup为空，等待下次添加')
+      return
+    }
+
+    // 创建group overlap检测器（只有1个）
+    this.playerCharacterCollider = this.physics.add.overlap(
+      this.player,
+      this.otherPlayersGroup,
+      (player1, player2) => {
+        // 确保是其他玩家触发了碰撞
+        if (player2.isOtherPlayer) {
+          this.handlePlayerCollision(player1, player2)
+        }
+      },
+      null,
+      this
+    )
+
+    console.log(`✅✅✅ 玩家与角色group碰撞器已创建！(1个overlap检测器管理${this.otherPlayersGroup.getLength()}个角色)`)
   }
 
   // 获取当前碰撞状态
