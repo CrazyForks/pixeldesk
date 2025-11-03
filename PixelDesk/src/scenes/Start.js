@@ -3,6 +3,7 @@ import { Player } from "../entities/Player.js"
 import { WashroomManager } from "../logic/WashroomManager.js"
 import { ZoomControl } from "../components/ZoomControl.js"
 import { WorkstationBindingUI } from "../components/WorkstationBindingUI.js"
+import { ChunkManager } from "../logic/ChunkManager.js"
 
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
@@ -25,6 +26,7 @@ export class Start extends Phaser.Scene {
     super("Start")
     this.workstationManager = null
     this.washroomManager = null // 添加洗手间管理器
+    this.chunkManager = null // 区块管理器
     this.player = null
     this.cursors = null
     this.wasdKeys = null
@@ -33,8 +35,15 @@ export class Start extends Phaser.Scene {
     this.bindingUI = null
     this.otherPlayers = new Map() // 存储其他玩家
     this.myStatus = null // 我的状态
-    
-    // 已删除无用的优化系统属性
+
+    // 工位对象缓存（用于区块加载）
+    this.workstationObjects = []
+    this.loadedWorkstations = new Map() // 已加载的工位: id -> sprite
+
+    // 🔧 碰撞器管理
+    this.playerDeskCollider = null // 玩家与工位group的碰撞器
+    this.otherPlayersGroup = null  // 其他玩家的物理group
+    this.playerCharacterCollider = null // 玩家与角色group的碰撞器
   }
 
   preload() {
@@ -358,6 +367,12 @@ export class Start extends Phaser.Scene {
     this.setupWorkstationEvents()
     this.setupUserEvents()
 
+    // 🔧 性能优化：创建其他玩家/角色的物理group（用于碰撞检测）
+    this.otherPlayersGroup = this.physics.add.group({
+      collideWorldBounds: false
+    })
+    debugLog('✅ 其他玩家group已创建')
+
     const map = this.createTilemap()
     this.mapLayers = this.createTilesetLayers(map)
     this.renderObjectLayer(map, "desk_objs")
@@ -406,6 +421,19 @@ export class Start extends Phaser.Scene {
 
     // 设置相机
     this.setupCamera(map)
+
+    // 🔧 关键修复：相机设置完成后，立即更新区块（确保加载玩家周围的工位）
+    if (this.chunkManager) {
+      debugLog('🎯 相机设置完成，强制更新区块')
+      this.time.delayedCall(50, () => {
+        this.chunkManager.updateActiveChunks()
+      })
+
+      // 🔧 双保险：区块加载后再次确保碰撞器已创建
+      this.time.delayedCall(500, () => {
+        this.ensurePlayerDeskCollider()
+      })
+    }
 
     // 设置社交功能
     this.setupSocialFeatures()
@@ -562,6 +590,9 @@ export class Start extends Phaser.Scene {
         this.physics.add.collider(this.player, treeLayer)
         treeLayer?.setCollisionByProperty({ solid: true })
       }
+
+      // 🔧 移除：group碰撞器会在第一次加载工位后创建，不在这里创建
+      // 原因：此时deskColliders可能还是空的（区块异步加载）
 
       // 添加玩家碰撞边界调试显示
       if (this.player.body) {
@@ -866,19 +897,32 @@ export class Start extends Phaser.Scene {
       return
     }
 
-    // 创建桌子碰撞组
-    this.deskColliders = this.physics.add.staticGroup()
+    // 🔧 性能优化：只在第一次创建deskColliders，避免覆盖
+    if (!this.deskColliders) {
+      this.deskColliders = this.physics.add.staticGroup()
+      debugLog('✅ deskColliders group已创建')
+    }
 
-    objectLayer.objects.forEach((obj) => this.renderObject(obj))
-
-    // 在所有工位创建完成后更新deskCount - 只对desk_objs图层执行
+    // 对于desk_objs图层，使用区块管理系统
     if (layerName === "desk_objs") {
-      this.userData.deskCount =
-        this.workstationManager.getWorkstationsByType("desk").length
-      // Desk count updated
+      debugLog(`📦 收集工位对象，总数: ${objectLayer.objects.length}`)
 
-      // 发送更新到UI
+      // 收集所有工位对象（不立即创建精灵）
+      objectLayer.objects.forEach((obj) => {
+        if (this.isDeskObject(obj)) {
+          this.workstationObjects.push(obj)
+        }
+      })
+
+      // 初始化区块管理器
+      this.initializeChunkSystem()
+
+      // 更新工位总数
+      this.userData.deskCount = this.workstationObjects.length
       this.sendUserDataToUI()
+    } else {
+      // 其他图层正常渲染
+      objectLayer.objects.forEach((obj) => this.renderObject(obj))
     }
   }
 
@@ -906,44 +950,40 @@ export class Start extends Phaser.Scene {
   }
 
   addDeskCollision(sprite, obj) {
-    // 启用sprite的物理特性
-    this.physics.world.enable(sprite)
-    sprite.body.setImmovable(true)
+    // 🔧 修复：先添加到staticGroup，让group管理物理体
+    // staticGroup会自动为成员启用物理并设置为immovable
+    this.deskColliders.add(sprite)
 
     // 根据桌子类型调整碰撞边界
     const collisionSettings = this.getCollisionSettings(obj)
-    const originalWidth = sprite.body.width
-    const originalHeight = sprite.body.height
 
-    // 计算新的碰撞边界大小
-    const newWidth = originalWidth * collisionSettings.scaleX
-    const newHeight = originalHeight * collisionSettings.scaleY
+    // 🔧 添加到group后，物理体才被创建，现在可以调整碰撞边界
+    if (sprite.body) {
+      const originalWidth = sprite.body.width
+      const originalHeight = sprite.body.height
 
-    // 设置碰撞边界大小（居中）
-    sprite.body.setSize(newWidth, newHeight, true)
+      // 计算新的碰撞边界大小
+      const newWidth = originalWidth * collisionSettings.scaleX
+      const newHeight = originalHeight * collisionSettings.scaleY
 
-    // 如果需要偏移碰撞边界
-    if (collisionSettings.offsetX !== 0 || collisionSettings.offsetY !== 0) {
-      sprite.body.setOffset(
-        collisionSettings.offsetX,
-        collisionSettings.offsetY
-      )
+      // 设置碰撞边界大小（居中）
+      sprite.body.setSize(newWidth, newHeight, true)
+
+      // 如果需要偏移碰撞边界
+      if (collisionSettings.offsetX !== 0 || collisionSettings.offsetY !== 0) {
+        sprite.body.setOffset(
+          collisionSettings.offsetX,
+          collisionSettings.offsetY
+        )
+      }
+
+      // 🔧 移除setImmovable调用：StaticBody默认就是immovable，没有这个方法
+      // sprite.body.setImmovable(true)  // ❌ StaticBody没有这个方法
     }
 
-    // 添加到碰撞组
-    this.deskColliders.add(sprite)
-
-    // 设置玩家与桌子的碰撞
-    if (this.player) {
-      this.physics.add.collider(this.player, sprite)
-    } else {
-      // 如果玩家还未创建，稍后再设置碰撞
-      this.time.delayedCall(200, () => {
-        if (this.player) {
-          this.physics.add.collider(this.player, sprite)
-        }
-      })
-    }
+    // 🔧 性能优化：不单独创建碰撞器
+    // group碰撞器在ensurePlayerDeskCollider()中创建
+    // this.physics.add.collider(this.player, this.deskColliders)  // ✅ 只有1个碰撞器
   }
 
   getCollisionSettings(obj) {
@@ -1014,6 +1054,180 @@ export class Start extends Phaser.Scene {
       sprite.setX(rotatedX)
       sprite.setY(rotatedY)
     }
+  }
+
+  // ===== 区块系统方法 =====
+  initializeChunkSystem() {
+    debugLog('🚀 初始化区块管理系统')
+
+    // 创建区块管理器
+    this.chunkManager = new ChunkManager(this, {
+      chunkSize: 2000,      // 🔧 从1000增加到2000，减少区块总数
+      loadRadius: 1,        // 加载当前区块及周围1圈区块
+      unloadDelay: 5000,    // 🔧 从3秒增加到5秒，减少频繁切换
+      updateInterval: 3000  // 🔧 从2秒增加到3秒，进一步降低更新频率
+    })
+
+    // 设置区块事件监听（必须在初始化区块之前）
+    this.setupChunkEvents()
+
+    // 初始化区块（分配工位到区块）
+    this.chunkManager.initializeChunks(this.workstationObjects)
+
+    // 添加全局函数获取区块统计
+    if (typeof window !== 'undefined') {
+      window.getChunkStats = () => this.chunkManager.getStats()
+    }
+
+    debugLog('✅ 区块管理系统初始化完成')
+  }
+
+  setupChunkEvents() {
+    // 监听区块加载事件
+    this.events.on('chunk-load', (data) => {
+      debugLog(`📥 加载区块，工位数: ${data.workstations.length}`)
+      data.workstations.forEach(obj => {
+        this.loadWorkstation(obj)
+      })
+
+      // 🔧 性能优化：在第一次加载工位后，创建玩家与deskColliders的group碰撞器
+      // 确保此时deskColliders中已有工位，碰撞才能生效
+      this.ensurePlayerDeskCollider()
+    })
+
+    // 监听区块卸载事件
+    this.events.on('chunk-unload', (data) => {
+      debugLog(`📤 卸载区块，工位数: ${data.workstations.length}`)
+      data.workstations.forEach(obj => {
+        this.unloadWorkstation(obj)
+      })
+    })
+  }
+
+  // 🔧 新增：确保玩家与工位group碰撞器已创建（只创建一次）
+  ensurePlayerDeskCollider() {
+    console.log('🔍 [ensurePlayerDeskCollider] 调用', {
+      已创建碰撞器: !!this.playerDeskCollider,
+      玩家存在: !!this.player,
+      Group存在: !!this.deskColliders,
+      Group中工位数: this.deskColliders?.getLength() || 0
+    })
+
+    // 如果已创建，跳过
+    if (this.playerDeskCollider) {
+      console.log('⏭️ 碰撞器已存在，跳过')
+      return
+    }
+
+    // 检查前提条件
+    if (!this.player || !this.deskColliders) {
+      console.warn('⚠️ 玩家或deskColliders不存在')
+      return
+    }
+
+    // 检查deskColliders中是否有工位
+    const groupLength = this.deskColliders.getLength()
+    if (groupLength === 0) {
+      console.log('⏸️ deskColliders为空，等待下次加载')
+      return
+    }
+
+    // 创建group碰撞器（只有1个）
+    this.playerDeskCollider = this.physics.add.collider(this.player, this.deskColliders)
+    console.log(`✅✅✅ 玩家与工位group碰撞器已创建！(1个碰撞器管理${groupLength}个工位)`)
+  }
+
+  loadWorkstation(obj) {
+    // 如果已加载，跳过
+    if (this.loadedWorkstations.has(obj.id)) {
+      return
+    }
+
+    // 创建工位精灵
+    const adjustedY = obj.y - obj.height
+    const sprite = this.createWorkstationSprite(obj, adjustedY)
+
+    if (sprite) {
+      // 保存引用
+      this.loadedWorkstations.set(obj.id, sprite)
+
+      // 使用WorkstationManager创建工位
+      const workstation = this.workstationManager.createWorkstation(obj, sprite)
+
+      // 🔧 性能优化：使用group碰撞器，避免为每个工位创建独立碰撞器
+      this.addDeskCollision(sprite, obj)
+      console.log(`📦 工位 ${obj.id} 已添加到碰撞组，当前group大小: ${this.deskColliders?.getLength()}`)
+
+      // 🔧 关键修复：如果工位已有绑定，需要重新应用视觉效果和角色
+      if (workstation && workstation.isOccupied) {
+        debugLog(`📥 加载已绑定工位 ${obj.id}, 用户: ${workstation.userId}`)
+
+        // 重新应用绑定的视觉效果
+        this.workstationManager.setupInteraction(workstation)
+
+        // 重新创建角色精灵
+        if (workstation.userId && workstation.userInfo) {
+          this.workstationManager.addCharacterToWorkstation(
+            workstation,
+            workstation.userId,
+            workstation.userInfo
+          )
+
+          // 🔧 关键修复：为新创建的角色设置碰撞检测
+          if (workstation.characterSprite) {
+            this.addCollisionForWorkstationCharacter(workstation.characterSprite)
+          }
+        }
+      }
+    }
+  }
+
+  unloadWorkstation(obj) {
+    const sprite = this.loadedWorkstations.get(obj.id)
+    if (!sprite) return
+
+    // 从碰撞组移除
+    if (this.deskColliders) {
+      this.deskColliders.remove(sprite, true, true) // 移除并销毁
+    }
+
+    // 从WorkstationManager移除
+    // 注意：我们保留workstation数据，只销毁精灵
+    const workstation = this.workstationManager.getWorkstation(obj.id)
+    if (workstation) {
+      // 🔧 修复：移除角色精灵（如果有）
+      if (workstation.characterSprite) {
+        // 🔧 性能优化：从玩家group中移除
+        if (this.otherPlayersGroup && workstation.characterSprite.body) {
+          this.otherPlayersGroup.remove(workstation.characterSprite, true, true)
+          console.log(`🗑️ 角色已从玩家group移除`)
+        }
+
+        workstation.characterSprite.destroy()
+        workstation.characterSprite = null
+        debugLog(`🗑️ 卸载工位 ${obj.id} 的角色精灵`)
+      }
+
+      // 移除精灵引用，但保留数据
+      workstation.sprite = null
+
+      // 移除交互图标和其他视觉元素
+      this.workstationManager.removeInteractionIcon(workstation)
+      this.workstationManager.removeOccupiedIcon(workstation)
+      this.workstationManager.removeUserWorkstationHighlight(workstation)
+    }
+
+    // 从缓存移除
+    this.loadedWorkstations.delete(obj.id)
+  }
+
+  createWorkstationSprite(obj, adjustedY) {
+    const imageKey = obj.name || "desk_image"
+    if (!imageKey) return null
+
+    const sprite = this.add.image(obj.x, adjustedY, imageKey)
+    this.configureSprite(sprite, obj)
+    return sprite
   }
 
   // ===== 辅助方法 =====
@@ -1116,6 +1330,10 @@ export class Start extends Phaser.Scene {
       onComplete: () => {
         // 缩放完成后重新计算死区
         this.updateDeadzone()
+
+        // 🔧 移除手动触发：ChunkManager的定时器会自动检测zoom变化
+        // 避免重复调用导致CPU飙升
+        // ChunkManager会在下一个500ms更新周期中检测到zoom变化并自动加载
       },
     })
 
@@ -1867,24 +2085,53 @@ export class Start extends Phaser.Scene {
     })
   }
 
-  // 为新创建的工位角色添加碰撞检测
+  // 🔧 性能优化：为新创建的工位角色添加到group（不单独创建碰撞检测）
   addCollisionForWorkstationCharacter(character) {
-    if (character && character.isOtherPlayer && this.player) {
-      this.physics.add.overlap(
-        this.player,
-        character,
-        (player1, player2) => {
-          // 确保是其他玩家触发了碰撞
-          if (player2.isOtherPlayer) {
-            this.handlePlayerCollision(player1, player2)
-          }
-        },
-        null,
-        this
-      )
+    if (character && character.isOtherPlayer) {
+      // 添加到其他玩家group
+      if (this.otherPlayersGroup) {
+        this.otherPlayersGroup.add(character)
+        console.log(`👤 角色 ${character.playerData.name} 已添加到玩家group，当前group大小: ${this.otherPlayersGroup.getLength()}`)
 
-      debugLog("为新工位角色添加碰撞检测:", character.playerData.name)
+        // 确保group overlap检测器已创建
+        this.ensurePlayerCharacterOverlap()
+      }
     }
+  }
+
+  // 🔧 新增：确保玩家与角色group的overlap检测器已创建（只创建一次）
+  ensurePlayerCharacterOverlap() {
+    // 如果已创建，跳过
+    if (this.playerCharacterCollider) {
+      return
+    }
+
+    // 检查前提条件
+    if (!this.player || !this.otherPlayersGroup) {
+      return
+    }
+
+    // 检查group中是否有角色
+    if (this.otherPlayersGroup.getLength() === 0) {
+      console.log('⏸️ otherPlayersGroup为空，等待下次添加')
+      return
+    }
+
+    // 创建group overlap检测器（只有1个）
+    this.playerCharacterCollider = this.physics.add.overlap(
+      this.player,
+      this.otherPlayersGroup,
+      (player1, player2) => {
+        // 确保是其他玩家触发了碰撞
+        if (player2.isOtherPlayer) {
+          this.handlePlayerCollision(player1, player2)
+        }
+      },
+      null,
+      this
+    )
+
+    console.log(`✅✅✅ 玩家与角色group碰撞器已创建！(1个overlap检测器管理${this.otherPlayersGroup.getLength()}个角色)`)
   }
 
   // 获取当前碰撞状态
@@ -2226,7 +2473,13 @@ export class Start extends Phaser.Scene {
       this.uiUpdateTimer.remove()
       this.uiUpdateTimer = null
     }
-    
+
+    // 清理区块管理器
+    if (this.chunkManager) {
+      this.chunkManager.destroy()
+      this.chunkManager = null
+    }
+
     // 清理工位和UI管理器
     if (this.workstationManager) {
       this.workstationManager.destroy()
@@ -2239,6 +2492,10 @@ export class Start extends Phaser.Scene {
     this.otherPlayers.forEach((player) => player.destroy())
     this.otherPlayers.clear()
 
+    // 清理工位缓存
+    this.workstationObjects = []
+    this.loadedWorkstations.clear()
+
     // 清理全局函数
     if (typeof window !== "undefined") {
       delete window.onPlayerCollisionStart
@@ -2246,6 +2503,7 @@ export class Start extends Phaser.Scene {
       delete window.getCurrentCollisions
       delete window.getCollisionHistory
       delete window.setCollisionSensitivity
+      delete window.getChunkStats
       delete window.gameScene
     }
 
