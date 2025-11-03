@@ -575,6 +575,13 @@ export class Start extends Phaser.Scene {
         treeLayer?.setCollisionByProperty({ solid: true })
       }
 
+      // 🔧 性能优化：创建一个针对整个deskColliders group的碰撞器
+      // 这样无论有多少工位，都只有1个碰撞器，而不是成百上千个
+      if (this.player && this.deskColliders) {
+        this.physics.add.collider(this.player, this.deskColliders)
+        debugLog('✅ 玩家与工位group碰撞器已创建（1个碰撞器管理所有工位）')
+      }
+
       // 添加玩家碰撞边界调试显示
       if (this.player.body) {
         const debugGraphics = this.add.graphics()
@@ -952,20 +959,16 @@ export class Start extends Phaser.Scene {
       )
     }
 
-    // 添加到碰撞组
+    // 🔧 性能优化：只添加到碰撞组，不单独创建碰撞器
+    // 在create()中会创建一个针对整个group的碰撞器
     this.deskColliders.add(sprite)
 
-    // 设置玩家与桌子的碰撞
-    if (this.player) {
-      this.physics.add.collider(this.player, sprite)
-    } else {
-      // 如果玩家还未创建，稍后再设置碰撞
-      this.time.delayedCall(200, () => {
-        if (this.player) {
-          this.physics.add.collider(this.player, sprite)
-        }
-      })
-    }
+    // 🔧 删除了单个sprite的碰撞器创建，避免创建成百上千个碰撞器
+    // 之前的代码：
+    // this.physics.add.collider(this.player, sprite)  // ❌ 性能杀手
+    //
+    // 现在使用group碰撞器（在setupPlayerCollisions中创建）：
+    // this.physics.add.collider(this.player, this.deskColliders)  // ✅ 只有1个碰撞器
   }
 
   getCollisionSettings(obj) {
@@ -1099,7 +1102,7 @@ export class Start extends Phaser.Scene {
       // 使用WorkstationManager创建工位
       const workstation = this.workstationManager.createWorkstation(obj, sprite)
 
-      // 添加碰撞
+      // 🔧 性能优化：使用group碰撞器，避免为每个工位创建独立碰撞器
       this.addDeskCollision(sprite, obj)
 
       // 🔧 关键修复：如果工位已有绑定，需要重新应用视觉效果和角色
