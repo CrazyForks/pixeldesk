@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
-import { verify } from 'jsonwebtoken'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
+const ADMIN_JWT_SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || 'default-secret')
 
 // 工位清理相关变量
 let lastCleanupTime = 0
@@ -118,11 +118,12 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      // 验证 token
-      verify(token.value, process.env.NEXTAUTH_SECRET || 'default-secret')
+      // 使用 jose 验证 token（Edge Runtime 兼容）
+      await jwtVerify(token.value, ADMIN_JWT_SECRET)
       return NextResponse.next()
     } catch (error) {
       // Token 无效，重定向到登录页
+      console.error('Admin token verification failed:', error)
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
   }

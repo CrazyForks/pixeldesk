@@ -1,6 +1,6 @@
 import { AdminRole } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
 
 /**
  * 权限矩阵
@@ -33,40 +33,63 @@ export function hasPermission(role: AdminRole, permission: string): boolean {
   const userPermissions = PERMISSIONS[role] || []
 
   // SUPER_ADMIN 有所有权限
-  if (userPermissions.includes('*')) {
+  if ((userPermissions as readonly string[]).includes('*')) {
     return true
   }
 
-  return userPermissions.includes(permission)
+  return (userPermissions as readonly string[]).includes(permission)
+}
+
+/**
+ * 从 cookie 中获取当前管理员信息
+ */
+async function getCurrentAdmin(): Promise<{ id: string; role: AdminRole } | null> {
+  try {
+    const cookieStore = cookies()
+    const token = cookieStore.get('admin-token')
+
+    if (!token) {
+      return null
+    }
+
+    const secret = new TextEncoder().encode(
+      process.env.NEXTAUTH_SECRET || 'default-secret'
+    )
+
+    const { payload } = await jwtVerify(token.value, secret)
+    return {
+      id: payload.adminId as string,
+      role: payload.role as AdminRole,
+    }
+  } catch (error) {
+    return null
+  }
 }
 
 /**
  * 检查当前登录的管理员是否有特定权限
  */
 export async function checkPermission(permission: string): Promise<boolean> {
-  const session = await getServerSession(authOptions)
+  const admin = await getCurrentAdmin()
 
-  if (!session?.user?.isAdmin || !session.user.adminRole) {
+  if (!admin) {
     return false
   }
 
-  return hasPermission(session.user.adminRole as AdminRole, permission)
+  return hasPermission(admin.role, permission)
 }
 
 /**
  * 要求管理员权限（用于 API 路由）
  */
 export async function requireAdmin() {
-  const session = await getServerSession(authOptions)
+  const admin = await getCurrentAdmin()
 
-  if (!session?.user?.isAdmin) {
+  if (!admin) {
     throw new Error('Unauthorized: Admin access required')
   }
 
-  return {
-    id: session.user.id,
-    role: session.user.adminRole as AdminRole,
-  }
+  return admin
 }
 
 /**

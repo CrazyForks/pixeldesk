@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { verify } from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 import { getAdminById } from '@/lib/admin/auth'
 
 export async function GET() {
@@ -15,11 +15,13 @@ export async function GET() {
       )
     }
 
-    // 验证 token
-    const decoded = verify(
-      token.value,
+    // 验证 token (使用 jose 库)
+    const secret = new TextEncoder().encode(
       process.env.NEXTAUTH_SECRET || 'default-secret'
-    ) as { adminId: string }
+    )
+
+    const { payload } = await jwtVerify(token.value, secret)
+    const decoded = payload as { adminId: string }
 
     // 获取管理员信息
     const admin = await getAdminById(decoded.adminId)

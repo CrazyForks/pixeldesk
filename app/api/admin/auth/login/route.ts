@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminPassword } from '@/lib/admin/auth'
 import { z } from 'zod'
-import { sign } from 'jsonwebtoken'
+import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 
 const loginSchema = z.object({
@@ -16,8 +16,9 @@ export async function POST(request: NextRequest) {
     // 验证输入
     const validation = loginSchema.safeParse(body)
     if (!validation.success) {
+      const firstError = validation.error.issues[0]
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: firstError?.message || '输入验证失败' },
         { status: 400 }
       )
     }
@@ -33,16 +34,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 生成 JWT token
-    const token = sign(
-      {
-        adminId: admin.id,
-        username: admin.username,
-        role: admin.role,
-      },
-      process.env.NEXTAUTH_SECRET || 'default-secret',
-      { expiresIn: '24h' }
+    // 生成 JWT token (使用 jose 库，兼容 Edge Runtime)
+    const secret = new TextEncoder().encode(
+      process.env.NEXTAUTH_SECRET || 'default-secret'
     )
+
+    const token = await new SignJWT({
+      adminId: admin.id,
+      username: admin.username,
+      role: admin.role,
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(secret)
 
     // 设置 cookie
     cookies().set('admin-token', token, {
