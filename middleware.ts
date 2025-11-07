@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { verify } from 'jsonwebtoken'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
 
@@ -100,6 +101,30 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/webhooks') // Skip webhooks
   ) {
     return NextResponse.next()
+  }
+
+  // 保护 /admin 路径（除了登录页）
+  if (pathname.startsWith('/admin')) {
+    // 允许访问登录页
+    if (pathname === '/admin/login') {
+      return NextResponse.next()
+    }
+
+    // 检查 admin-token cookie
+    const token = request.cookies.get('admin-token')
+
+    if (!token) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+
+    try {
+      // 验证 token
+      verify(token.value, process.env.NEXTAUTH_SECRET || 'default-secret')
+      return NextResponse.next()
+    } catch (error) {
+      // Token 无效，重定向到登录页
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
   }
 
   // 定期清理过期工位（异步执行，不阻塞请求）

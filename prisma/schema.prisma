@@ -33,9 +33,11 @@ model User {
   sessions                 UserSession[]
   workstations             UserWorkstation[]
   workSessions             WorkSession[]
+  ownedCharacters          CharacterPurchase[]       // 拥有的角色形象
 
   @@index([email])
   @@index([isActive])
+  @@index([lastLogin])
   @@map("users")
 }
 
@@ -257,18 +259,21 @@ model Player {
   id              String   @id @default(cuid())
   userId          String   @unique
   playerName      String
-  characterSprite String
+  characterSprite String   // 当前使用的角色形象名称
   currentX        Int      @default(400)
   currentY        Int      @default(300)
   currentScene    String   @default("Start")
   lastActiveAt    DateTime @default(now())
   playerState     Json?
+  totalPlayTime   Int      @default(0) // 总游戏时长（分钟）
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([lastActiveAt])
+  @@index([characterSprite])
+  @@index([createdAt])
   @@map("players")
 }
 
@@ -323,4 +328,112 @@ model PointsConfig {
 enum PointsCategory {
   REWARD    // 积分奖励
   COST      // 积分消耗
+}
+
+// ==================== 后台管理系统相关模型 ====================
+
+// 管理员表
+model Admin {
+  id          String    @id @default(cuid())
+  username    String    @unique
+  email       String    @unique
+  password    String    // bcrypt 加密
+  role        AdminRole @default(ADMIN)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+  isActive    Boolean   @default(true)
+  logs        AdminLog[]
+
+  @@index([email])
+  @@index([username])
+  @@index([isActive])
+  @@map("admins")
+}
+
+enum AdminRole {
+  SUPER_ADMIN // 超级管理员，所有权限
+  ADMIN       // 普通管理员，大部分权限
+  VIEWER      // 只读权限
+}
+
+// 管理员操作日志
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   // 'CREATE', 'UPDATE', 'DELETE'
+  resource   String   // 'Player', 'Character', 'WorkstationConfig'
+  resourceId String?
+  details    Json?    // 详细信息
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, createdAt])
+  @@index([resource, createdAt])
+  @@index([action])
+  @@map("admin_logs")
+}
+
+// 角色形象表
+model Character {
+  id              String                @id @default(cuid())
+  name            String                @unique // 例如 'hangli', 'Premade_Character_48x48_01'
+  displayName     String                // 显示名称，例如 '寒黎', '角色01'
+  description     String?               // 描述
+  imageUrl        String                // 图片存储路径
+  frameWidth      Int                   @default(48)
+  frameHeight     Int                   @default(48)
+  totalFrames     Int                   @default(8)
+  isCompactFormat Boolean               @default(false) // 是否为紧凑格式（2行4列）
+  price           Int                   @default(0) // 积分价格，0表示免费
+  isDefault       Boolean               @default(false) // 是否为默认角色
+  isActive        Boolean               @default(true) // 是否启用
+  sortOrder       Int                   @default(0) // 排序顺序
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  // 关联关系
+  purchases       CharacterPurchase[]
+
+  @@index([isActive, sortOrder])
+  @@index([price])
+  @@index([createdAt])
+  @@index([isDefault])
+  @@map("characters")
+}
+
+// 角色形象购买记录（为形象商店准备）
+model CharacterPurchase {
+  id          String    @id @default(cuid())
+  userId      String
+  characterId String
+  price       Int       // 购买时的价格
+  purchasedAt DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, characterId]) // 同一角色只能购买一次
+  @@index([userId])
+  @@index([characterId])
+  @@index([purchasedAt])
+  @@map("character_purchases")
+}
+
+// 工位配置表
+model WorkstationConfig {
+  id                 String   @id @default(cuid())
+  totalWorkstations  Int      @default(1000) // 总工位数
+  bindingCost        Int      @default(10) // 绑定工位消耗积分
+  renewalCost        Int      @default(5) // 续期工位消耗积分
+  unbindingRefund    Int      @default(5) // 解绑退还积分
+  teleportCost       Int      @default(2) // 传送消耗积分
+  defaultDuration    Int      @default(24) // 默认绑定时长（小时）
+  maxBindingsPerUser Int      @default(1) // 每个用户最多绑定工位数
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  updatedBy          String?  // 更新者ID（管理员）
+
+  @@map("workstation_config")
 }
