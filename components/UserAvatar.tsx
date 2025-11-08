@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import UserStatusIndicator from './UserStatusIndicator'
+import { getCharacterImageUrl } from '@/lib/characterUtils'
 
 interface UserAvatarProps {
   userId: string
@@ -74,19 +76,50 @@ export default function UserAvatar({
     setImageError(true)
   }
 
+  // 获取头像URL - 如果是角色key则转换为角色图片URL
+  const getAvatarUrl = () => {
+    if (!userAvatar) return null
+
+    // 如果已经是完整URL（http://或/开头），直接使用
+    if (userAvatar.startsWith('http://') || userAvatar.startsWith('https://') || userAvatar.startsWith('/')) {
+      return userAvatar
+    }
+
+    // 否则当作角色key处理，转换为角色图片URL
+    return getCharacterImageUrl(userAvatar)
+  }
+
+  const avatarUrl = getAvatarUrl()
+  const isCharacterSprite = avatarUrl && (avatarUrl.includes('/assets/characters/') || !avatarUrl.startsWith('http'))
+
   return (
-    <div 
+    <div
       className={`relative flex-shrink-0 ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       <div className={`${sizeClasses[size]} bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center overflow-hidden`}>
-        {userAvatar && !imageError ? (
-          <img 
-            src={userAvatar} 
-            alt={userName}
-            className="w-full h-full object-cover"
-            onError={handleImageError}
-          />
+        {avatarUrl && !imageError ? (
+          isCharacterSprite ? (
+            // 角色形象 - 使用像素化渲染
+            <Image
+              src={avatarUrl}
+              alt={userName}
+              width={size === 'xs' ? 24 : size === 'sm' ? 32 : size === 'md' ? 40 : size === 'lg' ? 48 : 64}
+              height={size === 'xs' ? 24 : size === 'sm' ? 32 : size === 'md' ? 40 : size === 'lg' ? 48 : 64}
+              className="w-full h-full object-cover pixelated"
+              style={{ imageRendering: 'pixelated' }}
+              onError={handleImageError}
+              unoptimized
+            />
+          ) : (
+            // 普通头像
+            <img
+              src={avatarUrl}
+              alt={userName}
+              className="w-full h-full object-cover"
+              onError={handleImageError}
+            />
+          )
         ) : (
           <span className={`text-white font-medium ${textSizeClasses[size]}`}>
             {getInitials(userName)}

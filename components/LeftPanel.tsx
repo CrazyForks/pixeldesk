@@ -101,7 +101,7 @@ export default function LeftPanel({
                   <UserAvatar
                     userId={currentUser.id}
                     userName={currentUser.name}
-                    userAvatar={currentUser.character || currentUser.avatar}
+                    userAvatar={currentUser.avatar}
                     size="xl"
                     showStatus={true}
                   />
