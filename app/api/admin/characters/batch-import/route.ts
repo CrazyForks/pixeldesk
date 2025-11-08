@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requirePermission } from '@/lib/adminAuth'
+import { requirePermission } from '@/lib/admin/permissions'
 import { readdirSync, statSync } from 'fs'
 import { join } from 'path'
 
