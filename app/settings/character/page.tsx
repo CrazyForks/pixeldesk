@@ -38,18 +38,9 @@ export default function CharacterSettingsPage() {
     try {
       setIsLoading(true)
 
-      // 获取token
-      const token = localStorage.getItem('token')
-      if (!token) {
-        setError('请先登录')
-        router.push('/login')
-        return
-      }
-
+      // API会自动从cookie读取认证信息
       const response = await fetch('/api/characters/owned', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include' // 包含cookie
       })
       const data = await response.json()
 
@@ -58,8 +49,9 @@ export default function CharacterSettingsPage() {
         setCurrentCharacter(data.currentCharacter)
       } else {
         if (response.status === 401) {
-          setError('登录已过期，请重新登录')
-          router.push('/login')
+          setError('请先登录后访问')
+          // 跳转到主页，主页会显示登录弹窗
+          setTimeout(() => router.push('/'), 2000)
         } else {
           setError(data.error || '加载失败')
         }
@@ -83,20 +75,13 @@ export default function CharacterSettingsPage() {
       setError(null)
       setSuccess(null)
 
-      // 获取token
-      const token = localStorage.getItem('token')
-      if (!token) {
-        setError('请先登录')
-        router.push('/login')
-        return
-      }
-
+      // API会自动从cookie读取认证信息
       const response = await fetch('/api/characters/switch', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include', // 包含cookie
         body: JSON.stringify({ characterId })
       })
 
@@ -121,8 +106,8 @@ export default function CharacterSettingsPage() {
         }, 2000)
       } else {
         if (response.status === 401) {
-          setError('登录已过期，请重新登录')
-          router.push('/login')
+          setError('请先登录后访问')
+          setTimeout(() => router.push('/'), 2000)
         } else {
           setError(data.error || '切换失败')
         }

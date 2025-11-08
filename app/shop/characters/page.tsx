@@ -39,14 +39,10 @@ export default function CharacterShopPage() {
     try {
       setIsLoading(true)
 
-      // 获取token（可选）
-      const token = localStorage.getItem('token')
-      const headers: HeadersInit = {}
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-
-      const response = await fetch('/api/characters/shop', { headers })
+      // API会自动从cookie读取认证信息（可选）
+      const response = await fetch('/api/characters/shop', {
+        credentials: 'include' // 包含cookie
+      })
       const data = await response.json()
 
       if (data.success) {
@@ -80,20 +76,13 @@ export default function CharacterShopPage() {
       setError(null)
       setSuccess(null)
 
-      // 获取token
-      const token = localStorage.getItem('token')
-      if (!token) {
-        setError('请先登录')
-        router.push('/login')
-        return
-      }
-
+      // API会自动从cookie读取认证信息
       const response = await fetch('/api/characters/purchase', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include', // 包含cookie
         body: JSON.stringify({ characterId })
       })
 
