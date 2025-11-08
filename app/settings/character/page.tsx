@@ -37,14 +37,32 @@ export default function CharacterSettingsPage() {
   const fetchOwnedCharacters = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/characters/owned')
+
+      // 获取token
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setError('请先登录')
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/characters/owned', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await response.json()
 
       if (data.success) {
         setCharacters(data.data)
         setCurrentCharacter(data.currentCharacter)
       } else {
-        setError(data.error || '加载失败')
+        if (response.status === 401) {
+          setError('登录已过期，请重新登录')
+          router.push('/login')
+        } else {
+          setError(data.error || '加载失败')
+        }
       }
     } catch (err) {
       console.error('加载角色列表失败:', err)
@@ -65,10 +83,19 @@ export default function CharacterSettingsPage() {
       setError(null)
       setSuccess(null)
 
+      // 获取token
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setError('请先登录')
+        router.push('/login')
+        return
+      }
+
       const response = await fetch('/api/characters/switch', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ characterId })
       })
@@ -93,7 +120,12 @@ export default function CharacterSettingsPage() {
           window.location.href = '/' // 回到游戏主页
         }, 2000)
       } else {
-        setError(data.error || '切换失败')
+        if (response.status === 401) {
+          setError('登录已过期，请重新登录')
+          router.push('/login')
+        } else {
+          setError(data.error || '切换失败')
+        }
       }
     } catch (err) {
       console.error('切换角色失败:', err)

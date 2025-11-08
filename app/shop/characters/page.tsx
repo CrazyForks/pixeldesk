@@ -38,13 +38,21 @@ export default function CharacterShopPage() {
   const fetchShopCharacters = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/characters/shop')
+
+      // 获取token（可选）
+      const token = localStorage.getItem('token')
+      const headers: HeadersInit = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch('/api/characters/shop', { headers })
       const data = await response.json()
 
       if (data.success) {
         setCharacters(data.data)
-        setUserPoints(data.userPoints)
-        setIsAuthenticated(data.isAuthenticated)
+        setUserPoints(data.userPoints || 0)
+        setIsAuthenticated(data.isAuthenticated || false)
       } else {
         setError(data.error || '加载失败')
       }
@@ -72,10 +80,19 @@ export default function CharacterShopPage() {
       setError(null)
       setSuccess(null)
 
+      // 获取token
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setError('请先登录')
+        router.push('/login')
+        return
+      }
+
       const response = await fetch('/api/characters/purchase', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ characterId })
       })
