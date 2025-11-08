@@ -100,17 +100,40 @@ export default function UserAvatar({
       <div className={`${sizeClasses[size]} bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center overflow-hidden`}>
         {avatarUrl && !imageError ? (
           isCharacterSprite ? (
-            // 角色形象 - 使用像素化渲染
-            <Image
-              src={avatarUrl}
-              alt={userName}
-              width={size === 'xs' ? 24 : size === 'sm' ? 32 : size === 'md' ? 40 : size === 'lg' ? 48 : 64}
-              height={size === 'xs' ? 24 : size === 'sm' ? 32 : size === 'md' ? 40 : size === 'lg' ? 48 : 64}
-              className="w-full h-full object-cover pixelated"
-              style={{ imageRendering: 'pixelated' }}
-              onError={handleImageError}
-              unoptimized
-            />
+            // 角色形象 - 使用精灵图裁剪显示第一帧（向下看）
+            <div
+              className="w-full h-full flex items-center justify-center relative"
+              style={{
+                imageRendering: 'pixelated',
+              }}
+            >
+              <div
+                className="relative"
+                style={{
+                  width: '100%',
+                  height: '200%', // 角色高度是宽度的2倍
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src={avatarUrl}
+                  alt={userName}
+                  className="absolute pixelated"
+                  style={{
+                    imageRendering: 'pixelated',
+                    // 精灵图是 192px × 192px (4列2行，每帧48px × 96px)
+                    // 显示第一帧（第一列第一行，向下看的姿势）
+                    width: '400%', // 192px / 48px = 4倍
+                    height: '100%', // 相对于容器高度
+                    objectFit: 'none',
+                    objectPosition: '0 0', // 从左上角开始
+                    left: '0',
+                    top: '0',
+                  }}
+                  onError={handleImageError}
+                />
+              </div>
+            </div>
           ) : (
             // 普通头像
             <img
