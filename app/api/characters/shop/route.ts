@@ -11,9 +11,21 @@ export async function GET(request: NextRequest) {
   try {
     // 获取用户信息（可选，未登录也可以查看商店）
     let user = null
-    const authHeader = request.headers.get('Authorization')
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7)
+    let token: string | null = null
+
+    // 优先从cookie读取
+    token = request.cookies.get('auth-token')?.value || null
+
+    // 如果cookie中没有，尝试从Authorization header读取
+    if (!token) {
+      const authHeader = request.headers.get('Authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    }
+
+    // 如果有token，验证并获取用户信息
+    if (token) {
       const payload = verifyToken(token)
       if (payload) {
         user = await prisma.user.findUnique({

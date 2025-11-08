@@ -9,16 +9,27 @@ import { getCharacterImageUrl } from '@/lib/characterUtils'
  */
 export async function GET(request: NextRequest) {
   try {
-    // 验证用户身份
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // 验证用户身份 - 支持从cookie或Authorization header读取token
+    let token: string | null = null
+
+    // 优先从cookie读取（主要认证方式）
+    token = request.cookies.get('auth-token')?.value || null
+
+    // 如果cookie中没有，尝试从Authorization header读取（向后兼容）
+    if (!token) {
+      const authHeader = request.headers.get('Authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    }
+
+    if (!token) {
       return NextResponse.json(
         { success: false, error: '请先登录' },
         { status: 401 }
       )
     }
 
-    const token = authHeader.substring(7)
     const payload = verifyToken(token)
     if (!payload) {
       return NextResponse.json(
