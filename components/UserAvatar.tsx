@@ -100,40 +100,28 @@ export default function UserAvatar({
       <div className={`${sizeClasses[size]} bg-gradient-to-br from-retro-purple to-retro-pink rounded-full flex items-center justify-center overflow-hidden`}>
         {avatarUrl && !imageError ? (
           isCharacterSprite ? (
-            // 角色形象 - 使用精灵图裁剪显示第一帧（向下看）
-            <div
-              className="w-full h-full flex items-center justify-center relative overflow-hidden"
-              style={{
-                imageRendering: 'pixelated',
-              }}
-            >
+            // 角色形象 - 使用background-image裁剪显示第一帧（向下看）
+            <>
+              <div
+                className="w-full h-full"
+                style={{
+                  backgroundImage: `url(${avatarUrl})`,
+                  backgroundSize: '400% 200%', // 精灵图是4列2行
+                  backgroundPosition: '0 0', // 显示第一帧（左上角）
+                  backgroundRepeat: 'no-repeat',
+                  imageRendering: 'pixelated',
+                }}
+                role="img"
+                aria-label={userName}
+              />
+              {/* 隐藏的img用于错误处理 */}
               <img
                 src={avatarUrl}
-                alt={userName}
-                className="pixelated"
-                style={{
-                  imageRendering: 'pixelated',
-                  // 精灵图是 192px × 192px (4列2行，每帧48px × 96px)
-                  // 使用固定尺寸，然后用transform scale来缩放
-                  width: '192px',
-                  height: '192px',
-                  objectFit: 'none',
-                  objectPosition: '0 0', // 从左上角裁剪，只显示第一帧(48px×96px)
-                  // 裁剪只显示左上角的48px×96px区域
-                  clipPath: 'inset(0 144px 96px 0)', // top right bottom left
-                  // 根据容器大小缩放
-                  transform: `scale(${
-                    size === 'xs' ? 0.125 : // 24/192
-                    size === 'sm' ? 0.167 : // 32/192
-                    size === 'md' ? 0.208 : // 40/192
-                    size === 'lg' ? 0.25 :  // 48/192
-                    0.333                    // 64/192 for xl
-                  })`,
-                  transformOrigin: 'top left',
-                }}
+                alt=""
+                style={{ display: 'none' }}
                 onError={handleImageError}
               />
-            </div>
+            </>
           ) : (
             // 普通头像
             <img
