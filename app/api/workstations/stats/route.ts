@@ -3,27 +3,10 @@ import { prisma } from '@/lib/db'
 
 export async function GET() {
   try {
-    // 首先尝试从Phaser游戏获取工位总数
-    let totalWorkstations = 0
-    
-    // 如果在浏览器环境中，尝试从全局Phaser游戏实例获取工位总数
-    if (typeof window !== 'undefined') {
-      try {
-        // 通过全局函数获取Phaser游戏的工位总数
-        if (window.getGameWorkstationCount) {
-          totalWorkstations = window.getGameWorkstationCount()
-        }
-      } catch (error) {
-        console.warn('Failed to get workstation count from game:', error)
-      }
-    }
-    
-    // 如果无法从游戏获取，则从数据库获取作为备用
-    if (totalWorkstations === 0) {
-      totalWorkstations = await prisma.workstation.count()
-      // 移除频繁的日志输出以优化性能
-    }
-    
+    // 从后台配置获取总工位数
+    const config = await prisma.workstationConfig.findFirst()
+    const totalWorkstations = config?.totalWorkstations || 1000 // 默认1000个工位
+
     // 获取已绑定工位数
     const boundWorkstations = await prisma.userWorkstation.count({
       where: {
