@@ -47,6 +47,7 @@ export class Start extends Phaser.Scene {
   }
 
   preload() {
+    // 先加载其他资源
     this.loadTilemap()
     this.loadTilesetImages()
     this.loadLibraryImages()
@@ -730,37 +731,14 @@ export class Start extends Phaser.Scene {
       this.load.spritesheet(key, path, { frameWidth: 48, frameHeight: 48 })
     })
 
-    // 加载角色图片（每个都包含4个方向的帧）
-    const characterAssets = [
-      "hangli.png",
-      "Premade_Character_48x48_01.png",
-      "Premade_Character_48x48_02.png",
-      "Premade_Character_48x48_03.png",
-      "Premade_Character_48x48_04.png",
-      "Premade_Character_48x48_05.png",
-      "Premade_Character_48x48_06.png",
-      "Premade_Character_48x48_07.png",
-      "Premade_Character_48x48_08.png",
-      "Premade_Character_48x48_09.png",
-      "Premade_Character_48x48_10.png",
-      "Premade_Character_48x48_11.png",
-      "Premade_Character_48x48_12.png",
-      "Premade_Character_48x48_13.png",
-      "Premade_Character_48x48_14.png",
-      "Premade_Character_48x48_15.png",
-      "Premade_Character_48x48_16.png",
-      "Premade_Character_48x48_17.png",
-      "Premade_Character_48x48_18.png",
-      "Premade_Character_48x48_19.png",
-      "Premade_Character_48x48_20.png",
-    ]
+    // 动态加载角色图片（从API获取）
+    // 使用 Phaser 的 file loading pattern
+    const charactersFileKey = 'characters-data'
+    this.load.json(charactersFileKey, '/api/characters?pageSize=1000')
 
-    characterAssets.forEach((filename) => {
-      const key = filename.replace(".png", "")
-      this.load.spritesheet(key, `/assets/characters/${filename}`, {
-        frameWidth: 48,
-        frameHeight: 48,
-      })
+    // 监听角色数据加载完成
+    this.load.once(`filecomplete-json-${charactersFileKey}`, (_key, _type, data) => {
+      this.loadCharacterSprites(data)
     })
   }
 
@@ -832,6 +810,67 @@ export class Start extends Phaser.Scene {
     this.load.image("rug", "/assets/tileset/rug.png")
     this.load.image("cabinet", "/assets/tileset/cabinet.png")
     this.load.image("stair-red", "/assets/tileset/stair-red.png")
+  }
+
+  /**
+   * 从API数据加载角色精灵
+   */
+  loadCharacterSprites(apiResponse) {
+    try {
+      if (!apiResponse || !apiResponse.success || !apiResponse.data || apiResponse.data.length === 0) {
+        debugError('Invalid character data from API')
+        this.loadDefaultCharacter()
+        return
+      }
+
+      // 存储角色配置信息供后续使用
+      this.characterConfigs = new Map()
+
+      // 加载所有角色的spritesheet
+      apiResponse.data.forEach((character) => {
+        // 存储角色配置
+        this.characterConfigs.set(character.name, {
+          isCompactFormat: character.isCompactFormat,
+          totalFrames: character.totalFrames,
+          frameWidth: character.frameWidth,
+          frameHeight: character.frameHeight
+        })
+
+        // 加载spritesheet
+        this.load.spritesheet(character.name, character.imageUrl, {
+          frameWidth: character.frameWidth,
+          frameHeight: character.frameHeight,
+        })
+      })
+
+      debugLog(`✅ Loaded ${apiResponse.data.length} characters from API`)
+
+      // 启动加载队列
+      this.load.start()
+
+    } catch (error) {
+      debugError('Error loading character sprites:', error)
+      this.loadDefaultCharacter()
+    }
+  }
+
+  /**
+   * 加载默认角色作为后备
+   */
+  loadDefaultCharacter() {
+    debugWarn('Loading default character as fallback')
+    this.characterConfigs = new Map()
+    this.characterConfigs.set('hangli', {
+      isCompactFormat: true,
+      totalFrames: 8,
+      frameWidth: 48,
+      frameHeight: 48
+    })
+    this.load.spritesheet('hangli', '/assets/characters/hangli.png', {
+      frameWidth: 48,
+      frameHeight: 48,
+    })
+    this.load.start()
   }
 
   // ===== 地图创建方法 =====

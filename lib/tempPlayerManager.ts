@@ -1,6 +1,7 @@
 'use client'
 
 // 临时玩家管理器 - 处理未注册用户的游戏体验
+import { getRandomCharacter } from './services/characterService'
 
 interface TempPlayer {
   id: string
@@ -71,32 +72,31 @@ function generateTempUsername(): string {
 }
 
 /**
- * 生成随机角色
+ * 生成随机角色（从API获取）
  */
-function generateRandomCharacter(): string {
-  const characters = [
-    'hangli',
-    'Premade_Character_48x48_01', 'Premade_Character_48x48_02', 'Premade_Character_48x48_03',
-    'Premade_Character_48x48_04', 'Premade_Character_48x48_05', 'Premade_Character_48x48_06',
-    'Premade_Character_48x48_07', 'Premade_Character_48x48_08', 'Premade_Character_48x48_09',
-    'Premade_Character_48x48_10'
-  ]
-  
-  return characters[Math.floor(Math.random() * characters.length)]
+async function generateRandomCharacter(): Promise<string> {
+  try {
+    const character = await getRandomCharacter()
+    return character.name
+  } catch (error) {
+    console.error('Failed to get random character from API:', error)
+    // 如果API失败，返回默认角色
+    return 'hangli'
+  }
 }
 
 /**
  * 创建临时玩家数据
  */
-export function createTempPlayer(): TempPlayerData {
+export async function createTempPlayer(): Promise<TempPlayerData> {
   const now = new Date().toISOString()
   const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  
+
   const tempPlayerData: TempPlayerData = {
     user: {
       id: tempId,
       username: generateTempUsername(),
-      character: generateRandomCharacter(),
+      character: await generateRandomCharacter(),
       points: 50,
       isTemporary: true,
       createdAt: now,
@@ -108,13 +108,13 @@ export function createTempPlayer(): TempPlayerData {
       currentScene: 'Start'
     }
   }
-  
+
   // 保存到localStorage
   saveTempPlayer(tempPlayerData)
   markAsVisited()
-  
+
   console.log('🎮 临时玩家已创建:', tempPlayerData.user.username)
-  
+
   return tempPlayerData
 }
 

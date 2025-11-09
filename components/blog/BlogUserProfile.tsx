@@ -21,6 +21,7 @@ export default function BlogUserProfile({ user, stats }: BlogUserProfileProps) {
           userId={user.id}
           userName={user.name}
           userAvatar={user.avatar}
+          customAvatar={user.customAvatar}
           size="lg"
           showStatus={false}
         />

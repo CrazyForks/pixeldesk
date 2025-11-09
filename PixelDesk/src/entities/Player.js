@@ -11,7 +11,7 @@ const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(cons
 const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
 
 export class Player extends Phaser.GameObjects.Container {
-    constructor(scene, x, y, spriteKey = 'characters_list_image', enableMovement = true, enableStateSave = true, isOtherPlayer = false, playerData = null) {
+    constructor(scene, x, y, spriteKey = 'characters_list_image', enableMovement = true, enableStateSave = true, isOtherPlayer = false, playerData = null, characterConfig = null) {
         // 🔧 位置恢复逻辑已移至 Start.js 的 loadPlayerPosition()
         // 这里不再从localStorage读取，而是接收从数据库或localStorage传来的坐标
         // 原因：需要在创建Player前先从数据库获取位置（异步操作）
@@ -47,8 +47,16 @@ export class Player extends Phaser.GameObjects.Container {
         this.collisionStartTime = null;
         this.collisionDebounceTimer = null;
 
-        // 🔧 检测是否为紧凑8帧格式（如 hangli：192×96，2行4列）
-        this.isCompactFormat = this.spriteKey === 'hangli';
+        // 🔧 动态检测是否为紧凑8帧格式
+        // 优先使用传入的 characterConfig，如果没有则从 scene 获取，最后回退到检查角色名
+        if (characterConfig) {
+            this.isCompactFormat = characterConfig.isCompactFormat;
+        } else if (scene.characterConfigs && scene.characterConfigs.has(spriteKey)) {
+            this.isCompactFormat = scene.characterConfigs.get(spriteKey).isCompactFormat;
+        } else {
+            // 后备方案：检查是否为已知的紧凑格式角色
+            this.isCompactFormat = this.spriteKey === 'hangli';
+        }
 
         // 创建分离的身体和头部精灵（两种格式都使用这个结构）
         this.bodySprite = scene.add.image(0, 48, this.spriteKey);

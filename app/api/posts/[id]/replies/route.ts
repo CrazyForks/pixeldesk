@@ -48,7 +48,8 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                avatar: true
+                avatar: true,
+                customAvatar: true
               }
             }
           }
@@ -231,7 +232,8 @@ export async function POST(
               select: {
                 id: true,
                 name: true,
-                avatar: true
+                avatar: true,
+                customAvatar: true
               }
             }
           }

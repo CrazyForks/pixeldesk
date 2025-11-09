@@ -270,6 +270,7 @@ export default function PostDetailModal({
                         userId={post.author.id}
                         userName={post.author.name}
                         userAvatar={post.author.avatar}
+                        customAvatar={post.author.customAvatar}
                         size="lg"
                         showStatus={true}
                       />
@@ -450,6 +451,7 @@ export default function PostDetailModal({
                                   userId={reply.author.id}
                                   userName={reply.author.name}
                                   userAvatar={reply.author.avatar}
+                                  customAvatar={reply.author.customAvatar}
                                   size="md"
                                   showStatus={true}
                                 />

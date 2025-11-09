@@ -73,6 +73,7 @@ export default function PostListItem({
               userId={post.author.id}
               userName={post.author.name}
               userAvatar={post.author.avatar}
+                        customAvatar={post.author.customAvatar}
               size="sm"
               showStatus={false}
               className="mt-0.5"

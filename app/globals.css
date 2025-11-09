@@ -621,3 +621,10 @@ canvas {
     width: 280px;
   }
 }
+/* 像素风格图片 - 禁用图片平滑 */
+.pixelated {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}

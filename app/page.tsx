@@ -184,7 +184,7 @@ export default function Home() {
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
 
   // 同步认证用户数据到currentUser状态，支持临时玩家
-  const syncAuthenticatedUser = useCallback(() => {
+  const syncAuthenticatedUser = useCallback(async () => {
     if (user) {
       // 用户已登录 - 确保设置为非临时用户状态
       // (临时玩家数据迁移已在UserContext中处理)
@@ -247,7 +247,7 @@ export default function Home() {
       } else if (isFirstTimeVisitor()) {
         // 首次访问，创建临时玩家
         // 首次访问用户，创建临时玩家
-        createTempPlayer()
+        await createTempPlayer()
         const tempGameData = getTempPlayerGameData()
 
         if (tempGameData) {
@@ -257,7 +257,7 @@ export default function Home() {
       } else {
         // 既不是首次访问，也没有临时玩家数据 - 创建新的临时玩家（比如用户退出登录后）
         // 用户退出登录，创建新临时玩家
-        createTempPlayer()
+        await createTempPlayer()
         const tempGameData = getTempPlayerGameData()
 
         if (tempGameData) {
@@ -444,11 +444,11 @@ export default function Home() {
         loadWorkstationStats()
       })
 
-      // 监听工位统计数据更新事件
-      window.addEventListener('workstation-stats-updated', (event: any) => {
-        // console.log('Workstation stats updated:', event.detail)
-        setWorkstationStats(event.detail)
-      })
+      // 监听工位统计数据更新事件（已禁用 - 改用后台API）
+      // 注意：工位统计现在完全从后台配置获取，不再使用Phaser游戏的统计
+      // window.addEventListener('workstation-stats-updated', (event: any) => {
+      //   setWorkstationStats(event.detail)
+      // })
     }
     
     checkDeviceType()
