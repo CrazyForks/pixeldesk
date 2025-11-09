@@ -113,6 +113,7 @@ export default function PostCard({
               userId={post.author.id}
               userName={post.author.name}
               userAvatar={post.author.avatar}
+              customAvatar={post.author.customAvatar}
               size={isMobile ? 'sm' : 'md'}
               showStatus={true}
               isOnline={post.author.isOnline}
@@ -345,6 +346,7 @@ export default function PostCard({
                           userId={reply.author.id}
                           userName={reply.author.name}
                           userAvatar={reply.author.avatar}
+                          customAvatar={reply.author.customAvatar}
                           size="sm"
                           showStatus={true}
                           isOnline={reply.author.isOnline}

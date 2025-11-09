@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              avatar: true
+              avatar: true,
+              customAvatar: true
             }
           },
           _count: {
