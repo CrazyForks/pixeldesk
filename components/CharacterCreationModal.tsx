@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import GameCompatibleInput from './GameCompatibleInput'
+import { getAvailableCharacters, type Character } from '@/lib/services/characterService'
 
 interface CharacterCreationModalProps {
   isOpen: boolean
@@ -10,22 +11,32 @@ interface CharacterCreationModalProps {
   onSkip?: () => void
 }
 
-// 可选的角色精灵列表
-const characterSprites = [
-  'hangli',
-  'Premade_Character_48x48_01', 'Premade_Character_48x48_02', 'Premade_Character_48x48_03',
-  'Premade_Character_48x48_04', 'Premade_Character_48x48_05', 'Premade_Character_48x48_06',
-  'Premade_Character_48x48_07', 'Premade_Character_48x48_08', 'Premade_Character_48x48_09',
-  'Premade_Character_48x48_10', 'Premade_Character_48x48_11', 'Premade_Character_48x48_12',
-  'Premade_Character_48x48_13', 'Premade_Character_48x48_14', 'Premade_Character_48x48_15',
-  'Premade_Character_48x48_16', 'Premade_Character_48x48_17', 'Premade_Character_48x48_18',
-  'Premade_Character_48x48_19', 'Premade_Character_48x48_20'
-]
-
 export default function CharacterCreationModal({ isOpen, userName, onComplete, onSkip }: CharacterCreationModalProps) {
+  const [characters, setCharacters] = useState<Character[]>([])
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingCharacters, setIsLoadingCharacters] = useState(true)
   const [error, setError] = useState('')
+
+  // 加载角色列表
+  useEffect(() => {
+    if (isOpen) {
+      loadCharacters()
+    }
+  }, [isOpen])
+
+  const loadCharacters = async () => {
+    setIsLoadingCharacters(true)
+    try {
+      const response = await getAvailableCharacters({ pageSize: 1000 })
+      setCharacters(response.data)
+    } catch (error) {
+      console.error('Failed to load characters:', error)
+      setError('加载角色列表失败')
+    } finally {
+      setIsLoadingCharacters(false)
+    }
+  }
 
   if (!isOpen) return null
 
@@ -70,11 +81,11 @@ export default function CharacterCreationModal({ isOpen, userName, onComplete, o
     <div className="fixed inset-0 bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center z-50 p-4">
       {/* 背景装饰 */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.8)_100%)]"></div>
-      
+
       <div className="relative bg-gradient-to-br from-retro-bg-darker via-gray-900 to-retro-bg-darker border-2 border-retro-purple/30 rounded-xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* 顶部装饰线 */}
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-retro-purple to-retro-pink"></div>
-        
+
         {/* 标题区域 */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-r from-retro-purple to-retro-pink rounded-full flex items-center justify-center mx-auto mb-4">
@@ -88,106 +99,93 @@ export default function CharacterCreationModal({ isOpen, userName, onComplete, o
           {/* 角色选择区域 */}
           <div className="space-y-4">
             <label className="block text-white text-sm font-medium">选择角色形象</label>
-            
+
             {/* 角色选择网格 */}
             <div className="grid grid-cols-5 gap-3 p-4 bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 rounded-xl border border-retro-border/30">
-              {characterSprites.map((sprite, index) => (
-                <div
-                  key={sprite}
-                  onClick={() => setSelectedCharacter(sprite)}
-                  className={`
-                    relative aspect-square rounded-lg border-2 cursor-pointer  overflow-hidden
-                    ${selectedCharacter === sprite 
-                      ? 'border-retro-purple bg-retro-purple/20 shadow-lg shadow-retro-purple/30' 
-                      : 'border-retro-border/50 bg-retro-bg-dark/30 hover:border-retro-purple/50 hover:bg-retro-purple/10'
-                    }
-                  `}
-                >
-                  {/* 角色精灵图片预览区域 */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div 
-                      className="w-12 h-12 bg-center bg-no-repeat bg-contain"
+              {isLoadingCharacters ? (
+                <div className="col-span-5 text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-retro-purple mx-auto"></div>
+                  <p className="text-retro-textMuted text-sm mt-2">加载中...</p>
+                </div>
+              ) : characters.length === 0 ? (
+                <div className="col-span-5 text-center py-8 text-retro-textMuted">
+                  暂无可用角色
+                </div>
+              ) : (
+                characters.map((character) => (
+                  <div
+                    key={character.id}
+                    onClick={() => setSelectedCharacter(character.name)}
+                    className={`
+                      relative aspect-square rounded-lg border-2 cursor-pointer overflow-hidden
+                      ${selectedCharacter === character.name
+                        ? 'border-retro-purple bg-retro-purple/20 shadow-lg shadow-retro-purple/30'
+                        : 'border-retro-border/50 bg-retro-bg-dark/30 hover:border-retro-purple/50 hover:bg-retro-purple/10'
+                      }
+                    `}
+                  >
+                    <img
+                      src={character.imageUrl}
+                      alt={character.displayName}
+                      className="w-full h-full object-contain pixelated"
                       style={{
-                        backgroundImage: `url(/assets/characters/${sprite}.png)`,
                         imageRendering: 'pixelated'
                       }}
                     />
-                  </div>
-                  
-                  {/* 选中指示器 */}
-                  {selectedCharacter === sprite && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-retro-purple rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                  )}
-                  
-                  {/* 角色编号 */}
-                  <div className="absolute bottom-1 left-1 text-xs text-retro-textMuted bg-black/50 px-1 rounded">
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
-                </div>
-              ))}
-            </div>
 
-            {/* 选中角色显示 */}
-            {selectedCharacter && (
-              <div className="text-center p-3 bg-gradient-to-r from-retro-purple/10 to-retro-pink/10 rounded-lg border border-retro-purple/20">
-                <p className="text-retro-textMuted text-sm">
-                  已选择角色: <span className="text-white font-medium">{selectedCharacter}</span>
-                </p>
-              </div>
-            )}
+                    {/* 显示名称提示 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs py-1 px-2 text-center truncate">
+                      {character.displayName}
+                    </div>
+
+                    {/* 价格标签 */}
+                    {character.price > 0 && (
+                      <div className="absolute top-1 right-1 bg-yellow-500 text-black text-xs px-1 rounded">
+                        {character.price}
+                      </div>
+                    )}
+
+                    {/* 默认标签 */}
+                    {character.isDefault && (
+                      <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1 rounded">
+                        推荐
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          {/* 错误显示 */}
+          {/* 错误信息 */}
           {error && (
-            <div className="text-red-400 text-sm flex items-center space-x-2 p-3 bg-red-900/20 rounded-lg border border-red-500/30">
-              <span>⚠️</span>
-              <span>{error}</span>
+            <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+              <p className="text-red-400 text-sm">{error}</p>
             </div>
           )}
 
-          {/* 按钮区域 */}
-          <div className="flex items-center justify-between space-x-4 pt-4 border-t border-retro-border/30">
+          {/* 操作按钮 */}
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={handleCreateCharacter}
+              disabled={!selectedCharacter || isLoading}
+              className="flex-1 py-3 bg-gradient-to-r from-retro-purple to-retro-pink text-white font-semibold rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+            >
+              {isLoading ? '创建中...' : '确认创建'}
+            </button>
+
             {onSkip && (
               <button
                 type="button"
                 onClick={onSkip}
                 disabled={isLoading}
-                className="text-retro-textMuted hover:text-white text-sm  disabled:opacity-50"
+                className="px-6 py-3 bg-retro-bg-dark border border-retro-border text-retro-text hover:border-retro-purple/50 rounded-lg transition-all disabled:opacity-50"
               >
-                跳过 (稍后创建)
+                跳过
               </button>
             )}
-            
-            <div className="flex-1"></div>
-            
-            <button
-              type="button"
-              onClick={handleCreateCharacter}
-              disabled={isLoading || !userName.trim() || !selectedCharacter}
-              className="bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-bold py-3 px-8 rounded-lg  disabled:opacity-50 shadow-lg hover:shadow-purple-500/25  disabled:scale-100"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full "></div>
-                  <span>创建中...</span>
-                </span>
-              ) : (
-                <span className="flex items-center space-x-2">
-                  <span>🚀</span>
-                  <span>开始游戏</span>
-                </span>
-              )}
-            </button>
           </div>
-        </div>
-
-        {/* 底部提示 */}
-        <div className="mt-6 pt-4 border-t border-retro-border/30">
-          <p className="text-retro-textMuted text-xs text-center">
-            💡 提示：创建角色后，你可以在游戏中获得积分和金币，完成各种有趣的任务
-          </p>
         </div>
       </div>
     </div>
