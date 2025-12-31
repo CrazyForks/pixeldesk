@@ -18,7 +18,7 @@ interface UseSocialPostsReturn {
     totalPages: number
     hasNextPage: boolean
   }
-  
+
   // 操作函数
   fetchPosts: (page?: number, sortBy?: string) => Promise<void>
   createPost: (postData: CreatePostData) => Promise<Post | null>
@@ -29,7 +29,7 @@ interface UseSocialPostsReturn {
 
 export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsReturn {
   const { userId, autoFetch = true, refreshInterval = 30000, filterByAuthor } = options
-  
+
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -56,12 +56,12 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
         limit: '10',
         sortBy
       })
-      
+
       // 如果有作者过滤，添加到查询参数
       if (filterByAuthor) {
         queryParams.append('authorId', filterByAuthor)
       }
-      
+
       const response = await fetch(`/api/posts?${queryParams.toString()}`)
       const data: PostsResponse = await response.json()
 
@@ -71,7 +71,7 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
 
       if (data.data) {
         const { posts: newPosts, pagination: newPagination } = data.data
-        
+
         if (page === 1) {
           setPosts(newPosts)
         } else {
@@ -111,6 +111,15 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
         throw new Error(data.error || 'Failed to create post')
       }
 
+      // Check for points update
+      if ((data as any).currentPoints !== undefined) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('user-points-updated', {
+            detail: { userId, points: (data as any).currentPoints }
+          }))
+        }
+      }
+
       // 将新帖子添加到列表顶部
       if (data.data) {
         const newPost = data.data
@@ -142,13 +151,13 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
       // 更新本地帖子状态
       if (data.data) {
         const { likeCount, isLiked } = data.data
-        setPosts(prev => prev.map(post => 
-          post.id === postId 
-            ? { 
-                ...post, 
-                likeCount,
-                isLiked 
-              }
+        setPosts(prev => prev.map(post =>
+          post.id === postId
+            ? {
+              ...post,
+              likeCount,
+              isLiked
+            }
             : post
         ))
       }

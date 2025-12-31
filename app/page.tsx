@@ -148,7 +148,7 @@ export default function Home() {
   const [myStatus, setMyStatus] = useState<any>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [workstationStats, setWorkstationStats] = useState<any>(null)
-  
+
   // 工位绑定弹窗状态
   const [bindingModal, setBindingModal] = useState({
     isVisible: false,
@@ -162,7 +162,7 @@ export default function Home() {
     workstationId: null as number | null,
     userId: null as string | null
   })
-  
+
   // 角色显示弹窗状态
   const [characterDisplayModal, setCharacterDisplayModal] = useState({
     isVisible: false,
@@ -171,7 +171,7 @@ export default function Home() {
     position: null as { x: number; y: number } | null
   })
 
-  
+
   // 错误消息状态
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -238,7 +238,7 @@ export default function Home() {
     } else {
       // 用户未登录 - 检查临时玩家或创建新的临时玩家
       const tempPlayerData = getTempPlayerGameData()
-      
+
       if (tempPlayerData) {
         // 使用现有临时玩家
         // 使用现有临时玩家
@@ -275,7 +275,7 @@ export default function Home() {
   // 检测移动设备和加载用户数据 - 优化resize处理
   useEffect(() => {
     let resizeTimeout: NodeJS.Timeout
-    
+
     const checkDeviceType = () => {
       const width = window.innerWidth
       if (width < 768) {
@@ -292,19 +292,19 @@ export default function Home() {
         setIsTablet(false)
       }
     }
-    
+
     // 防抖版本的resize处理器，避免高频触发
     const debouncedCheckDeviceType = () => {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(checkDeviceType, 250) // 250ms防抖
     }
-    
+
     // 设置全局函数供Phaser调用
     if (typeof window !== 'undefined') {
       window.setWorkstationBindingModal = (modalState: any) => {
         setBindingModal(modalState)
       }
-      
+
       // 设置工位信息弹窗的全局函数
       window.showWorkstationInfo = (workstationId: number, userId: string) => {
         setWorkstationInfoModal({
@@ -313,7 +313,7 @@ export default function Home() {
           userId
         })
       }
-      
+
       // 设置角色点击的全局函数 - 使用独立的 player:click 事件
       window.showPlayerInfo = (userId: string, userInfo: any) => {
         console.log('🔵 [Global] showPlayerInfo called:', { userId, userInfo })
@@ -431,13 +431,13 @@ export default function Home() {
         console.log('🔵 [Global] Emitting player:click event:', clickEvent)
         EventBus.emit('player:click', clickEvent)
       }
-      
+
       // 设置临时玩家认证提示的全局函数
       window.showTempPlayerAuthPrompt = (message: string) => {
         setAuthPromptMessage(message)
         setShowAuthPrompt(true)
       }
-      
+
       // 监听Phaser游戏初始化完成事件
       window.addEventListener('phaser-game-ready', () => {
         // Phaser游戏已准备好
@@ -450,7 +450,7 @@ export default function Home() {
       //   setWorkstationStats(event.detail)
       // })
     }
-    
+
     checkDeviceType()
     loadWorkstationStats()
     window.addEventListener('resize', debouncedCheckDeviceType)
@@ -498,7 +498,8 @@ export default function Home() {
 
               setCurrentUser((prev: any) => ({
                 ...prev,
-                workstationId: workstationId
+                workstationId: workstationId,
+                workstationExpiresAt: binding.expiresAt
               }))
 
               // 缓存绑定信息
@@ -673,7 +674,7 @@ export default function Home() {
           currentUser: workstationBindingManager.getCurrentUser(),
           isProcessing: workstationBindingManager.isBindingProcessing()
         })
-        
+
         const result = await workstationBindingManager.handleBindingConfirm()
         console.log('绑定结果:', result)
         return result
@@ -788,8 +789,8 @@ export default function Home() {
 
   // 优化：使用 memo 避免 selectedPlayer 变化导致整个组件重新渲染
   const memoizedPhaserGame = useMemo(() => (
-    <PhaserGame 
-      onPlayerCollision={handlePlayerCollision} 
+    <PhaserGame
+      onPlayerCollision={handlePlayerCollision}
       onWorkstationBinding={handleWorkstationBinding}
       onPlayerClick={handlePlayerClick}
     />
@@ -904,7 +905,7 @@ export default function Home() {
         leftPanelCollapsed={leftPanelCollapsed}
         rightPanelCollapsed={rightPanelCollapsed}
       />
-      
+
       {/* All modals */}
       {/* 工位绑定弹窗 */}
       <WorkstationBindingModal
@@ -923,7 +924,7 @@ export default function Home() {
         userId={workstationInfoModal.userId}
         onClose={handleWorkstationInfoModalClose}
       />
-      
+
       {/* 角色显示弹窗 */}
       {characterDisplayModal.isVisible && (
         <CharacterDisplayModal
@@ -956,7 +957,7 @@ export default function Home() {
                 {errorMessage}
               </p>
             </div>
-            
+
             <div className="flex justify-center">
               <button
                 onClick={() => setErrorMessage(null)}
@@ -975,7 +976,7 @@ export default function Home() {
           <div className="bg-gradient-to-br from-retro-bg-darker via-gray-900 to-retro-bg-darker border-2 border-retro-purple/30 rounded-xl p-6 w-full max-w-lg">
             {/* 顶部装饰线 */}
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-retro-purple to-retro-pink"></div>
-            
+
             <div className="text-center mb-6">
               <div className="w-20 h-20 bg-gradient-to-r from-retro-purple to-retro-pink rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">🚀</span>
@@ -1013,7 +1014,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between space-x-4">
               <button
                 onClick={() => setShowAuthPrompt(false)}
@@ -1021,7 +1022,7 @@ export default function Home() {
               >
                 稍后再说
               </button>
-              
+
               <div className="flex space-x-3">
                 <button
                   onClick={() => {
@@ -1068,8 +1069,8 @@ export default function Home() {
 
       {/* 临时玩家的认证模态框 */}
       {showAuthModal && (
-        <AuthModal 
-          isOpen={showAuthModal} 
+        <AuthModal
+          isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
         />
       )}

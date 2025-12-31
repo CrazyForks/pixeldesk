@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const sortBy = searchParams.get('sortBy') || 'latest' // latest, popular, trending
     const authorId = searchParams.get('authorId')
-    
+    const postType = searchParams.get('type') // 可选：TEXT, IMAGE, MARKDOWN
+
     const skip = (page - 1) * limit
 
     // 构建查询条件
@@ -21,6 +22,11 @@ export async function GET(request: NextRequest) {
 
     if (authorId) {
       where.authorId = authorId
+    }
+
+    // 根据类型筛选
+    if (postType) {
+      where.type = postType
     }
 
     // 构建排序条件
@@ -195,24 +201,28 @@ export async function POST(request: NextRequest) {
     })
 
     // 奖励积分（仅对已发布的非草稿帖子）
+    let currentPoints: number | undefined;
+
     if (!isDraft) {
       const rewardKey = type === 'MARKDOWN' ? 'create_blog_reward' : 'create_post_reward'
       const postTypeText = type === 'MARKDOWN' ? '博客' : '帖子'
 
-      rewardPoints(userId, rewardKey, `发布${postTypeText} ${post.id}`)
-        .then(reward => {
-          if (reward.success) {
-            console.log(`✨ [POST posts] 用户 ${userId} 发布${postTypeText}获得 ${reward.points} 积分奖励`)
-          }
-        })
+      const reward = await rewardPoints(userId, rewardKey, `发布${postTypeText} ${post.id}`)
         .catch(err => {
           console.error('❌ [POST posts] 积分奖励失败:', err)
+          return { success: false, points: 0, newTotal: 0 }
         })
+
+      if (reward && reward.success) {
+        console.log(`✨ [POST posts] 用户 ${userId} 发布${postTypeText}获得 ${reward.points} 积分奖励`)
+        currentPoints = reward.newTotal
+      }
     }
 
     return NextResponse.json({
       success: true,
-      data: post
+      data: post,
+      currentPoints
     })
 
   } catch (error) {

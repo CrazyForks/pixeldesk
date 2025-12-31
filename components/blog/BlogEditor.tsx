@@ -258,6 +258,15 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
         const data = await response.json()
 
         if (response.ok && data.success) {
+          if (data.currentPoints !== undefined) {
+            console.log('💰 [BlogEditor] 收到积分更新:', data.currentPoints)
+            if (typeof window !== 'undefined') {
+              const event = new CustomEvent('user-points-updated', {
+                detail: { userId, points: data.currentPoints }
+              })
+              window.dispatchEvent(event)
+            }
+          }
           localStorage.removeItem(`blog_draft_${userId}`)
           setHasUnsavedChanges(false)
           onPublished?.(data.data.id)

@@ -28,6 +28,7 @@ model User {
   postLikes                PostLike[]
   postReplies              PostReply[]
   posts                    Post[]
+  pointsHistory            PointsHistory[]
   statusHistory            StatusHistory[]
   timeTracking             TimeTracking[]
   onlineStatus             UserOnlineStatus?
@@ -462,4 +463,20 @@ model WorkstationConfig {
   updatedBy          String?  // 更新者ID（管理员）
 
   @@map("workstation_config")
+}
+
+// 积分历史记录
+model PointsHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int      // 变动金额 (+2, -50)
+  reason      String   // 原因 ("发布帖子", "绑定工位")
+  type        String   // "EARN" (赚取), "SPEND" (消费)
+  balance     Int      // 变动后的余额
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("points_history")
 }

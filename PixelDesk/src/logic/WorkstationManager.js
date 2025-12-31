@@ -6,15 +6,15 @@ import { Player } from '../entities/Player.js';
 
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
-  // 禁用控制台日志以大幅减少CPU消耗
-  ENABLE_DEBUG_LOGGING: false,
-  // 关键错误和警告仍然显示
-  ENABLE_ERROR_LOGGING: true
+    // 禁用控制台日志以大幅减少CPU消耗
+    ENABLE_DEBUG_LOGGING: false,
+    // 关键错误和警告仍然显示
+    ENABLE_ERROR_LOGGING: true
 }
 
 // 性能优化的日志系统
-const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
-const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => { }
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => { }
 
 export class WorkstationManager {
     constructor(scene) {
@@ -31,7 +31,7 @@ export class WorkstationManager {
         this.cleanupUserBindings();
         this.viewportUpdateDebounce = null;
         this.isViewportOptimizationEnabled = false; // 永久禁用
-        
+
         this.config = {
             occupiedTint: 0x888888,    // 其他用户占用工位的颜色 (灰色)
             userOwnedTint: 0xFFD700,   // 当前用户工位的颜色 (金黄色 - 高贵醒目)
@@ -65,7 +65,7 @@ export class WorkstationManager {
     createWorkstation(tiledObject, sprite) {
         // 检测工位方向
         const direction = this.detectWorkstationDirection(tiledObject.name || tiledObject.type || '');
-        
+
         const workstation = {
             id: tiledObject.id,
             sprite: sprite,
@@ -83,7 +83,7 @@ export class WorkstationManager {
 
         this.workstations.set(tiledObject.id, workstation);
         this.setupInteraction(workstation);
-        
+
         // debugLog(`Created workstation with ID: ${tiledObject.id}`, workstation);
         return workstation;
     }
@@ -102,9 +102,9 @@ export class WorkstationManager {
     detectWorkstationDirection(name) {
         // 根据名称检测工位方向
         if (!name) return 'single'; // 默认为单人桌
-        
+
         const lowerName = name.toLowerCase();
-        
+
         if (lowerName.includes('_right')) {
             return 'right';
         } else if (lowerName.includes('_left')) {
@@ -114,7 +114,7 @@ export class WorkstationManager {
         } else if (lowerName.includes('center')) {
             return 'center';
         }
-        
+
         // 默认根据宽度判断
         return 'single';
     }
@@ -143,9 +143,9 @@ export class WorkstationManager {
         if (workstation) {
             debugLog(`Clicked workstation ${workstationId}:`, workstation);
             debugLog(`User bound: ${this.getUserByWorkstation(workstationId) || 'None'}`);
-            
+
             this.highlightWorkstation(workstationId);
-            
+
             // 只有未占用的工位才触发绑定事件
             if (!workstation.isOccupied) {
                 this.scene.events.emit('workstation-binding-request', {
@@ -157,14 +157,14 @@ export class WorkstationManager {
                 const userId = this.getUserByWorkstation(workstationId);
                 if (userId) {
                     debugLog(`显示工位 ${workstationId} 的信息弹窗，用户ID: ${userId}`);
-                    
+
                     // 调用全局函数显示工位信息弹窗
                     if (typeof window !== 'undefined' && window.showWorkstationInfo) {
                         window.showWorkstationInfo(workstationId, userId);
                     }
                 }
             }
-            
+
             // 触发自定义事件
             this.scene.events.emit('workstation-clicked', {
                 workstationId,
@@ -186,7 +186,7 @@ export class WorkstationManager {
         const workstation = this.workstations.get(workstationId);
         if (workstation && workstation.sprite) {
             workstation.sprite.setTint(this.config.highlightTint);
-            
+
             const highlightDuration = duration || this.config.highlightDuration;
             this.scene.time.delayedCall(highlightDuration, () => {
                 this.restoreWorkstationTint(workstationId);
@@ -238,23 +238,23 @@ export class WorkstationManager {
         workstation.boundAt = now.toISOString();
         workstation.expiresAt = expiresAt.toISOString();
         workstation.remainingDays = 30;
-        
+
         this.userBindings.set(String(workstationId), userId);
 
         // 更新视觉效果
         if (workstation.sprite) {
             workstation.sprite.setTint(this.config.occupiedTint);
         }
-        
+
         // 移除交互图标
         this.removeInteractionIcon(workstation);
 
         // 添加占用图标
         this.addOccupiedIcon(workstation);
-        
+
         // 为当前用户的工位添加特殊高亮
         this.addUserWorkstationHighlight(workstation);
-        
+
         // 在工位上显示角色形象
         debugLog(`👤 [bindUserToWorkstation] 即将调用 addCharacterToWorkstation`);
         this.addCharacterToWorkstation(workstation, userId, userInfo);
@@ -274,7 +274,7 @@ export class WorkstationManager {
             boundAt: workstation.boundAt,
             expiresAt: workstation.expiresAt
         });
-        
+
         if (!saveResult.success) {
             console.error('保存工位绑定失败:', saveResult.error);
             // 回滚本地绑定状态
@@ -282,19 +282,19 @@ export class WorkstationManager {
             workstation.userId = null;
             workstation.userInfo = null;
             this.userBindings.delete(String(workstationId));
-            
+
             // 恢复视觉效果
             if (workstation.sprite) {
                 workstation.sprite.clearTint();
             }
             this.removeOccupiedIcon(workstation);
             this.addInteractionIcon(workstation);
-            
+
             return { success: false, error: saveResult.error };
         }
-        
+
         debugLog(`工位绑定成功，服务器返回剩余积分: ${saveResult.remainingPoints}`);
-        
+
         // 更新本地用户数据中的积分
         if (saveResult.remainingPoints !== undefined) {
             const userData = JSON.parse(localStorage.getItem('pixelDeskUser') || '{}');
@@ -304,7 +304,7 @@ export class WorkstationManager {
                 localStorage.setItem('pixelDeskUser', JSON.stringify(userData));
             }
         }
-        
+
         // 触发事件（增强版本，包含更多信息）
         debugLog(`📢 [bindUserToWorkstation] 即将触发 user-bound 事件:`, {
             workstationId,
@@ -367,21 +367,21 @@ export class WorkstationManager {
         if (workstation.sprite) {
             workstation.sprite.clearTint();
         }
-        
+
         // 移除占用图标
         this.removeOccupiedIcon(workstation);
 
         // 重新添加交互图标
         this.addInteractionIcon(workstation);
-        
+
         // 移除用户工位高亮
         this.removeUserWorkstationHighlight(workstation);
-        
+
         // 移除角色显示
         this.removeCharacterFromWorkstation(workstation);
 
         debugLog(`Successfully unbound user ${userId} from workstation ${workstationId}`);
-        
+
         // 触发事件
         this.scene.events.emit('user-unbound', {
             workstationId,
@@ -448,10 +448,10 @@ export class WorkstationManager {
 
     findWorkstationsInArea(x, y, width, height) {
         return Array.from(this.workstations.values()).filter(w => {
-            return w.position.x >= x && 
-                   w.position.x <= x + width &&
-                   w.position.y >= y && 
-                   w.position.y <= y + height;
+            return w.position.x >= x &&
+                w.position.x <= x + width &&
+                w.position.y >= y &&
+                w.position.y <= y + height;
         });
     }
 
@@ -489,7 +489,7 @@ export class WorkstationManager {
     // ===== 配置管理 =====
     updateConfig(newConfig) {
         this.config = { ...this.config, ...newConfig };
-        
+
         // 应用新的视觉配置
         this.workstations.forEach(workstation => {
             this.restoreWorkstationTint(workstation.id);
@@ -516,10 +516,10 @@ export class WorkstationManager {
         if (data.config) {
             this.config = { ...this.config, ...data.config };
         }
-        
+
         debugLog('Workstation data imported successfully');
     }
- 
+
     // ===== 调试和日志 =====
     printStatistics() {
         const stats = this.getStatistics();
@@ -542,13 +542,13 @@ export class WorkstationManager {
     }
 
     // ===== 后端接口预留 =====
-    
+
     async loadAllWorkstationBindings() {
         // 从服务器加载所有工位绑定信息
         try {
             const response = await fetch('/api/workstations/all-bindings');
             const result = await response.json();
-            
+
             if (result.success && result.data) {
                 debugLog('从服务器加载工位绑定信息:', result.data);
                 return result.data;
@@ -561,7 +561,7 @@ export class WorkstationManager {
             return [];
         }
     }
-    
+
     async syncWorkstationBindings() {
         // 完全禁用缓存系统，每次都重新获取最新数据
         debugLog('🔄 使用无缓存的工位同步方法');
@@ -658,15 +658,15 @@ export class WorkstationManager {
 
         debugLog(`📊 [applyBindingsDirectly] 完成: ${bindings.length} 个绑定已应用`);
     }
-    
+
     // 手动刷新工位状态
     async refreshWorkstationStatus() {
         debugLog('手动刷新工位状态...');
         await this.syncWorkstationBindings();
-        
+
         // 触发刷新完成事件
         this.scene.events.emit('workstation-status-refreshed');
-        
+
         return { success: true, message: '工位状态已刷新' };
     }
 
@@ -674,7 +674,7 @@ export class WorkstationManager {
     // loadSavedBindings() {
     //     // 这个方法已被永久禁用，不再使用localStorage缓存
     // }
-    
+
     // 高亮当前用户的工位
     highlightUserWorkstation(currentUserId) {
         this.workstations.forEach((workstation) => {
@@ -684,7 +684,7 @@ export class WorkstationManager {
             }
         });
     }
-    
+
     addUserWorkstationHighlight(workstation) {
         // 检查是否为当前用户的工位
         const currentUser = this.scene.currentUser;
@@ -713,7 +713,7 @@ export class WorkstationManager {
             this.addExpiryCountdown(workstation);
         }
     }
-    
+
     // 添加到期倒计时文本
     addExpiryCountdown(workstation) {
         if (workstation.countdownText) {
@@ -771,7 +771,7 @@ export class WorkstationManager {
         // 不再使用边框对象，只需移除倒计时文本
         this.removeExpiryCountdown(workstation);
     }
-    
+
     async saveWorkstationBinding(workstationId, bindingData) {
         // 只调用后端API，完全不使用localStorage缓存
         try {
@@ -891,7 +891,7 @@ export class WorkstationManager {
         const now = new Date();
         const expiresAt = new Date(workstation.expiresAt);
         const remainingTime = expiresAt - now;
-        
+
         return Math.max(0, Math.ceil(remainingTime / (24 * 60 * 60 * 1000)));
     }
 
@@ -917,7 +917,7 @@ export class WorkstationManager {
             remainingPoints: bindResult.remainingPoints
         };
     }
-    
+
     // ===== 角色显示管理 =====
     addCharacterToWorkstation(workstation, userId, userInfo) {
         debugLog(`👤 [addCharacterToWorkstation] 开始为工位 ${workstation.id} 添加角色:`, {
@@ -961,7 +961,7 @@ export class WorkstationManager {
             return;
         }
 
-        
+
         // 根据工位方向计算角色位置
         const { x: charX, y: charY, direction: characterDirection } = this.calculateCharacterPosition(workstation);
         debugLog(`📐 [addCharacterToWorkstation] 计算角色位置:`, {
@@ -970,16 +970,17 @@ export class WorkstationManager {
             workstationSize: workstation.size,
             workstationDirection: workstation.direction
         });
-        
+
         // 确定角色图片 - 优先使用player表的characterSprite
         let characterKey = 'Premade_Character_48x48_01'; // 默认角色
         if (userInfo) {
             // 优先使用player表的characterSprite，其次是character字段，最后是avatar（如果是角色精灵格式）
-            if (userInfo.characterSprite && userInfo.characterSprite.includes('Premade_Character')) {
+            // 优先使用player表的characterSprite，其次是character字段，最后是avatar（如果是角色精灵格式）
+            if (userInfo.characterSprite) {
                 characterKey = userInfo.characterSprite;
-            } else if (userInfo.character && userInfo.character.includes('Premade_Character')) {
+            } else if (userInfo.character) {
                 characterKey = userInfo.character;
-            } else if (userInfo.avatar && userInfo.avatar.includes('Premade_Character')) {
+            } else if (userInfo.avatar && (userInfo.avatar.includes('Character') || userInfo.avatar.includes('hangli'))) {
                 characterKey = userInfo.avatar;
             }
         }
@@ -990,7 +991,7 @@ export class WorkstationManager {
             userInfoAvatar: userInfo?.avatar,
             finalKey: characterKey
         });
-        
+
         // 尝试加载角色图片
         try {
             debugLog(`🔍 [addCharacterToWorkstation] 检查场景纹理管理器:`, {
@@ -1006,7 +1007,7 @@ export class WorkstationManager {
                 this.createCharacterSprite(workstation, charX, charY, 'Premade_Character_48x48_01', userId, characterDirection);
                 return;
             }
-            
+
             // 如果图片还没加载，先加载
             if (!this.scene.textures.exists(characterKey)) {
                 debugLog(`📥 [addCharacterToWorkstation] 加载角色纹理: ${characterKey}`);
@@ -1031,7 +1032,7 @@ export class WorkstationManager {
             }
         }
     }
-    
+
     createCharacterSprite(workstation, x, y, characterKey, userId, characterDirection) {
         debugLog(`🎨 [createCharacterSprite] 开始创建工位 ${workstation.id} 的角色精灵:`, {
             position: { x, y },
@@ -1175,13 +1176,13 @@ export class WorkstationManager {
             });
         }
     }
-    
+
     onCharacterClick(userId, workstation) {
         debugLog(`点击了工位 ${workstation.id} 上的角色 ${userId}`);
-        
+
         // 检查userInfo是否为null或undefined
         const userInfo = workstation.userInfo || {};
-        
+
         // 触发角色点击事件
         this.scene.events.emit('character-clicked', {
             userId,
@@ -1189,16 +1190,16 @@ export class WorkstationManager {
             userInfo: userInfo,
             position: { x: workstation.position.x, y: workstation.position.y }
         });
-        
+
         // 如果有全局函数，调用它
         if (typeof window !== 'undefined' && window.showCharacterInfo) {
-            window.showCharacterInfo(userId, userInfo, { 
-                x: workstation.position.x, 
-                y: workstation.position.y 
+            window.showCharacterInfo(userId, userInfo, {
+                x: workstation.position.x,
+                y: workstation.position.y
             });
         }
     }
-    
+
     removeCharacterFromWorkstation(workstation) {
         if (workstation.characterSprite) {
             workstation.characterSprite.destroy();
@@ -1207,7 +1208,7 @@ export class WorkstationManager {
             workstation.characterDirection = null;
         }
     }
-    
+
     // 根据工位方向获取角色朝向（角色应该面向工位）
     getCharacterDirectionFromWorkstation(workstation) {
         switch (workstation.direction) {
@@ -1222,7 +1223,7 @@ export class WorkstationManager {
                 return 'down';  // 单人桌，角色面向下（面向工位）
         }
     }
-    
+
     // 根据工位方向计算角色位置（复制Start.js的逻辑）
     calculateCharacterPosition(workstation) {
         const position = workstation.position;
@@ -1230,11 +1231,11 @@ export class WorkstationManager {
         const direction = workstation.direction;
         const offsetX = 24;
         const offsetY = 48;
-        
+
         let characterX = position.x;
         let characterY = position.y;
         let characterDirection = 'down';
-        
+
         switch (direction) {
             case 'right':
                 // 右侧工位，角色放在工位右侧，面向左
@@ -1242,38 +1243,38 @@ export class WorkstationManager {
                 characterY = position.y - offsetY;
                 characterDirection = 'left';
                 break;
-                
+
             case 'left':
                 // 左侧工位，角色放在工位左侧，面向右
                 characterX = position.x - offsetX;
-                characterY = position.y  - offsetY;
+                characterY = position.y - offsetY;
                 characterDirection = 'right';
                 break;
-                
+
             case 'single':
                 // 单人桌，角色放在工位上方，面向下
                 characterX = position.x + (size.width / 2); // 居中
                 characterY = position.y - offsetY - 30;
                 characterDirection = 'down';
                 break;
-                
+
             case 'center':
                 // 中间工位，角色放在工位上方，面向下
                 characterX = position.x + (size.width / 2) - 24; // 居中
                 characterY = position.y - offsetY;
                 characterDirection = 'down';
                 break;
-                
+
             default:
                 // 默认处理
                 characterX = position.x + size.width + offsetX;
                 characterY = position.y;
                 characterDirection = 'left';
         }
-        
+
         // 额外调整：向上移动48像素，根据朝向左右调整30像素
         characterY -= 48; // 向上移动48像素
-        
+
         switch (characterDirection) {
             case 'left':
                 characterX -= 30; // 向左调整30像素
@@ -1283,10 +1284,10 @@ export class WorkstationManager {
                 break;
             // down方向不需要左右调整
         }
-        
+
         return { x: characterX, y: characterY, direction: characterDirection };
     }
-    
+
     // 设置角色方向帧（复制Player类的逻辑）
     setCharacterDirectionFrame(headSprite, bodySprite, direction) {
         switch (direction) {
@@ -1298,7 +1299,7 @@ export class WorkstationManager {
                 headSprite.setFrame(2);
                 bodySprite.setFrame(58);
                 break;
-            case 'down': 
+            case 'down':
                 headSprite.setFrame(3);
                 bodySprite.setFrame(59);
                 break;
@@ -1309,7 +1310,7 @@ export class WorkstationManager {
         }
     }
 
-        // ===== 交互图标管理 =====
+    // ===== 交互图标管理 =====
     addInteractionIcon(workstation) {
         if (workstation.interactionIcon) {
             return; // 已有交互图标
@@ -1329,7 +1330,7 @@ export class WorkstationManager {
 
         const iconX = workstation.position.x + workstation.size.width / 2;
         const iconY = workstation.position.y + workstation.size.height / 2;
-        
+
         // 创建交互图标
         const icon = this.scene.add.text(
             iconX,
@@ -1346,7 +1347,7 @@ export class WorkstationManager {
         icon.setScrollFactor(1); // 跟随地图滚动
         icon.setDepth(1001); // 确保在最上层
         icon.setInteractive();
-        
+
         // 添加点击事件
         icon.on('pointerdown', () => this.onWorkstationClick(workstation.id));
         icon.on('pointerover', () => {
@@ -1361,7 +1362,7 @@ export class WorkstationManager {
                 this.scene.input.setDefaultCursor('default');
             }
         });
-        
+
         workstation.interactionIcon = icon;
     }
 
@@ -1370,7 +1371,7 @@ export class WorkstationManager {
         // 此方法保留但不执行任何操作，避免破坏现有调用逻辑
         debugLog(`🏷️ [addOccupiedIcon] 工位 ${workstation.id} 不再使用图标标记，改用颜色高亮`);
     }
-    
+
     removeInteractionIcon(workstation) {
         if (workstation.interactionIcon) {
             workstation.interactionIcon.destroy();
@@ -1384,7 +1385,7 @@ export class WorkstationManager {
             workstation.occupiedIcon = null;
         }
     }
-    
+
     // ===== 快速回到工位功能 =====
     async teleportToWorkstation(userId, player) {
         // 直接从API查询用户的工位绑定，不依赖内存缓存
@@ -1477,7 +1478,7 @@ export class WorkstationManager {
         const spriteY = workstation.sprite ? workstation.sprite.y : workstation.position.y;
         const { size, direction } = workstation;
         const offset = 60; // 距离工位的偏移量
-        
+
         let teleportX = spriteX + size.width / 2;
         let teleportY = spriteY + size.height / 2;
         let teleportDirection = 'down';
@@ -1512,17 +1513,17 @@ export class WorkstationManager {
         debugLog('强制清理所有工位绑定...');
         const results = this.unbindAllUsers();
         debugLog(`已清理 ${results.length} 个工位绑定`);
-        
+
         // 移除所有交互图标、占用图标和角色显示
         this.workstations.forEach(workstation => {
             this.removeInteractionIcon(workstation);
             this.removeOccupiedIcon(workstation);
             this.removeCharacterFromWorkstation(workstation);
         });
-        
+
         debugLog('所有工位绑定和交互图标已清理');
     }
-    
+
     // 新增：优雅清理方法，用于场景切换等情况
     gracefulClearBindings() {
         // 优雅地清理绑定，避免视觉闪烁
@@ -1598,7 +1599,7 @@ export class WorkstationManager {
             return { success: false, error: error.message };
         }
     }
-    
+
     // ===== 视口优化系统已永久禁用 =====
 
     /**
@@ -1608,7 +1609,7 @@ export class WorkstationManager {
         debugLog('🚫 视口优化已永久禁用，避免缓存问题');
         return;
     }
-    
+
     /**
      * 视口优化功能已永久禁用
      */
@@ -1616,34 +1617,34 @@ export class WorkstationManager {
         debugLog('🚫 视口优化已永久禁用');
         return;
     }
-    
+
     // 所有视口优化相关方法已永久禁用
     setupViewportListeners() { /* 已禁用 */ }
     onViewportChange() { /* 已禁用 */ }
-    
+
     // 所有视口优化相关方法已永久禁用，避免缓存问题
     async updateVisibleWorkstations() { /* 已禁用 */ }
     getCurrentViewport() { return { x: 0, y: 0, width: 800, height: 600, zoom: 1 }; }
     shouldUpdateViewport() { return false; }
     getWorkstationsInViewport() { return []; }
-    
+
     // 视口优化同步方法已永久禁用
     async syncVisibleWorkstationBindings() {
         debugLog('🚫 视口优化同步已永久禁用，使用标准同步');
         return await this.syncWorkstationBindings();
     }
-    
+
     // 这个方法已不再需要，因为我们直接使用loadAllWorkstationBindings
     async loadWorkstationBindingsByIds() {
         debugLog('🚫 loadWorkstationBindingsByIds已禁用，使用loadAllWorkstationBindings');
         return await this.loadAllWorkstationBindings();
     }
-    
+
     // 视口绑定应用方法已禁用
     applyVisibleBindings() {
         debugLog('🚫 applyVisibleBindings已禁用');
     }
-    
+
     /**
      * 应用绑定状态到工位
      */
@@ -1702,33 +1703,33 @@ export class WorkstationManager {
             isExpiringSoon: workstation.isExpiringSoon
         });
     }
-    
+
     /**
      * 确保工位显示为未绑定状态
      */
     ensureWorkstationUnbound(workstation) {
         if (!workstation.isOccupied) return; // 已经是未绑定状态
-        
+
         workstation.isOccupied = false;
         workstation.userId = null;
         workstation.userInfo = null;
         this.userBindings.delete(String(workstation.id));
-        
+
         // 恢复视觉效果
         if (workstation.sprite) {
             workstation.sprite.clearTint();
         }
-        
+
         this.removeOccupiedIcon(workstation);
         this.removeCharacterFromWorkstation(workstation);
         this.addInteractionIcon(workstation);
     }
-    
+
     // 所有视口优化相关方法已永久禁用
     cleanupInvisibleBindings() { /* 已禁用 */ }
     getViewportStats() { return { enabled: false, message: '视口优化已永久禁用' }; }
     invalidateWorkstationBinding() { /* 已禁用 */ }
-    
+
     destroy() {
         // 清理视口优化相关资源
         this.disableViewportOptimization();
@@ -1741,7 +1742,7 @@ export class WorkstationManager {
             this.removeOccupiedIcon(workstation);
             this.removeCharacterFromWorkstation(workstation);
         });
-        
+
         this.workstations.clear();
         this.userBindings.clear();
         debugLog('WorkstationManager destroyed');
