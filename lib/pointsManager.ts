@@ -95,12 +95,28 @@ export async function rewardPoints(
       return { success: false, points: 0, newTotal: 0 }
     }
 
-    // 更新用户积分
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        points: { increment: points }
-      }
+    // 使用事务同时更新积分和记录历史
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // 更新用户积分
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: {
+          points: { increment: points }
+        }
+      })
+
+      // 记录历史
+      await tx.pointsHistory.create({
+        data: {
+          userId,
+          amount: points,
+          reason: reason || configKey,
+          type: 'EARN',
+          balance: user.points
+        }
+      })
+
+      return user
     })
 
     console.log(`✨ 用户 ${userId} 获得 ${points} 积分 (${configKey})${reason ? `: ${reason}` : ''}`)
@@ -141,12 +157,12 @@ export async function deductPoints(
     }
 
     // 检查用户当前积分
-    const user = await prisma.user.findUnique({
+    const currentUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { points: true }
     })
 
-    if (!user) {
+    if (!currentUser) {
       return {
         success: false,
         points: 0,
@@ -155,21 +171,37 @@ export async function deductPoints(
       }
     }
 
-    if (user.points < points) {
+    if (currentUser.points < points) {
       return {
         success: false,
         points: 0,
-        newTotal: user.points,
+        newTotal: currentUser.points,
         error: '积分不足'
       }
     }
 
-    // 扣除积分
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        points: { decrement: points }
-      }
+    // 使用事务更新积分和记录历史
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // 扣除积分
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: {
+          points: { decrement: points }
+        }
+      })
+
+      // 记录历史
+      await tx.pointsHistory.create({
+        data: {
+          userId,
+          amount: -points, // 扣除显示负数
+          reason: reason || configKey,
+          type: 'SPEND',
+          balance: user.points
+        }
+      })
+
+      return user
     })
 
     console.log(`💰 用户 ${userId} 扣除 ${points} 积分 (${configKey})${reason ? `: ${reason}` : ''}`)

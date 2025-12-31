@@ -4,6 +4,7 @@ import { ReactNode, useState } from 'react'
 import UserAvatar from './UserAvatar'
 import AuthenticationHeader from './AuthenticationHeader'
 import { useTheme } from '@/contexts/ThemeContext'
+import PointsHistory from './PointsHistory'
 
 interface LeftPanelProps {
   currentUser?: any
@@ -27,6 +28,7 @@ export default function LeftPanel({
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const { theme, toggleTheme } = useTheme()
+  const [showHistory, setShowHistory] = useState(false)
 
   const handleToggle = (collapsed: boolean) => {
     if (onCollapsedChange) {
@@ -43,18 +45,16 @@ export default function LeftPanel({
   // 收起状态下显示最小化的面板
   if (isCollapsed) {
     return (
-      <div className="h-full flex flex-col bg-transparent w-12 border-r border-gray-800">
-        <div className="flex-1 flex items-center justify-center">
-          <button
-            onClick={() => handleToggle(false)}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-            title="展开面板"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+      <div className="h-full flex flex-col bg-transparent w-12 border-r border-gray-800 relative z-50">
+        <button
+          onClick={() => handleToggle(false)}
+          className="absolute top-1/2 -right-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-gray-900/80 hover:bg-gray-800 border border-gray-700 rounded-full text-gray-400 hover:text-white transition-all shadow-lg backdrop-blur-sm opacity-50 hover:opacity-100"
+          title="展开面板"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
     )
   }
@@ -64,7 +64,7 @@ export default function LeftPanel({
       {/* 收起按钮 - 右上角 */}
       <button
         onClick={() => handleToggle(true)}
-        className="absolute top-3 right-2 z-10 p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+        className="absolute top-1/2 -right-4 -translate-y-1/2 z-50 w-8 h-8 flex items-center justify-center bg-gray-900/80 hover:bg-gray-800 border border-gray-700 rounded-full text-gray-400 hover:text-white transition-all shadow-lg backdrop-blur-sm opacity-50 hover:opacity-100"
         title="收起面板"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,33 @@ export default function LeftPanel({
                 <p className="text-xs text-gray-500 font-mono">Social Office</p>
               </div>
             </div>
-            {/* 状态点已移除 */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
+                )}
+              </button>
+
+              <a
+                href="/shop/characters"
+                className="p-1.5 text-gray-400 hover:text-purple-400 hover:bg-gray-800 rounded-lg transition-colors"
+                title="商店"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -127,7 +153,11 @@ export default function LeftPanel({
               <div className="flex items-center gap-2 mb-2">
                 {/* 积分 */}
                 {currentUser.points !== undefined && (
-                  <div className="flex-1 flex items-center gap-1.5 p-2 bg-yellow-600/10 border border-yellow-500/20 rounded">
+                  <div
+                    onClick={() => setShowHistory(true)}
+                    className="flex-1 flex items-center gap-1.5 p-2 bg-yellow-600/10 border border-yellow-500/20 rounded cursor-pointer hover:bg-yellow-600/20 transition-all select-none"
+                    title="点击查看积分历史"
+                  >
                     <svg className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
@@ -137,31 +167,7 @@ export default function LeftPanel({
                 )}
 
                 {/* 快捷按钮 */}
-                <button
-                  onClick={toggleTheme}
-                  className="flex items-center justify-center p-2 bg-gray-700/20 hover:bg-gray-700/30 border border-gray-600/30 rounded transition-all"
-                  title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
-                >
-                  {theme === 'dark' ? (
-                    <svg className="w-3.5 h-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                    </svg>
-                  )}
-                </button>
 
-                <a
-                  href="/shop/characters"
-                  className="flex items-center justify-center p-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded transition-all"
-                  title="商店"
-                >
-                  <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                </a>
 
                 <a
                   href="/settings/character"
@@ -210,6 +216,22 @@ export default function LeftPanel({
                     )}
                   </div>
                 </div>
+                {currentUser.workstationExpiresAt && (
+                  <div className="mt-1 flex justify-end">
+                    <span className={`text-[10px] font-mono ${new Date(currentUser.workstationExpiresAt) < new Date() ? 'text-red-400' : 'text-gray-500'}`}>
+                      {(() => {
+                        const date = new Date(currentUser.workstationExpiresAt);
+                        const now = new Date();
+                        const diffTime = date.getTime() - now.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays < 0) return "已过期";
+                        if (diffDays === 0) return "今天到期";
+                        return `${diffDays}天后到期 (${date.toLocaleDateString()})`;
+                      })()}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -296,6 +318,15 @@ export default function LeftPanel({
           </div>
         </div>
       </div>
+
+      {/* 积分历史弹窗 */}
+      {showHistory && currentUser && (
+        <PointsHistory
+          userId={currentUser.id}
+          isOpen={showHistory}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   )
 }

@@ -14,17 +14,17 @@ interface NotificationsTabProps {
   onPostClick?: (postId: string) => void // 点击通知跳转到帖子
 }
 
-export default function NotificationsTab({ 
+export default function NotificationsTab({
   isActive = false,
   isMobile = false,
   isTablet = false,
   onPostClick
 }: NotificationsTabProps) {
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
-  
+
   // 获取当前用户信息
   const { userId: currentUserId } = useCurrentUser()
-  
+
   // 使用社交通知hook
   const {
     notifications,
@@ -41,7 +41,7 @@ export default function NotificationsTab({
   } = useSocialNotifications({
     userId: currentUserId || '',
     autoFetch: isActive && !!currentUserId,
-    refreshInterval: isActive ? 60000 : 0, // 60秒刷新一次
+    refreshInterval: isActive ? 15000 : 0, // 15秒刷新一次
     unreadOnly: filter === 'unread'
   })
 
@@ -51,7 +51,7 @@ export default function NotificationsTab({
     if (!notification.isRead) {
       await markAsRead(notification.id)
     }
-    
+
     // 如果有相关帖子，触发跳转
     if (notification.relatedPostId && onPostClick) {
       onPostClick(notification.relatedPostId)
@@ -96,7 +96,7 @@ export default function NotificationsTab({
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}分钟前`
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}小时前`
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}天前`
-    
+
     return date.toLocaleDateString('zh-CN')
   }
 
@@ -154,29 +154,27 @@ export default function NotificationsTab({
               </div>
             </div>
           </div>
-          
+
           {/* 操作按钮 */}
           <div className="flex items-center space-x-2">
             {/* 过滤按钮 */}
             <div className="flex bg-gray-800/60 border border-gray-700/50 rounded-lg overflow-hidden">
               <button
                 onClick={() => setFilter('all')}
-                className={`px-3 py-2 text-xs font-mono font-medium  ${
-                  filter === 'all'
+                className={`px-3 py-2 text-xs font-mono font-medium  ${filter === 'all'
                     ? 'bg-gray-700 text-gray-100'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-                }`}
+                  }`}
               >
                 ALL
               </button>
               <div className="w-px bg-gray-700/30"></div>
               <button
                 onClick={() => setFilter('unread')}
-                className={`px-3 py-2 text-xs font-mono font-medium  flex items-center gap-2 ${
-                  filter === 'unread'
+                className={`px-3 py-2 text-xs font-mono font-medium  flex items-center gap-2 ${filter === 'unread'
                     ? 'bg-gray-700 text-gray-100'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-                }`}
+                  }`}
               >
                 <span>UNREAD</span>
                 {unreadCount > 0 && (
@@ -250,11 +248,10 @@ export default function NotificationsTab({
                 <div
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`group relative cursor-pointer bg-gray-900/90 border  rounded-lg overflow-hidden shadow-lg hover:shadow-xl ${
-                    notification.isRead
+                  className={`group relative cursor-pointer bg-gray-900/90 border  rounded-lg overflow-hidden shadow-lg hover:shadow-xl ${notification.isRead
                       ? 'border-gray-800 hover:border-gray-700'
                       : 'border-blue-800/50 hover:border-blue-700/60 shadow-blue-900/20'
-                  }`}
+                    }`}
                 >
                   {/* 未读指示器 */}
                   {!notification.isRead && (
@@ -269,28 +266,26 @@ export default function NotificationsTab({
                           {getNotificationIcon(notification.type)}
                         </span>
                       </div>
-                      
+
                       {/* 通知内容 */}
                       <div className="flex-1 min-w-0 space-y-1">
                         {/* 通知标题和时间 */}
                         <div className="flex items-start justify-between">
-                          <h4 className={`font-bold font-pixel text-sm tracking-wide truncate pr-2 ${
-                            notification.isRead ? 'text-retro-textMuted' : 'text-white'
-                          }`}>
+                          <h4 className={`font-bold font-pixel text-sm tracking-wide truncate pr-2 ${notification.isRead ? 'text-retro-textMuted' : 'text-white'
+                            }`}>
                             {notification.title}
                           </h4>
                           <span className="text-xs text-retro-textMuted font-retro flex-shrink-0">
                             {formatTimeAgo(notification.createdAt)}
                           </span>
                         </div>
-                        
+
                         {/* 通知消息 */}
-                        <p className={`text-sm font-retro leading-relaxed ${
-                          notification.isRead ? 'text-retro-textMuted/80' : 'text-retro-text'
-                        }`}>
+                        <p className={`text-sm font-retro leading-relaxed ${notification.isRead ? 'text-retro-textMuted/80' : 'text-retro-text'
+                          }`}>
                           {notification.message}
                         </p>
-                        
+
                         {/* 相关用户信息 */}
                         {notification.relatedUser && (
                           <div className="flex items-center space-x-2 pt-1">
@@ -306,7 +301,7 @@ export default function NotificationsTab({
                             </span>
                           </div>
                         )}
-                        
+
                         {/* 相关帖子预览 */}
                         {notification.relatedPost && (
                           <div className="mt-2 p-2 bg-retro-bg-dark/30 rounded-lg border border-retro-border/30">
@@ -327,7 +322,7 @@ export default function NotificationsTab({
                           </div>
                         )}
                       </div>
-                      
+
                       {/* 删除按钮 */}
                       <button
                         onClick={(e) => {
@@ -345,7 +340,7 @@ export default function NotificationsTab({
                   </div>
                 </div>
               ))}
-              
+
               {/* 加载更多按钮 */}
               {pagination.hasNextPage && (
                 <div className="flex justify-center py-4">

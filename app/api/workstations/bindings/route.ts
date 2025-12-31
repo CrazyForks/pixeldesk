@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 })
     }
@@ -103,7 +103,18 @@ export async function POST(request: NextRequest) {
           boundAt: new Date(),
           expiresAt
         },
-        })
+      })
+
+      // 记录积分历史
+      await tx.pointsHistory.create({
+        data: {
+          userId,
+          amount: -cost,
+          reason: '工位绑定',
+          type: 'SPEND',
+          balance: updatedUser.points
+        }
+      })
 
       return { user: updatedUser, binding: userWorkstation }
     })
@@ -111,12 +122,12 @@ export async function POST(request: NextRequest) {
     // Redis缓存已永久禁用，避免缓存导致的数据不一致问题
     // 不再使用Redis缓存
 
-    return NextResponse.json({ 
-      success: true, 
-      data: { 
-        binding: result.binding, 
-        remainingPoints: result.user.points 
-      } 
+    return NextResponse.json({
+      success: true,
+      data: {
+        binding: result.binding,
+        remainingPoints: result.user.points
+      }
     })
   } catch (error) {
     console.error('Error binding workstation:', error)
@@ -129,7 +140,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const workstationId = searchParams.get('workstationId')
-    
+
     if (!userId || !workstationId) {
       return NextResponse.json({ error: 'User ID and Workstation ID required' }, { status: 400 })
     }
