@@ -343,7 +343,8 @@ export class Start extends Phaser.Scene {
     // 初始化其他玩家物理组（用于碰撞检测）
     // 🔧 关键修复：必须在WorkstationManager创建之前初始化，因为loadWorkstation可能会立即尝试添加角色到这个组
     this.otherPlayersGroup = this.physics.add.group()
-    debugLog('✅ [Start] otherPlayersGroup 物理组已初始化')
+    this.npcGroup = this.physics.add.group({ immovable: true })
+    debugLog('✅ [Start] player groups 物理组已初始化')
 
     // 初始化工位管理器
     this.workstationManager = new WorkstationManager(this)
@@ -374,10 +375,8 @@ export class Start extends Phaser.Scene {
     this.setupUserEvents()
 
     // 🔧 性能优化：创建其他玩家/角色的物理group（用于碰撞检测）
-    this.otherPlayersGroup = this.physics.add.group({
-      collideWorldBounds: false
-    })
-    debugLog('✅ 其他玩家group已创建')
+    // 已在上方统一初始化，此处仅保留逻辑说明
+    debugLog('✅ 玩家物理组已准备就绪')
 
     const map = this.createTilemap()
     this.mapLayers = this.createTilesetLayers(map)
@@ -427,6 +426,15 @@ export class Start extends Phaser.Scene {
 
     // 设置输入
     this.setupInput()
+
+    // 设置 NPC 碰撞，并添加碰撞回调来触发社交中心互动
+    if (this.player && this.npcGroup) {
+      this.physics.add.collider(this.player, this.npcGroup, (playerObj, npcObj) => {
+        if (typeof this.handlePlayerCollision === 'function') {
+          this.handlePlayerCollision(playerObj, npcObj)
+        }
+      })
+    }
 
     // 设置相机
     this.setupCamera(map)
@@ -502,17 +510,40 @@ export class Start extends Phaser.Scene {
     // 保存游戏场景引用，确保工位绑定功能可用
     this.saveGameScene()
 
+    // 加载 AI NPC
+    this.loadAiNpcs()
+
     console.log('🎮 游戏配置信息:', {
       渲染器: this.game.renderer.type === 0 ? 'CANVAS' : 'WEBGL',
       尺寸: `${this.game.config.width}x${this.game.config.height}`,
       FPS目标: this.game.loop.targetFps,
       实际FPS: this.game.loop.actualFps
     });
+
+    // 创建坐标显示 UI (固定在屏幕底部中间，避免被面板遮挡)
+    const gameWidth = this.cameras.main.width
+    this.coordsText = this.add.text(gameWidth / 2, 30, 'X: 0, Y: 0', {
+      fontFamily: 'monospace',
+      fontSize: '16px',
+      color: '#00FFFF', // 青色，与绿色背景形成对比
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      padding: { x: 10, y: 5 }
+    })
+    this.coordsText.setOrigin(0.5, 0) // 居中对齐
+    this.coordsText.setScrollFactor(0) // 固定在屏幕上，不随相机移动
+    this.coordsText.setDepth(9999) // 确保在最上层
   }
 
   update() {
     // 只处理需要每帧更新的核心逻辑
     this.handlePlayerMovement()
+
+    // 更新坐标显示
+    if (this.coordsText && this.player) {
+      const x = Math.round(this.player.x)
+      const y = Math.round(this.player.y)
+      this.coordsText.setText(`X: ${x}, Y: ${y}`)
+    }
 
     // 检查T键按下，快速回到工位（临时禁用）
     // if (this.teleportKey && Phaser.Input.Keyboard.JustDown(this.teleportKey)) {
@@ -2520,6 +2551,200 @@ export class Start extends Phaser.Scene {
   }
 
   // ===== 清理方法 =====
+
+  // ===== AI NPC 系统 =====
+
+  /**
+   * 从 API 加载所有 AI NPC 并在此地图上创建
+   */
+  async loadAiNpcs() {
+    try {
+      console.log('🤖 [AI NPC] 开始加载...')
+
+      const response = await fetch('/api/ai/npcs', {
+        method: 'GET',
+        credentials: 'include'
+      })
+
+      console.log('🤖 [AI NPC] API 响应状态:', response.status)
+
+      if (!response.ok) {
+        console.warn('🤖 [AI NPC] 加载失败:', response.status)
+        return
+      }
+
+      const data = await response.json()
+      console.log('🤖 [AI NPC] 收到数据:', data)
+
+      if (!data.success || !data.data) {
+        console.warn('🤖 [AI NPC] 数据无效')
+        return
+      }
+
+      this.aiNpcs = [] // 存储 NPC 引用
+
+      for (const npcData of data.data) {
+        console.log('🤖 [AI NPC] 创建 NPC:', npcData.name, '位置:', npcData.x, npcData.y)
+        const npc = await this.createAiNpc(npcData)
+        if (npc) {
+          this.aiNpcs.push(npc)
+          console.log('🤖 [AI NPC] 创建成功:', npcData.name)
+        } else {
+          console.error('🤖 [AI NPC] 创建失败:', npcData.name)
+        }
+      }
+
+      debugLog(`✅ 已加载 ${this.aiNpcs.length} 个 AI NPC`)
+
+    } catch (error) {
+      debugError('加载 AI NPC 出错:', error)
+    }
+  }
+
+  /**
+   * 创建单个 AI NPC 精灵 - 使用 Player 类确保正确显示
+   */
+  async createAiNpc(npcData) {
+    try {
+      const { id, name, sprite, x, y, greeting } = npcData
+
+      console.log(`🤖 [AI NPC] 创建: ${name} 位置 (${x}, ${y}) 精灵: ${sprite}`)
+
+      // 检查精灵是否已加载，如果没有则动态加载
+      const textureKey = sprite
+      if (!this.textures.exists(textureKey)) {
+        const spritePath = `/assets/characters/${sprite}.png`
+        console.log(`🤖 [AI NPC] 加载精灵: ${spritePath}`)
+
+        try {
+          await new Promise((resolve, reject) => {
+            this.load.spritesheet(textureKey, spritePath, {
+              frameWidth: 48,
+              frameHeight: 48
+            })
+            this.load.once('complete', resolve)
+            this.load.once('loaderror', (file) => {
+              console.error(`🤖 [AI NPC] 加载精灵失败: ${file.key}`)
+              reject(new Error(`Failed to load sprite: ${spritePath}`))
+            })
+            this.load.start()
+          })
+        } catch (loadError) {
+          console.error(`🤖 [AI NPC] 精灵加载失败`, loadError)
+          return null
+        }
+      }
+
+      // 动态检测是否为紧凑8帧格式 (参考 WorkstationManager 逻辑)
+      const texture = this.textures.get(textureKey);
+      const frameCount = texture ? texture.frameTotal : 0;
+      // 只有正好是 8 帧的才被认为是紧凑格式，Sarah (Premade_Character) 通常是 50+ 帧
+      const isCompactFormat = true;
+      const characterConfig = { isCompactFormat };
+
+      console.log(`🤖 [AI NPC] 角色: ${name}, 帧数: ${frameCount}, 格式: ${isCompactFormat ? '紧凑' : '传统'}`)
+
+      // 使用 Player 类创建 NPC
+      const playerData = {
+        id: `npc_${id}`,
+        name: name,
+        currentStatus: {
+          type: 'available',
+          status: 'AI助手',
+          emoji: '🤖',
+          message: greeting || '有什么可以帮你的吗？',
+          timestamp: new Date().toISOString()
+        }
+      }
+
+      // 创建 Player 实例 - 关键：最后两个参数决定了外观解析
+      const npcCharacter = new Player(
+        this,           // scene
+        x,              // x
+        y,              // y
+        textureKey,     // spriteKey
+        false,          // enableMovement
+        false,          // enableStateSave
+        true,           // isOtherPlayer
+        playerData,     // playerData
+        characterConfig // 传入检测到的配置
+      )
+
+      // 强制设置一次朝向，触发帧更新
+      if (typeof npcCharacter.setDirectionFrame === 'function') {
+        npcCharacter.setDirectionFrame('down');
+      }
+
+      // 设置缩放：其他玩家通常是 0.8
+      npcCharacter.setScale(0.8)
+
+      // 设置深度：确保在层级正确
+      npcCharacter.setDepth(1000)
+
+      // 存储数据
+      npcCharacter.npcId = id
+      npcCharacter.npcName = name
+      npcCharacter.npcGreeting = greeting
+
+      // 添加到场景
+      this.add.existing(npcCharacter)
+
+      // 🔧 关键：添加到碰撞组以实现碰撞效果
+      if (this.npcGroup) {
+        this.npcGroup.add(npcCharacter)
+
+        // 彻底锁定 NPC，防止被推走
+        if (npcCharacter.body) {
+          npcCharacter.body.setSize(32, 24) // 较扁的碰撞盒，更符合透视
+          npcCharacter.body.setOffset(-16, 60) // 移至脚部
+          npcCharacter.body.setImmovable(true) // 不可移动
+          npcCharacter.body.moves = false      // 物理引擎不再更新其位置
+        }
+        console.log(`🤖 [AI NPC] 已物理锁定: ${name}`)
+      }
+
+      // 同时添加到其他玩家组（用于点击互动等逻辑）
+      if (this.otherPlayersGroup) {
+        this.otherPlayersGroup.add(npcCharacter)
+      }
+
+      // 创建 AI 图标 (头顶小图标，区分于普通玩家)
+      const aiIcon = this.add.text(x + 25, y - 50, '🤖', {
+        fontSize: '16px'
+      })
+      aiIcon.setOrigin(0.5)
+      aiIcon.setDepth(1100)
+      npcCharacter.aiIcon = aiIcon
+
+      // 添加悬浮动画（只对图标）
+      this.tweens.add({
+        targets: aiIcon,
+        y: '-=5',
+        duration: 1000,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1
+      })
+
+      // 鼠标悬停效果
+      npcCharacter.on('pointerover', () => {
+        npcCharacter.setScale(0.85)
+        this.input.setDefaultCursor('pointer')
+      })
+
+      npcCharacter.on('pointerout', () => {
+        npcCharacter.setScale(0.8)
+        this.input.setDefaultCursor('default')
+      })
+
+      console.log(`🤖 [AI NPC] 创建完成: ${name}`)
+      return npcCharacter
+
+    } catch (error) {
+      console.error(`🤖 [AI NPC] 创建失败:`, error)
+      return null
+    }
+  }
 
   shutdown() {
     // 清理定时器

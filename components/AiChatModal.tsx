@@ -1,0 +1,241 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+
+interface Message {
+    role: 'user' | 'assistant'
+    content: string
+    timestamp: Date
+}
+
+interface AiChatModalProps {
+    isOpen: boolean
+    onClose: () => void
+    npcId: string
+    npcName: string
+    greeting?: string
+}
+
+export default function AiChatModal({
+    isOpen,
+    onClose,
+    npcId,
+    npcName,
+    greeting
+}: AiChatModalProps) {
+    const [messages, setMessages] = useState<Message[]>([])
+    const [input, setInput] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
+    const [usage, setUsage] = useState<{ current: number; limit: number; remaining: number } | null>(null)
+    const [error, setError] = useState<string | null>(null)
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    // 初始化时添加问候语
+    useEffect(() => {
+        if (isOpen && messages.length === 0 && greeting) {
+            setMessages([{
+                role: 'assistant',
+                content: greeting,
+                timestamp: new Date()
+            }])
+        }
+    }, [isOpen, greeting, messages.length])
+
+    // 自动聚焦输入框
+    useEffect(() => {
+        if (isOpen && inputRef.current) {
+            setTimeout(() => inputRef.current?.focus(), 100)
+        }
+    }, [isOpen])
+
+    // 自动滚动到底部
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages])
+
+    // 重置状态（关闭时）
+    useEffect(() => {
+        if (!isOpen) {
+            // 保留消息历史，但重置错误状态
+            setError(null)
+            setInput('')
+        }
+    }, [isOpen])
+
+    const sendMessage = useCallback(async () => {
+        if (!input.trim() || isLoading) return
+
+        const userMessage: Message = {
+            role: 'user',
+            content: input.trim(),
+            timestamp: new Date()
+        }
+
+        setMessages(prev => [...prev, userMessage])
+        setInput('')
+        setIsLoading(true)
+        setError(null)
+
+        try {
+            const response = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    message: userMessage.content,
+                    npcId
+                })
+            })
+
+            const data = await response.json()
+
+            if (data.usage) {
+                setUsage(data.usage)
+            }
+
+            if (!response.ok) {
+                if (response.status === 429) {
+                    setError('今日对话次数已用完，明天再来吧！')
+                } else {
+                    setError(data.error || '发送失败，请重试')
+                }
+                // 还是显示 AI 的回复（如果有）
+                if (data.reply) {
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: data.reply,
+                        timestamp: new Date()
+                    }])
+                }
+                return
+            }
+
+            if (data.reply) {
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: data.reply,
+                    timestamp: new Date()
+                }])
+            }
+
+        } catch (err) {
+            console.error('AI Chat Error:', err)
+            setError('网络错误，请检查连接')
+        } finally {
+            setIsLoading(false)
+        }
+    }, [input, isLoading, npcId])
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            sendMessage()
+        }
+    }
+
+    if (!isOpen) return null
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
+                            <span className="text-lg">🤖</span>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-semibold">{npcName}</h3>
+                            <p className="text-gray-400 text-xs font-mono">AI NPC</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        {usage && (
+                            <span className="text-xs text-gray-500 font-mono">
+                                剩余: {usage.remaining}/{usage.limit}
+                            </span>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-white"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px]">
+                    {messages.map((msg, idx) => (
+                        <div
+                            key={idx}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                            <div
+                                className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'user'
+                                        ? 'bg-blue-600 text-white rounded-br-md'
+                                        : 'bg-gray-800 text-gray-100 rounded-bl-md'
+                                    }`}
+                            >
+                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
+                                    {msg.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+
+                    {isLoading && (
+                        <div className="flex justify-start">
+                            <div className="bg-gray-800 text-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
+                                <div className="flex items-center gap-1">
+                                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Error */}
+                {error && (
+                    <div className="px-4 py-2 bg-red-900/30 border-t border-red-800/50">
+                        <p className="text-red-400 text-sm text-center">{error}</p>
+                    </div>
+                )}
+
+                {/* Input */}
+                <div className="p-4 border-t border-gray-800">
+                    <div className="flex items-center gap-2">
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="输入消息..."
+                            disabled={isLoading}
+                            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
+                        />
+                        <button
+                            onClick={sendMessage}
+                            disabled={isLoading || !input.trim()}
+                            className="p-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
+                        >
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

@@ -95,6 +95,11 @@ const PostDetailModal = dynamic(() => import('@/components/PostDetailModal'), {
   ssr: false
 })
 
+// AI 聊天弹窗
+const AiChatModal = dynamic(() => import('@/components/AiChatModal'), {
+  ssr: false
+})
+
 export default function Home() {
   // 认证相关状态
   const { user, isLoading, playerExists, setPlayerExists } = useUser()
@@ -182,6 +187,14 @@ export default function Home() {
   // 面板收起状态
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false)
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
+
+  // AI 聊天弹窗状态
+  const [aiChatModal, setAiChatModal] = useState({
+    isOpen: false,
+    npcId: '',
+    npcName: '',
+    greeting: ''
+  })
 
   // 同步认证用户数据到currentUser状态，支持临时玩家
   const syncAuthenticatedUser = useCallback(async () => {
@@ -571,6 +584,26 @@ export default function Home() {
     }
   }, []) // 移除currentUser依赖，避免频繁重建监听器
 
+  // 监听 AI NPC 聊天事件
+  useEffect(() => {
+    const handleOpenAiChat = (event: CustomEvent) => {
+      const { npcId, npcName, greeting } = event.detail
+      console.log('🤖 打开 AI 聊天:', npcName)
+      setAiChatModal({
+        isOpen: true,
+        npcId,
+        npcName,
+        greeting: greeting || ''
+      })
+    }
+
+    window.addEventListener('open-ai-chat', handleOpenAiChat as EventListener)
+
+    return () => {
+      window.removeEventListener('open-ai-chat', handleOpenAiChat as EventListener)
+    }
+  }, [])
+
   // 重新启用工位统计功能
   const loadWorkstationStats = useCallback(async () => {
     try {
@@ -942,6 +975,15 @@ export default function Home() {
         currentUserId={currentUser?.id || ''}
         onClose={handlePostDetailModalClose}
         onNavigateToPage={handleNavigateToPostPage}
+      />
+
+      {/* AI NPC 聊天弹窗 */}
+      <AiChatModal
+        isOpen={aiChatModal.isOpen}
+        onClose={() => setAiChatModal(prev => ({ ...prev, isOpen: false }))}
+        npcId={aiChatModal.npcId}
+        npcName={aiChatModal.npcName}
+        greeting={aiChatModal.greeting}
       />
 
       {/* 错误消息弹窗 */}
