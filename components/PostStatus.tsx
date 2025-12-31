@@ -81,7 +81,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
     } catch (error) {
       console.error('Error in disabled status save:', error)
     }
-    
+
     // 时间跟踪：根据状态类型开始或结束活动
     try {
       const timeTrackingResponse = await fetch('/api/time-tracking', {
@@ -104,28 +104,28 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
     } catch (error) {
       console.error('Error starting time tracking:', error)
     }
-    
+
     // 同时保存到本地缓存（用于快速UI更新）
     statusHistoryManager.addStatusHistory(fullStatus, userId)
     // 不再重新加载状态历史，避免重复API调用，改为直接更新本地状态
     const localHistory = statusHistoryManager.getStatusHistory(userId)
     setStatusHistory(localHistory)
-    
+
     // 通知 Phaser 游戏更新状态（优先执行，避免延迟）
     if (typeof window !== 'undefined' && (window as any).updateMyStatus) {
       (window as any).updateMyStatus(fullStatus)
     }
-    
+
     // 更新 React 组件状态（直接同步调用，避免requestAnimationFrame开销）
     onStatusUpdate(fullStatus)
-    
+
     // 同步生成社交帖子
     try {
       const statusEmoji = statusOptions.find(s => s.id === selectedStatus)?.emoji || '📝'
       const postContent = customMessage || `${statusEmoji} ${statusOptions.find(s => s.id === selectedStatus)?.label || selectedStatus}`
-      
+
       // console.log('🎯 [PostStatus] 同步生成社交帖子:', { postContent, userId })
-      
+
       const postResponse = await fetch(`/api/posts?userId=${userId}`, {
         method: 'POST',
         headers: {
@@ -137,14 +137,30 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
           type: 'TEXT'
         })
       })
-      
+
       if (!postResponse.ok) {
         console.error('❌ [PostStatus] 状态同步帖子创建失败:', postResponse.status)
+      } else {
+        // 尝试获取积分更新信息
+        try {
+          const postData = await postResponse.json()
+          if (postData.success && postData.currentPoints !== undefined) {
+            console.log('💰 [PostStatus] 收到积分更新:', postData.currentPoints)
+            if (typeof window !== 'undefined') {
+              const event = new CustomEvent('user-points-updated', {
+                detail: { userId, points: postData.currentPoints }
+              })
+              window.dispatchEvent(event)
+            }
+          }
+        } catch (e) {
+          console.warn('Error parsing post response:', e)
+        }
       }
     } catch (error) {
       console.error('Error creating status sync post:', error)
     }
-    
+
     // 平滑收起面板
     setIsExpanded(false)
     setCustomMessage('')
@@ -281,11 +297,10 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                 <button
                   key={status.id}
                   onClick={() => memoizedHandleStatusSelect(status.id)}
-                  className={`group relative overflow-hidden p-2 rounded-lg border   ${
-                    selectedStatus === status.id
+                  className={`group relative overflow-hidden p-2 rounded-lg border   ${selectedStatus === status.id
                       ? `border-white/40 bg-gradient-to-br ${status.color} text-white shadow-lg`
                       : "border-gray-700/50 bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 hover:border-retro-purple/50 shadow-md"
-                  }`}
+                    }`}
                 >
                   {/* 选择状态的光效 */}
                   {selectedStatus === status.id && (
@@ -493,18 +508,18 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                       .mostUsedStatus === "working"
                       ? "💼"
                       : statusHistoryManager.getStatusHistoryStats(userId)
-                          .mostUsedStatus === "break"
-                      ? "☕"
-                      : statusHistoryManager.getStatusHistoryStats(userId)
+                        .mostUsedStatus === "break"
+                        ? "☕"
+                        : statusHistoryManager.getStatusHistoryStats(userId)
                           .mostUsedStatus === "reading"
-                      ? "📚"
-                      : statusHistoryManager.getStatusHistoryStats(userId)
-                          .mostUsedStatus === "meeting"
-                      ? "👥"
-                      : statusHistoryManager.getStatusHistoryStats(userId)
-                          .mostUsedStatus === "lunch"
-                      ? "🍽️"
-                      : "🚻"}
+                          ? "📚"
+                          : statusHistoryManager.getStatusHistoryStats(userId)
+                            .mostUsedStatus === "meeting"
+                            ? "👥"
+                            : statusHistoryManager.getStatusHistoryStats(userId)
+                              .mostUsedStatus === "lunch"
+                              ? "🍽️"
+                              : "🚻"}
                   </div>
                   <div className="text-xs text-retro-textMuted font-retro tracking-wide">
                     POPULAR

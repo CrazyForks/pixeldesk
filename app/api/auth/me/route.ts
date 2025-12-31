@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
         email: true,
         avatar: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        points: true
       }
     })
 

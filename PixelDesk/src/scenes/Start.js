@@ -684,6 +684,11 @@ export class Start extends Phaser.Scene {
       if (this.workstationManager && data.workstationId) {
         this.workstationManager.invalidateWorkstationBinding(data.workstationId);
       }
+
+      // 触发DOM事件更新工位绑定
+      window.dispatchEvent(new CustomEvent('workstation-binding-updated', {
+        detail: { userId: data.userId, workstationId: data.workstationId }
+      }));
     })
 
     this.events.on("user-unbound", (data) => {

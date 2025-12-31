@@ -83,11 +83,14 @@ export default function LeftPanel({
                 </svg>
               </div>
               <div>
-                <h1 className="text-sm font-medium text-gray-200">个人信息</h1>
-                <p className="text-xs text-gray-500 font-mono">Profile</p>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm font-medium text-gray-200">PixelDesk</h1>
+                  <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] leading-none font-mono rounded border border-blue-500/20">Beta</span>
+                </div>
+                <p className="text-xs text-gray-500 font-mono">Social Office</p>
               </div>
             </div>
-            <div className="w-2 h-2 bg-emerald-400 rounded-full  shadow-sm shadow-emerald-400/50"></div>
+            {/* 状态点已移除 */}
           </div>
         </div>
       </div>

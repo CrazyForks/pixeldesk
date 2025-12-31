@@ -2,15 +2,15 @@ import { Player } from '../entities/Player.js';
 
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
-  // 禁用控制台日志以大幅减少CPU消耗
-  ENABLE_DEBUG_LOGGING: false,
-  // 关键错误和警告仍然显示
-  ENABLE_ERROR_LOGGING: true
+    // 禁用控制台日志以大幅减少CPU消耗
+    ENABLE_DEBUG_LOGGING: false,
+    // 关键错误和警告仍然显示
+    ENABLE_ERROR_LOGGING: true
 }
 
 // 性能优化的日志系统
-const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
-const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => { }
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => { }
 
 export class WorkstationBindingUI {
     constructor(scene) {
@@ -226,33 +226,35 @@ export class WorkstationBindingUI {
             if (result.success) {
                 // 更新用户积分
                 this.currentuser.points = result.remainingPoints;
-                
+
                 // 更新UI显示
                 if (this.userPointsText) {
                     this.userPointsText.setText(`您的积分: ${result.remainingPoints}`);
                 }
-                
+
                 // 保存用户数据
                 localStorage.setItem('pixelDeskUser', JSON.stringify(this.currentuser));
-                
+
                 // 显示成功消息
                 this.showMessage('绑定成功！', 0x4a9eff);
-                
+
                 // 更新场景中的积分显示
-                this.scene.events.emit('user-points-updated', {
-                    userId: this.currentuser.id,
-                    points: result.remainingPoints
-                });
-                
+                window.dispatchEvent(new CustomEvent('user-points-updated', {
+                    detail: {
+                        userId: this.currentuser.id,
+                        points: result.remainingPoints
+                    }
+                }));
+
                 // 更新用户数据到UI（包括工位ID）
                 this.scene.sendUserDataToUI();
-                
+
                 // 延迟关闭窗口
                 setTimeout(() => {
                     // 保存scene引用，防止hide()方法影响
                     const sceneRef = this.scene;
                     const playerRef = this.scene?.player;
-                    
+
                     // 先尝试立即恢复玩家移动
                     if (playerRef) {
                         debugLog('WorkstationBindingUI: 确认成功 - 找到player对象，尝试恢复移动');
@@ -267,14 +269,14 @@ export class WorkstationBindingUI {
                             debugLog('WorkstationBindingUI: 确认成功 - 已调用enableMovement方法');
                         }
                     }
-                    
+
                     this.hide();
-                    
+
                     // 使用延迟调用作为确保恢复的备选方案
                     if (sceneRef) {
                         sceneRef.time.delayedCall(50, () => {
                             debugLog('WorkstationBindingUI: 确认成功 - 延迟调用尝试恢复玩家移动');
-                            
+
                             // 方法1：尝试直接访问scene.player
                             if (sceneRef.player) {
                                 debugLog('WorkstationBindingUI: 确认成功 - 延迟调用找到scene.player');
@@ -307,7 +309,7 @@ export class WorkstationBindingUI {
                                     }
                                 }
                             }
-                            
+
                             if (!sceneRef.player && (!sceneRef.children || !sceneRef.children.list || !sceneRef.children.list.find(child => child instanceof Player))) {
                                 console.error('WorkstationBindingUI: 确认成功 - 延迟调用无法恢复玩家移动 - player对象不存在');
                                 console.error('WorkstationBindingUI: 确认成功 - 调试信息 - sceneRef:', sceneRef, 'player:', sceneRef?.player);
@@ -330,11 +332,11 @@ export class WorkstationBindingUI {
         debugLog('WorkstationBindingUI: handleCancel 被调用');
         debugLog('WorkstationBindingUI: 当前scene对象:', !!this.scene);
         debugLog('WorkstationBindingUI: 当前player对象:', !!this.scene?.player);
-        
+
         // 保存scene引用，防止hide()方法影响
         const sceneRef = this.scene;
         const playerRef = this.scene?.player;
-        
+
         // 尝试一个更简单的方法：直接设置enableMovement属性为true
         if (playerRef) {
             debugLog('WorkstationBindingUI: 找到player对象，尝试直接设置enableMovement属性');
@@ -349,18 +351,18 @@ export class WorkstationBindingUI {
                 debugLog('WorkstationBindingUI: 已调用enableMovement方法');
             }
         }
-        
+
         this.hide();
-        
+
         // 使用延迟调用作为确保恢复的备选方案
         if (sceneRef) {
             // 尝试多个延迟时间来找到合适的时机
             const delays = [50, 100, 200, 500];
-            
+
             delays.forEach(delay => {
                 sceneRef.time.delayedCall(delay, () => {
                     debugLog(`WorkstationBindingUI: ${delay}ms延迟调用 - 尝试恢复玩家移动`);
-                    
+
                     // 方法1：尝试直接访问scene.player
                     if (sceneRef.player) {
                         debugLog(`WorkstationBindingUI: ${delay}ms延迟调用 - 找到scene.player`);
@@ -375,7 +377,7 @@ export class WorkstationBindingUI {
                             debugLog(`WorkstationBindingUI: ${delay}ms延迟调用 - 已调用enableMovement方法`);
                         }
                     }
-                    
+
                     // 方法2：尝试通过scene.children.list查找player对象
                     else if (sceneRef.children && sceneRef.children.list) {
                         debugLog(`WorkstationBindingUI: ${delay}ms延迟调用 - 尝试在children中查找Player对象`);
@@ -392,7 +394,7 @@ export class WorkstationBindingUI {
                             }
                             return false;
                         });
-                        
+
                         if (playerInChildren) {
                             debugLog(`WorkstationBindingUI: ${delay}ms延迟调用 - 在children中找到player对象`);
                             // 如果enableMovement是属性，直接设置
@@ -407,7 +409,7 @@ export class WorkstationBindingUI {
                             }
                         }
                     }
-                    
+
                     debugLog(`WorkstationBindingUI: ${delay}ms延迟调用 - 恢复尝试完成`);
                 });
             });

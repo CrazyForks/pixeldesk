@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 })
     }
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { id, name, email, avatar, points } = await request.json()
-    
+
     if (!id || !name) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     // 准备更新数据（只包含提供的字段）
     const updateData: any = {
       name,
-      points: points || 0,
+      // points: points || 0, // 移除points更新，防止前端陈旧数据覆盖数据库
       updatedAt: new Date()
     }
 

@@ -195,18 +195,8 @@ export default function RightPanel({
       <div className="border-b border-gray-800 bg-gray-900/50">
         <div className={isMobile ? "p-3" : "p-4"}>
           <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'}`}>
-            <div className={`flex items-center ${isMobile ? 'space-x-2' : 'space-x-3'}`}>
-              <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center`}>
-                <svg className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-300`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className={`${isMobile ? 'text-base' : 'text-xl'} font-medium text-gray-200`}>社交中心</h1>
-                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 font-mono`}>Social Hub</p>
-              </div>
-            </div>
-            <div className={`${isMobile ? 'w-2 h-2' : 'w-2 h-2'} bg-emerald-400 rounded-full  shadow-sm shadow-emerald-400/50`}></div>
+            {/* 社交中心标题已移除 */}
+            {/* 状态点已移除 */}
           </div>
 
           {/* 标签导航 */}
@@ -215,11 +205,10 @@ export default function RightPanel({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center ${isMobile ? 'flex-col space-y-0.5 px-1.5 py-1.5 min-w-[50px]' : 'space-x-1.5 px-2.5 py-2 min-w-[60px]'} rounded font-mono  flex-1 justify-center ${
-                  activeTab === tab.id
-                    ? 'bg-gray-700 text-gray-100 border border-gray-600/50'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-                }`}
+                className={`relative flex items-center ${isMobile ? 'flex-col space-y-0.5 px-1.5 py-1.5 min-w-[50px]' : 'space-x-1.5 px-2.5 py-2 min-w-[60px]'} rounded font-mono  flex-1 justify-center ${activeTab === tab.id
+                  ? 'bg-gray-700 text-gray-100 border border-gray-600/50'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  }`}
                 style={{ maxWidth: isMobile ? '25%' : '25%' }}
               >
                 <div className={`${activeTab === tab.id ? 'text-gray-100' : 'text-gray-400'}  ${isMobile ? 'text-xs' : 'text-sm'}`}>
