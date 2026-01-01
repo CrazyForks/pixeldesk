@@ -24,7 +24,8 @@ export async function callAiProvider(messages: ChatMessage[], options: AiOptions
             return callGemini(messages, apiKey, modelName, temperature);
         case 'openai':
         case 'deepseek':
-            return callOpenAiCompatible(messages, apiKey, modelName, temperature, baseUrl);
+            const finalBaseUrl = baseUrl || (provider.toLowerCase() === 'deepseek' ? 'https://api.deepseek.com' : 'https://api.openai.com/v1');
+            return callOpenAiCompatible(messages, apiKey, modelName, temperature, finalBaseUrl);
         default:
             throw new Error(`Unsupported AI provider: ${provider}`);
     }

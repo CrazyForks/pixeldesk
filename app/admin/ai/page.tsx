@@ -13,6 +13,9 @@ export default function AiAdminPage() {
     const [npcs, setNpcs] = useState<any[]>([])
     const [status, setStatus] = useState('')
     const [isLoading, setIsLoading] = useState(true)
+    const [isTesting, setIsTesting] = useState(false)
+    const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+    const [activeConfig, setActiveConfig] = useState<any>(null)
 
     useEffect(() => {
         fetchInitialData()
@@ -34,6 +37,7 @@ export default function AiAdminPage() {
                 const configData = await configRes.json()
                 if (configData.success && configData.data) {
                     setConfig(configData.data)
+                    setActiveConfig(configData.data)
                 }
             }
         } catch (e) {
@@ -51,12 +55,38 @@ export default function AiAdminPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(config)
             })
-            if (res.ok) setStatus('✅ 全局配置已更新')
+            if (res.ok) {
+                setStatus('✅ 全局配置已更新')
+                // 再次获取确保同步
+                fetchInitialData()
+            }
             else setStatus('❌ 保存失败')
         } catch (e) {
             setStatus('❌ 网络错误')
         }
         setTimeout(() => setStatus(''), 3000)
+    }
+
+    const testAi = async () => {
+        setIsTesting(true)
+        setTestResult(null)
+        try {
+            const res = await fetch('/api/admin/ai/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            const data = await res.json()
+            if (data.success) {
+                setTestResult({ success: true, message: `连接成功！AI 回复: ${data.reply}` })
+            } else {
+                setTestResult({ success: false, message: `连接失败: ${data.error}` })
+            }
+        } catch (e) {
+            setTestResult({ success: false, message: '网络错误，无法连接到测试接口' })
+        } finally {
+            setIsTesting(false)
+        }
     }
 
     const saveNpc = async (npc: any) => {
@@ -111,11 +141,27 @@ export default function AiAdminPage() {
 
             {/* Global Config Section */}
             <section className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6 shadow-2xl backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-purple-600/20 rounded-xl flex items-center justify-center text-purple-400 border border-purple-500/30">
-                        ⚡
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-600/20 rounded-xl flex items-center justify-center text-purple-400 border border-purple-500/30">
+                            ⚡
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-100">核心 AI 指控中心</h2>
                     </div>
-                    <h2 className="text-xl font-bold text-gray-100">核心 AI 指控中心</h2>
+
+                    {activeConfig && (
+                        <div className="flex items-center gap-4 px-4 py-2 bg-gray-950 border border-gray-800 rounded-xl">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] text-gray-500 font-mono uppercase leading-tight">ACTIVE PROVIDER</span>
+                                <span className="text-xs text-purple-400 font-bold font-mono">{(activeConfig.provider || 'unknown').toUpperCase()}</span>
+                            </div>
+                            <div className="w-px h-6 bg-gray-800"></div>
+                            <div className="flex flex-col">
+                                <span className="text-[9px] text-gray-500 font-mono uppercase leading-tight">ACTIVE MODEL</span>
+                                <span className="text-xs text-cyan-400 font-bold font-mono">{activeConfig.modelName || 'default'}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -124,7 +170,22 @@ export default function AiAdminPage() {
                         <select
                             className="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-sm text-gray-200 focus:border-purple-500 outline-none transition-all"
                             value={config.provider}
-                            onChange={e => setConfig({ ...config, provider: e.target.value })}
+                            onChange={e => {
+                                const p = e.target.value;
+                                let m = config.modelName;
+                                let url = config.baseUrl;
+                                if (p === 'deepseek') {
+                                    m = 'deepseek-chat';
+                                    url = 'https://api.deepseek.com';
+                                } else if (p === 'gemini') {
+                                    m = 'gemini-1.5-flash';
+                                    url = '';
+                                } else if (p === 'openai') {
+                                    m = 'gpt-4o-mini';
+                                    url = 'https://api.openai.com/v1';
+                                }
+                                setConfig({ ...config, provider: p, modelName: m, baseUrl: url });
+                            }}
                         >
                             <option value="gemini">Google Gemini (Recommended)</option>
                             <option value="openai">OpenAI (Pro)</option>
@@ -166,7 +227,19 @@ export default function AiAdminPage() {
                     </div>
                 </div>
 
-                <div className="mt-8 flex justify-end">
+                <div className="mt-8 flex flex-col sm:flex-row justify-end gap-4">
+                    {testResult && (
+                        <div className={`flex-1 text-xs p-3 rounded-lg border font-mono ${testResult.success ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                            [DEBUG_OUTPUT] {testResult.message}
+                        </div>
+                    )}
+                    <button
+                        onClick={testAi}
+                        disabled={isTesting || !config.apiKey}
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold py-2.5 px-6 rounded-xl transition-all border border-gray-700 disabled:opacity-50"
+                    >
+                        {isTesting ? '正在嗅探接口...' : '测试 AI 连接'}
+                    </button>
                     <button
                         onClick={saveConfig}
                         className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-2.5 px-8 rounded-xl transition-all shadow-lg active:scale-95 border border-purple-400/20"

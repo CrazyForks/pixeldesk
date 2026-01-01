@@ -88,6 +88,8 @@ ${systemContext?.latestBuzz}
 
         // 6. 调用 AI
         try {
+            console.log(`🤖 [AI Chat] Calling Provider: ${aiConfig.provider}, Model: ${aiConfig.modelName || 'gemini-1.5-flash'}, BaseURL: ${aiConfig.baseUrl || 'default'}`);
+
             const reply = await callAiProvider(
                 [
                     { role: 'system', content: systemPrompt },
@@ -96,7 +98,7 @@ ${systemContext?.latestBuzz}
                 {
                     provider: aiConfig.provider,
                     apiKey: aiConfig.apiKey,
-                    modelName: aiConfig.modelName || 'gemini-1.5-flash',
+                    modelName: aiConfig.modelName || (aiConfig.provider === 'deepseek' ? 'deepseek-chat' : 'gemini-1.5-flash'),
                     temperature: aiConfig.temperature,
                     baseUrl: aiConfig.baseUrl || undefined
                 }
