@@ -2219,12 +2219,24 @@ export class Start extends Phaser.Scene {
       return
     }
 
-    // 创建group overlap检测器（只有1个）
+    // 创建 group 物理阻挡 + 交互触发 (Collider)
+    this.physics.add.collider(
+      this.player,
+      this.otherPlayersGroup,
+      (p1, p2) => {
+        if (p2.isOtherPlayer) {
+          this.handlePlayerCollision(p1, p2);
+        }
+      },
+      null,
+      this
+    );
+
+    // 锦上添花：也保留 Overlap，确保哪怕是直接传送过去的也能触发
     this.playerCharacterCollider = this.physics.add.overlap(
       this.player,
       this.otherPlayersGroup,
       (player1, player2) => {
-        // 确保是其他玩家触发了碰撞
         if (player2.isOtherPlayer) {
           this.handlePlayerCollision(player1, player2)
         }

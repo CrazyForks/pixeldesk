@@ -1,14 +1,14 @@
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
-  // 禁用控制台日志以大幅减少CPU消耗（开发时可设为true）
-  ENABLE_DEBUG_LOGGING: false,
-  // 关键错误和警告仍然显示
-  ENABLE_ERROR_LOGGING: true
+    // 禁用控制台日志以大幅减少CPU消耗（开发时可设为true）
+    ENABLE_DEBUG_LOGGING: false,
+    // 关键错误和警告仍然显示
+    ENABLE_ERROR_LOGGING: true
 }
 
 // 性能优化的日志系统
-const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => {}
-const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => {}
+const debugLog = PERFORMANCE_CONFIG.ENABLE_DEBUG_LOGGING ? console.log.bind(console) : () => { }
+const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(console) : () => { }
 
 export class Player extends Phaser.GameObjects.Container {
     constructor(scene, x, y, spriteKey = 'characters_list_image', enableMovement = true, enableStateSave = true, isOtherPlayer = false, playerData = null, characterConfig = null) {
@@ -82,13 +82,13 @@ export class Player extends Phaser.GameObjects.Container {
         if (this.isOtherPlayer) {
             this.initCharacterFloatAnimation();
         }
-        // 修改碰撞体大小和偏移量，使其与玩家精灵重叠
-        this.body.setSize(40, 60);
-        this.body.setOffset(-20, -12);
-        
+        // 修改碰撞体大小和偏移量，使其位于玩家脚部（最自然的碰撞位置）
+        this.body.setSize(30, 20);
+        this.body.setOffset(-15, 42);
+
         // 设置默认帧
         this.setDirectionFrame(this.currentDirection);
-        
+
         // 为其他玩家创建状态标签
         if (this.isOtherPlayer) {
             this.createStatusLabel();
@@ -96,7 +96,7 @@ export class Player extends Phaser.GameObjects.Container {
             this.setupClickDetection();
         }
     }
-    
+
     setDirectionFrame(direction) {
         this.currentDirection = direction;
 
@@ -147,18 +147,18 @@ export class Player extends Phaser.GameObjects.Container {
         // 保存方向变化
         this.saveState();
     }
-    
+
     move(velocityX, velocityY, direction) {
         if (!this.body) return;
-        
+
         this.body.setVelocity(velocityX, velocityY);
-        
+
         // 更新玩家方向帧（仅在移动时更新）
         if (velocityX !== 0 || velocityY !== 0) {
             this.setDirectionFrame(direction);
         }
     }
-    
+
     // 新增：处理玩家移动逻辑
     handleMovement(cursors, wasdKeys) {
         // 如果移动功能被禁用，直接返回
@@ -190,13 +190,13 @@ export class Player extends Phaser.GameObjects.Container {
 
         // 设置速度和方向
         this.move(velocityX, velocityY, direction);
-        
+
         // 保存位置（在移动过程中持续保存）
         if (velocityX !== 0 || velocityY !== 0) {
             this.saveState();
         }
     }
-    
+
     // 保存玩家状态到localStorage和数据库
     saveState() {
         // 如果状态保存功能被禁用，直接返回
@@ -264,7 +264,7 @@ export class Player extends Phaser.GameObjects.Container {
             }
         }
     }
-    
+
     // 从localStorage获取保存的玩家状态
     getSavedState() {
         try {
@@ -280,14 +280,14 @@ export class Player extends Phaser.GameObjects.Container {
     clearSavedState() {
         localStorage.removeItem('playerState');
     }
-    
+
     // 创建状态标签
     createStatusLabel() {
         const status = this.playerData.currentStatus;
         this.statusLabel = this.scene.add.text(
-            0, 
-            -20, 
-            `${status.emoji} ${status.status}`, 
+            0,
+            -20,
+            `${status.emoji} ${status.status}`,
             {
                 fontSize: '12px',
                 fill: '#ffffff',
@@ -295,40 +295,40 @@ export class Player extends Phaser.GameObjects.Container {
                 padding: { x: 4, y: 2 }
             }
         ).setOrigin(0.5);
-        
+
         this.add(this.statusLabel);
-        
+
         // 初始化浮动动画
         this.initFloatingAnimation();
-        
+
         // 初始化可视范围检测
         this.initVisibilityCheck();
     }
-    
+
     // 初始化角色浮动动画
     initCharacterFloatAnimation() {
         // 为每个角色生成随机的浮动参数，创造不同的浮动节奏
         const randomFactor = 0.7 + Math.random() * 0.6; // 0.7 到 1.3 的随机因子
-        
+
         // 角色浮动动画参数（大幅减少动画频率以节省CPU）
         this.characterFloatAmplitude = 1.2 + Math.random() * 0.6;   // 浮动幅度：1.2 到 1.8 像素
         this.characterFloatInterval = 8000 + Math.random() * 4000;   // 浮动间隔：8到12秒（原来1.8-2.6秒）
         this.characterFloatDuration = 800 + Math.random() * 400;    // 单次浮动持续时间：800 到 1200 毫秒
-        
+
         // 记录角色的初始Y位置
         this.characterBaseY = this.y;
-        
+
         // 启动周期性浮动动画
         this.startPeriodicFloatAnimation();
     }
-    
+
     // 启动周期性浮动动画
     startPeriodicFloatAnimation() {
         // 清除之前的计时器（如果有）
         if (this.floatTimer) {
             this.floatTimer.remove();
         }
-        
+
         // 创建周期性浮动计时器
         this.floatTimer = this.scene.time.addEvent({
             delay: this.characterFloatInterval,
@@ -336,22 +336,22 @@ export class Player extends Phaser.GameObjects.Container {
             callbackScope: this,
             loop: true
         });
-        
+
         // 立即执行第一次浮动
         this.performFloatAnimation();
     }
-    
+
     // 停止浮动动画
     stopFloatAnimation() {
         // 停止所有浮动相关的tweens
         this.scene.tweens.killTweensOf(this);
-        
+
         // 停止周期性计时器
         if (this.floatTimer) {
             this.floatTimer.remove();
             this.floatTimer = null;
         }
-        
+
         // 重置到基准位置
         if (this.characterBaseY !== undefined) {
             this.y = this.characterBaseY;
@@ -360,16 +360,18 @@ export class Player extends Phaser.GameObjects.Container {
             }
         }
     }
-    
+
     // 执行单次浮动动画
     performFloatAnimation() {
         if (!this.body || this.body.velocity.x !== 0 || this.body.velocity.y !== 0) {
             return;
         }
-        
-        // 记录动画开始时的基准位置
+
+        // 走到哪记到哪：在执行浮动动画前，同步基准 Y 坐标为当前位置
+        // 解决用户反馈的“NPC 走动后跳回原位”的问题
+        this.characterBaseY = this.y;
         const originalBaseY = this.characterBaseY;
-        
+
         // 创建浮动动画
         this.scene.tweens.add({
             targets: this,
@@ -387,7 +389,7 @@ export class Player extends Phaser.GameObjects.Container {
                     }
                     return;
                 }
-                
+
                 // 同步更新物理体位置
                 if (this.body) {
                     this.body.y = this.y;
@@ -397,22 +399,22 @@ export class Player extends Phaser.GameObjects.Container {
                 // 动画完成后重置到基准位置，但只在玩家仍然静止时
                 if (this.body && this.body.velocity.x === 0 && this.body.velocity.y === 0) {
                     this.y = originalBaseY;
-                    this.body.y = originalBaseY;
+                    if (this.body) this.body.y = originalBaseY;
                 }
             }
         });
     }
-    
+
     // 初始化浮动动画 - 使用Tween而不是每帧更新
     initFloatingAnimation() {
         if (!this.statusLabel) return;
-        
+
         // 浮动动画参数
         this.floatingAmplitude = 3; // 浮动幅度
-        
+
         // 初始Y位置
         this.baseY = this.statusLabel.y;
-        
+
         // 使用Tween创建循环浮动动画，比每帧更新更高效
         this.floatingTween = this.scene.tweens.add({
             targets: this.statusLabel,
@@ -424,7 +426,7 @@ export class Player extends Phaser.GameObjects.Container {
             paused: !this.isVisible // 只有可见时才开始动画
         });
     }
-    
+
     // 控制动画播放/暂停以优化性能
     controlFloatingAnimation(shouldPlay) {
         if (this.floatingTween) {
@@ -435,12 +437,12 @@ export class Player extends Phaser.GameObjects.Container {
             }
         }
     }
-    
+
     // 初始化可视范围检测 - 使用定时器而不是每帧检查
     initVisibilityCheck() {
         this.isVisible = true;
         this.visibilityDebounceTimer = null; // 防抖计时器
-        
+
         // 进一步优化：将可见性检查频率从1秒减少到5秒，减少CPU占用
         this.visibilityTimer = this.scene.time.addEvent({
             delay: 5000, // 改为每5秒检查一次，进一步减少CPU使用
@@ -449,24 +451,24 @@ export class Player extends Phaser.GameObjects.Container {
             loop: true
         });
     }
-    
+
     // 检查可视范围 - 优化后的版本
     checkVisibility() {
         if (!this.isOtherPlayer || !this.statusLabel) return;
-        
+
         // 安全检查：确保scene和cameras存在
         if (!this.scene || !this.scene.cameras) return;
-        
+
         // 获取相机边界
         const camera = this.scene.cameras.main;
         const cameraLeft = camera.worldView.left;
         const cameraRight = camera.worldView.right;
         const cameraTop = camera.worldView.top;
         const cameraBottom = camera.worldView.bottom;
-        
+
         // 扩展检测范围（在屏幕外一定距离内也显示）
         const padding = 100;
-        
+
         // 检查玩家是否在可视范围内
         const wasVisible = this.isVisible;
         this.isVisible = (
@@ -475,26 +477,26 @@ export class Player extends Phaser.GameObjects.Container {
             this.y >= cameraTop - padding &&
             this.y <= cameraBottom + padding
         );
-        
+
         // 优化：只有在可视性发生变化时才更新
         if (wasVisible !== this.isVisible) {
             // 清除之前的防抖计时器
             if (this.visibilityDebounceTimer) {
                 this.scene.time.removeEvent(this.visibilityDebounceTimer);
             }
-            
+
             // 设置防抖计时器，避免快速闪烁
             this.visibilityDebounceTimer = this.scene.time.delayedCall(100, () => {
                 this.statusLabel.setVisible(this.isVisible);
-                
+
                 // 控制浮动动画的播放/暂停以优化性能
                 this.controlFloatingAnimation(this.isVisible);
-                
+
                 this.visibilityDebounceTimer = null;
             });
         }
     }
-    
+
     // 更新状态
     updateStatus(newStatus) {
         this.playerData.currentStatus = newStatus;
@@ -502,12 +504,12 @@ export class Player extends Phaser.GameObjects.Container {
             this.statusLabel.setText(`${newStatus.emoji} ${newStatus.status}`);
         }
     }
-    
+
     // 设置点击检测
     setupClickDetection() {
         // 设置整个容器为可交互
         this.setInteractive(new Phaser.Geom.Rectangle(-20, -30, 40, 60), Phaser.Geom.Rectangle.Contains);
-        
+
         // 添加点击事件监听器
         this.on('pointerdown', (pointer) => {
             // 只有其他玩家才能被点击
@@ -515,7 +517,7 @@ export class Player extends Phaser.GameObjects.Container {
                 this.handlePlayerClick(pointer);
             }
         });
-        
+
         // 添加悬停效果
         this.on('pointerover', () => {
             if (this.isOtherPlayer) {
@@ -524,7 +526,7 @@ export class Player extends Phaser.GameObjects.Container {
                 this.scene.input.setDefaultCursor('pointer');
             }
         });
-        
+
         this.on('pointerout', () => {
             if (this.isOtherPlayer) {
                 // 恢复正常状态
@@ -533,7 +535,7 @@ export class Player extends Phaser.GameObjects.Container {
             }
         });
     }
-    
+
     // 处理玩家点击
     handlePlayerClick(pointer) {
         debugLog('玩家被点击:', this.playerData.name);
@@ -571,7 +573,7 @@ export class Player extends Phaser.GameObjects.Container {
         // 添加点击动画效果
         this.addClickAnimation();
     }
-    
+
     // 添加点击动画效果
     addClickAnimation() {
         // 缩放动画 - 点击时更明显的效果
@@ -586,7 +588,7 @@ export class Player extends Phaser.GameObjects.Container {
                 this.setScale(1);
             }
         });
-        
+
         // 蓝色闪烁效果 - 区别于碰撞的粉色效果
         this.scene.tweens.add({
             targets: this,
@@ -595,12 +597,12 @@ export class Player extends Phaser.GameObjects.Container {
             yoyo: true,
             ease: 'Power2'
         });
-        
+
         // 添加蓝色光环效果表示点击交互
         const clickRing = this.scene.add.graphics();
         clickRing.lineStyle(3, 0x00BFFF, 0.8); // 蓝色光环
         clickRing.strokeCircle(this.x, this.y, 30);
-        
+
         // 光环扩散动画
         this.scene.tweens.add({
             targets: clickRing,
@@ -614,7 +616,7 @@ export class Player extends Phaser.GameObjects.Container {
             }
         });
     }
-    
+
     // 添加碰撞动画效果 - 区别于点击动画
     addCollisionAnimation() {
         // 轻微的脉冲效果
@@ -630,12 +632,12 @@ export class Player extends Phaser.GameObjects.Container {
                 this.setScale(1);
             }
         });
-        
+
         // 粉色光环效果表示碰撞交互
         const collisionRing = this.scene.add.graphics();
         collisionRing.lineStyle(2, 0xFF69B4, 0.6); // 粉色光环
         collisionRing.strokeCircle(this.x, this.y, 25);
-        
+
         // 持续的光环脉冲动画
         this.collisionRing = collisionRing; // 保存引用以便在碰撞结束时清理
         this.scene.tweens.add({
@@ -649,7 +651,7 @@ export class Player extends Phaser.GameObjects.Container {
             repeat: -1 // 持续动画
         });
     }
-    
+
     // 清理碰撞动画效果
     clearCollisionAnimation() {
         // 检查场景是否存在且有效
@@ -661,12 +663,12 @@ export class Player extends Phaser.GameObjects.Container {
             }
             return;
         }
-        
+
         try {
             // 停止所有针对此对象的缩放动画
             this.scene.tweens.killTweensOf(this);
             this.setScale(1);
-            
+
             // 清理碰撞光环
             if (this.collisionRing) {
                 this.scene.tweens.killTweensOf(this.collisionRing);
@@ -681,13 +683,13 @@ export class Player extends Phaser.GameObjects.Container {
             }
         }
     }
-    
+
     // 处理与主玩家的碰撞开始
     handleCollisionStart(mainPlayer) {
         if (this.isOtherPlayer && !this.isColliding) {
             this.isColliding = true;
             this.collisionStartTime = Date.now();
-            
+
             // 创建碰撞事件数据
             const collisionEvent = {
                 type: 'collision_start',
@@ -696,28 +698,28 @@ export class Player extends Phaser.GameObjects.Container {
                 timestamp: this.collisionStartTime,
                 position: { x: this.x, y: this.y }
             };
-            
+
             // 使用事件总线触发碰撞开始事件
             if (window.gameEventBus) {
                 window.gameEventBus.emit('player:collision:start', collisionEvent);
             }
-            
+
             // 保持向后兼容性
             if (window.onPlayerCollisionStart) {
                 window.onPlayerCollisionStart(collisionEvent);
             }
-            
+
             debugLog('碰撞开始:', this.playerData.name, 'at', new Date(this.collisionStartTime).toLocaleTimeString());
         }
     }
-    
+
     // 处理与主玩家的碰撞结束
     handleCollisionEnd(mainPlayer) {
         if (this.isOtherPlayer && this.isColliding) {
             this.isColliding = false;
             const collisionEndTime = Date.now();
             const collisionDuration = collisionEndTime - (this.collisionStartTime || collisionEndTime);
-            
+
             // 创建碰撞结束事件数据
             const collisionEvent = {
                 type: 'collision_end',
@@ -727,36 +729,36 @@ export class Player extends Phaser.GameObjects.Container {
                 duration: collisionDuration,
                 position: { x: this.x, y: this.y }
             };
-            
+
             // 使用事件总线触发碰撞结束事件
             if (window.gameEventBus) {
                 window.gameEventBus.emit('player:collision:end', collisionEvent);
             }
-            
+
             // 保持向后兼容性
             if (window.onPlayerCollisionEnd) {
                 window.onPlayerCollisionEnd(collisionEvent);
             }
-            
+
             // 清理碰撞动画效果
             this.clearCollisionAnimation();
-            
+
             debugLog('碰撞结束:', this.playerData.name, '持续时间:', collisionDuration + 'ms');
             this.collisionStartTime = null;
         }
     }
-    
+
     // 处理与主玩家的碰撞（保持向后兼容）
     handleCollisionWithMainPlayer(mainPlayer) {
         // 保持原有的碰撞处理逻辑以确保向后兼容
         if (this.isOtherPlayer && window.onPlayerCollision) {
             window.onPlayerCollision(this.playerData);
         }
-        
+
         // 同时触发新的碰撞开始事件
         this.handleCollisionStart(mainPlayer);
     }
-    
+
     // 禁用玩家移动
     disableMovement() {
         debugLog('Player.disableMovement() 被调用，当前enableMovement值:', this.enableMovement);
@@ -767,7 +769,7 @@ export class Player extends Phaser.GameObjects.Container {
             this.body.setVelocity(0, 0);
         }
     }
-    
+
     // 启用玩家移动
     enableMovement() {
         debugLog('Player.enableMovement() 被调用，当前enableMovement值:', this.enableMovement);
@@ -778,28 +780,28 @@ export class Player extends Phaser.GameObjects.Container {
     // 传送玩家到指定位置
     teleportTo(x, y, direction = 'down') {
         if (!this.scene || !this.body) return false;
-        
+
         // 停止当前移动
         if (this.body.velocity) {
             this.body.velocity.x = 0;
             this.body.velocity.y = 0;
         }
-        
+
         // 设置新位置
         this.setPosition(x, y);
-        
+
         // 设置朝向
         this.setDirectionFrame(direction);
-        
+
         // 确保移动功能启用
         this.enableMovement = true;
-        
+
         // 保存状态
         this.saveState();
-        
+
         // 添加传送特效
         this.addTeleportEffect();
-        
+
         debugLog(`玩家传送到位置: (${x}, ${y}), 朝向: ${direction}, 移动功能已启用`);
         return true;
     }
@@ -815,13 +817,13 @@ export class Player extends Phaser.GameObjects.Container {
             quantity: 10,
             frequency: 100
         });
-        
+
         // 1秒后销毁特效
         this.scene.time.delayedCall(1000, () => {
             effect.destroy();
         });
     }
-    
+
     destroy() {
         // 清理状态保存防抖计时器
         if (this.saveStateTimer) {
@@ -859,12 +861,12 @@ export class Player extends Phaser.GameObjects.Container {
         if (this.collisionDebounceTimer) {
             this.scene.time.removeEvent(this.collisionDebounceTimer);
         }
-        
+
         // 清理精灵
         if (this.bodySprite) this.bodySprite.destroy();
         if (this.headSprite) this.headSprite.destroy();
         if (this.statusLabel) this.statusLabel.destroy();
-        
+
         super.destroy();
     }
 }

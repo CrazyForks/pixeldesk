@@ -486,16 +486,33 @@ model PointsHistory {
 model AiNpc {
   id          String   @id @default(cuid())
   name        String
+  role        String?  // 角色职能，如 'Receptionist', 'Cleaner', 'IT Support'
   sprite      String   // 精灵资源名
   x           Int      // 初始 X 坐标
   y           Int      // 初始 Y 坐标
   personality String   @db.Text // 系统提示词 (System Prompt)
+  knowledge   String?  @db.Text // 专属知识库，用于提供业务相关回答
   greeting    String?  // 默认打招呼语
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("ai_npcs")
+}
+
+// AI 全局配置表 - 由管理员配置
+model AiGlobalConfig {
+  id            String   @id @default(cuid())
+  provider      String   @default("gemini") // 'gemini', 'openai', 'deepseek', 'anthropic' 等
+  apiKey        String?  // AI 供应商的 API Key
+  modelName     String?  // 模型名称，如 'gemini-1.5-flash', 'gpt-4o'
+  baseUrl       String?  // API 代理或供应商的基础 URL
+  temperature   Float    @default(0.7)
+  maxTokens     Int      @default(1000)
+  isActive      Boolean  @default(true)
+  updatedAt     DateTime @updatedAt
+
+  @@map("ai_global_config")
 }
 
 // AI 使用记录 (每日限制)

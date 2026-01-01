@@ -43,105 +43,95 @@ export class AiNpcManager {
      * 初始化管理器
      */
     async init() {
-        if (!this.npcGroup) {
-            this.npcGroup = this.scene.npcGroup || this.scene.physics.add.group({ immovable: true });
-        }
+        // 优先使用场景已经创建好的 group，确保碰撞逻辑一致
+        this.npcGroup = this.scene.npcGroup || this.scene.physics.add.group({ immovable: true });
 
-        // 设置碰撞
+        // 设置物理阻挡与交互触发 (合并 Collider 和 Interaction)
         if (this.scene.player) {
-            this.scene.physics.add.collider(this.scene.player, this.npcGroup, (playerObj, npcObj) => {
+            this.scene.physics.add.collider(this.scene.player, this.npcGroup, (p, npc) => {
                 if (typeof this.scene.handlePlayerCollision === 'function') {
-                    this.scene.handlePlayerCollision(playerObj, npcObj);
+                    this.scene.handlePlayerCollision(p, npc);
                 }
             });
         }
 
-        // 1. 加载服务器固定 NPC (如 Sarah)
+        // 确保 NPC 进入其他玩家 group 以触发对话 overlap (Start.js 中的逻辑)
+        if (!this.scene.otherPlayersGroup) {
+            this.scene.otherPlayersGroup = this.scene.physics.add.group();
+        }
+
+        // 定时设置环境碰撞，确保图层已加载
+        this.scene.time.delayedCall(1000, () => {
+            if (this.scene.mapLayers) {
+                const layers = [this.scene.mapLayers.office_1, this.scene.mapLayers.tree];
+                layers.forEach(layer => {
+                    if (layer) this.scene.physics.add.collider(this.npcGroup, layer);
+                });
+            }
+            if (this.scene.deskColliders) {
+                this.scene.physics.add.collider(this.npcGroup, this.scene.deskColliders);
+            }
+        });
+
+        // 1. 加载服务器端的 NPC
         await this.loadAndCreateNpcs();
-
-        // 2. 本地随机生成更多游荡 NPC (不保存到服务器)
-        this.spawnRandomWanderers(15);
     }
 
     /**
-     * 生成本地游荡 NPC
+     * 加载数据库中的所有活跃 NPC
      */
-    spawnRandomWanderers(count) {
-        console.log(`🤖 [AiNpcManager] 正在本地生成 ${count} 个游荡 NPC...`);
-
-        for (let i = 0; i < count; i++) {
-            const template = Phaser.Utils.Array.GetRandom(this.templates);
-
-            // 随机坐标 - 显著扩大生成范围，覆盖更大的办公区域
-            const randomX = 5800 + Phaser.Math.Between(-2500, 2500);
-            const randomY = 750 + Phaser.Math.Between(-1500, 1500);
-
-            const npcData = {
-                id: `local_${i}_${Date.now()}`,
-                name: `${template.role}-${Phaser.Math.Between(10, 99)}`,
-                sprite: template.sprite,
-                x: randomX,
-                y: randomY,
-                greeting: Phaser.Utils.Array.GetRandom(template.greetings),
-                personality: template.personality,
-                isLocal: true // 标记为本地 NPC
-            };
-
-            this.createAiNpc(npcData).then(npc => {
-                if (npc) {
-                    // 启动游荡逻辑
-                    this.startWandering(npc);
+    async loadAndCreateNpcs() {
+        try {
+            const response = await fetch('/api/ai/npcs');
+            const data = await response.json();
+            const npcs = data.data || data.npcs;
+            if (data.success && Array.isArray(npcs)) {
+                for (const npcData of npcs) {
+                    this.createAiNpc(npcData).then(npc => {
+                        if (npc && npc.name !== 'Sarah') { // Sarah 站前台不动，其他人都去游荡
+                            this.startWandering(npc);
+                        }
+                    });
                 }
-            });
+            }
+        } catch (error) {
+            console.error('🤖 [AiNpcManager] 加载 NPCs 失败:', error);
         }
     }
 
-    /**
-     * 游荡 AI 逻辑 (轻量级本地实现)
-     */
     startWandering(npc) {
         if (!npc || !npc.body) return;
 
-        // 记录“家”的位置，防止走太远
+        // 记录“家”的位置，用于约束范围（可选）
         const homeX = npc.x;
         const homeY = npc.y;
 
         const roamAction = () => {
-            if (!npc.active) return;
+            if (!npc.active || !npc.body) return;
 
-            // 随机做决定：50% 概率走动，50% 概率休息
-            if (Phaser.Math.Between(0, 100) > 40) { // 稍微提高移动频率
-                // 挑选一个在“家”附近的新目标点 - 增加移动半径
-                const targetX = homeX + Phaser.Math.Between(-300, 300);
-                const targetY = homeY + Phaser.Math.Between(-300, 300);
+            // 随机做决定：60% 概率走动，40% 概率休息
+            if (Phaser.Math.Between(0, 100) > 40) {
+                // 随机选择一个方向
+                const directions = ['up', 'down', 'left', 'right'];
+                const direction = Phaser.Utils.Array.GetRandom(directions);
+                const walkDuration = Phaser.Math.Between(1500, 4000);
+                const speed = Phaser.Math.Between(40, 80); // 散步速度
 
-                // 计算方向
-                const dx = targetX - npc.x;
-                const dy = targetY - npc.y;
-                let direction = 'down';
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    direction = dx > 0 ? 'right' : 'left';
-                } else {
-                    direction = dy > 0 ? 'down' : 'up';
-                }
+                // 计算速度向量
+                let vx = 0, vy = 0;
+                if (direction === 'left') vx = -speed;
+                else if (direction === 'right') vx = speed;
+                else if (direction === 'up') vy = -speed;
+                else if (direction === 'down') vy = speed;
 
-                // 设置朝向
+                // 开始移动
+                npc.body.setVelocity(vx, vy);
                 if (npc.setDirectionFrame) npc.setDirectionFrame(direction);
 
-                // 使用 Tween 移动坐标 (物理身体 moves=false，所以直接对容器使用 tween)
-                this.scene.tweens.add({
-                    targets: npc,
-                    x: targetX,
-                    y: targetY,
-                    duration: Phaser.Math.Between(3000, 6000), // 走得很慢，像在散步
-                    ease: 'Linear',
-                    onUpdate: () => {
-                        if (npc.aiIcon) {
-                            npc.aiIcon.x = npc.x + 25;
-                            npc.aiIcon.y = npc.y - 50;
-                        }
-                    },
-                    onComplete: () => {
+                // 定时停止
+                this.scene.time.delayedCall(walkDuration, () => {
+                    if (npc.active && npc.body) {
+                        npc.body.setVelocity(0, 0);
                         // 到了目的地，随机停顿 5-15 秒
                         this.scene.time.delayedCall(Phaser.Math.Between(5000, 15000), roamAction);
                     }
@@ -154,36 +144,33 @@ export class AiNpcManager {
 
         // 首次启动延迟一点
         this.scene.time.delayedCall(Phaser.Math.Between(1000, 5000), roamAction);
+
+        // 每帧同步 AI 图标
+        this.scene.events.on('update', () => {
+            if (npc.active && npc.aiIcon) {
+                npc.aiIcon.x = npc.x + 25;
+                npc.aiIcon.y = npc.y - 50;
+            }
+        });
     }
 
-    /**
-     * 加载服务器固定 NPC
-     */
-    async loadAndCreateNpcs() {
-        try {
-            const response = await fetch('/api/ai/npcs');
-            const data = await response.json();
-            const npcs = data.data || data.npcs;
-            if (data.success && Array.isArray(npcs)) {
-                for (const npcData of npcs) {
-                    await this.createAiNpc(npcData);
-                }
-            }
-        } catch (error) {
-            console.error('🤖 [AiNpcManager] 加载 NPCs 失败:', error);
-        }
-    }
 
     /**
      * 创建单个 NPC 实体
      */
     async createAiNpc(npcData) {
-        const { id, name, sprite, x, y, greeting } = npcData;
+        let { id, name, sprite, x, y, greeting } = npcData;
+
+        // 每次刷新给 NPC 一个随机的初始位置偏移，让场景更有活力
+        if (name !== 'Sarah') {
+            x += Phaser.Math.Between(-150, 150);
+            y += Phaser.Math.Between(-150, 150);
+        }
 
         // 检查精灵
         const textureKey = sprite;
+        // ... (保持精灵加载逻辑不变)
         if (!this.scene.textures.exists(textureKey)) {
-            // 尝试加载，如果失败则回退到默认
             try {
                 await new Promise((resolve, reject) => {
                     this.scene.load.spritesheet(textureKey, `/assets/characters/${sprite}.png`, {
@@ -194,26 +181,26 @@ export class AiNpcManager {
                     this.scene.load.start();
                 });
             } catch (e) {
-                console.warn(`🤖 NPC 精灵 ${sprite} 加载失败，回退到默认`);
-                // 如果是 Sarah，必须要这个精灵。如果是本地，可以选一个存在的。
+                console.warn(`🤖 NPC 精灵 ${sprite} 加载失败`);
                 return null;
             }
         }
 
         const texture = this.scene.textures.get(textureKey);
         const frameCount = texture ? texture.frameTotal : 0;
-        // 如果帧数很少（通常为8帧或更少），则认为是紧凑格式
         const isCompactFormat = frameCount <= 12 || sprite.includes('Premade');
 
         const npcCharacter = new Player(
             this.scene, x, y, textureKey,
-            false, false, true,
+            false, // enableMovement (这是针对键盘控制的)
+            false, // enableStateSave
+            true,  // isOtherPlayer
             {
                 id: id.startsWith('npc_') ? id : `npc_${id}`,
                 name: name,
                 currentStatus: {
                     type: 'available',
-                    status: npcData.personality?.substring(0, 10) || 'AI助手',
+                    status: npcData.role || npcData.personality?.substring(0, 10) || 'AI助手',
                     emoji: '🤖',
                     message: greeting,
                     timestamp: new Date().toISOString()
@@ -224,18 +211,29 @@ export class AiNpcManager {
         );
 
         if (npcCharacter.body) {
-            npcCharacter.body.setSize(30, 24);
-            npcCharacter.body.setOffset(-15, 0);
+            // NPC 的物理设定：Immovable 确保玩家撞不动 NPC
+            // 采用与玩家一致的“脚部碰撞”模式
+            npcCharacter.body.setSize(30, 20);
+            npcCharacter.body.setOffset(-15, 42);
             npcCharacter.body.setImmovable(true);
-            npcCharacter.body.moves = false;
+            npcCharacter.body.moves = true;
+            npcCharacter.body.setCollideWorldBounds(true);
         }
 
         npcCharacter.setScale(0.8);
         npcCharacter.setDepth(1000);
         if (npcCharacter.setDirectionFrame) npcCharacter.setDirectionFrame('down');
 
+        // 同时加入这两个 Group：
+        // 1. npcGroup 用于物理碰撞限制（如撞墙）
+        // 2. otherPlayersGroup 用于触发对话 Interaction（兼容 Start.js 中的逻辑）
         if (this.npcGroup) this.npcGroup.add(npcCharacter);
-        if (this.scene.otherPlayersGroup) this.scene.otherPlayersGroup.add(npcCharacter);
+        if (this.scene.otherPlayersGroup) {
+            this.scene.otherPlayersGroup.add(npcCharacter);
+            if (typeof this.scene.ensurePlayerCharacterOverlap === 'function') {
+                this.scene.ensurePlayerCharacterOverlap();
+            }
+        }
 
         this.createAiIcon(npcCharacter, x, y);
         this.setupInteractions(npcCharacter);
