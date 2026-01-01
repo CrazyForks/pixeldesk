@@ -129,15 +129,24 @@ export class Start extends Phaser.Scene {
         this.keyboardInputEnabled = false;
 
         if (this.input && this.input.keyboard) {
-          // 停止当前所有正在进行的按键动作，防止人物一直走
+          // 1. 停止当前物理移动
           if (this.player && this.player.body) {
             this.player.body.setVelocity(0, 0);
           }
 
-          // 停用按键管理器，不移除 Key 对象以防状态丢失
-          this.input.keyboard.enabled = false;
+          // 2. 核心修复：重置所有按键状态，防止“粘滞键”和自动走向大老远的问题
+          this.input.keyboard.resetKeys();
 
-          // 暂时禁用 canvas 焦点
+          // 3. 停用阻止默认行为，允许在输入框中输入 WASD
+          this.input.keyboard.preventDefault = false;
+
+          // 4. 彻底停用按键管理器
+          this.input.keyboard.enabled = false;
+          if (this.input.keyboard.manager) {
+            this.input.keyboard.manager.enabled = false;
+          }
+
+          // 5. 暂时禁用 canvas 焦点及TabIndex
           const canvas = this.game.canvas;
           if (canvas) {
             canvas.removeAttribute('tabindex');
@@ -146,13 +155,15 @@ export class Start extends Phaser.Scene {
             }
           }
 
-          // 拦截所有穿透到 document 的按键事件 (双保险)
+          // 6. 全局拦截拦截穿透事件 (双保险)
           if (!this.keyboardBlockHandler) {
             this.keyboardBlockHandler = (event) => {
-              const isFromInput = event.target.tagName.toLowerCase() === 'input' ||
-                event.target.tagName.toLowerCase() === 'textarea' ||
-                event.target.contentEditable === 'true';
+              const target = event.target;
+              const isFromInput = target.tagName.toLowerCase() === 'input' ||
+                target.tagName.toLowerCase() === 'textarea' ||
+                target.contentEditable === 'true';
 
+              // 如果是输入框事件，允许传播；否则停止传播以保护 Phaser 内部状态
               if (isFromInput) return;
               event.stopPropagation();
             };
@@ -168,27 +179,34 @@ export class Start extends Phaser.Scene {
         this.keyboardInputEnabled = true;
 
         if (this.input && this.input.keyboard) {
-          // 移除全局拦截器
+          // 1. 移除全局拦截器
           if (this.keyboardBlockHandler) {
             document.removeEventListener('keydown', this.keyboardBlockHandler, true);
             document.removeEventListener('keyup', this.keyboardBlockHandler, true);
             this.keyboardBlockHandler = null;
           }
 
-          // 重新启用 Phaser 键盘
+          // 2. 重新启用 Phaser 键盘
           this.input.keyboard.enabled = true;
           if (this.input.keyboard.manager) {
             this.input.keyboard.manager.enabled = true;
           }
 
-          // 恢复 canvas 聚焦能力
+          // 3. 恢复阻止默认行为，保护游戏健位
+          this.input.keyboard.preventDefault = true;
+
+          // 4. 恢复 canvas 聚焦能力
           const canvas = this.game.canvas;
           if (canvas) {
             canvas.setAttribute('tabindex', '0');
-            canvas.focus();
+            // 延迟一点点聚焦，确保 DOM 状态已更新
+            setTimeout(() => canvas.focus(), 10);
           }
 
-          // 确保 cursors 重建
+          // 5. 确保按键状态是干净的
+          this.input.keyboard.resetKeys();
+
+          // 6. 确保 cursors 重建并可用
           if (!this.cursors) {
             this.cursors = this.input.keyboard.createCursorKeys();
           }
@@ -202,6 +220,14 @@ export class Start extends Phaser.Scene {
       window.isGameKeyboardEnabled = () => {
         return { enabled: this.keyboardInputEnabled !== false };
       }
+
+      // 窗口重新获得焦点时重置按键状态，防止粘滞键
+      window.addEventListener('focus', () => {
+        if (this.keyboardInputEnabled !== false && this.input && this.input.keyboard) {
+          console.log('🎮 [Internal] Window Focused - Resetting Keys');
+          this.input.keyboard.resetKeys();
+        }
+      });
 
       // 游戏状态测试函数已移除以优化性能
 
@@ -659,7 +685,10 @@ export class Start extends Phaser.Scene {
 
     // 检查玩家enableMovement状态
     if (!this.player.enableMovement) {
-      // debugLog('DEBUG: Player movement is disabled, enableMovement =', this.player.enableMovement);
+      // 停止移动，防止禁用后继续滑行
+      if (this.player.body.setVelocity) {
+        this.player.body.setVelocity(0, 0);
+      }
       return;
     }
 
