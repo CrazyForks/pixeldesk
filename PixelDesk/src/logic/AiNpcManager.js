@@ -79,7 +79,8 @@ export class AiNpcManager {
             if (data.success && Array.isArray(npcs)) {
                 for (const npcData of npcs) {
                     this.createAiNpc(npcData).then(npc => {
-                        if (npc && npc.name !== 'Sarah') { // Sarah 站前台不动，其他人都去游荡
+                        // 🔧 关键修复：如果是固定位置 NPC，不启动游荡逻辑
+                        if (npc && !npcData.isFixed) {
                             this.startWandering(npc);
                         }
                     });
@@ -157,10 +158,11 @@ export class AiNpcManager {
      * 创建单个 NPC 实体
      */
     async createAiNpc(npcData) {
-        let { id, name, sprite, x, y, greeting } = npcData;
+        let { id, name, sprite, x, y, greeting, isFixed } = npcData;
 
-        // 每次刷新给 NPC 一个随机的初始位置偏移，让场景更有活力
-        if (name !== 'Sarah') {
+        // 每次刷新给游荡 NPC 一个随机的初始位置偏移，让场景更有活力
+        // 如果是固定位置 NPC（如咖啡师），则精准原位生成
+        if (!isFixed) {
             x += Phaser.Math.Between(-150, 150);
             y += Phaser.Math.Between(-150, 150);
         }

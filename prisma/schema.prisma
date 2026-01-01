@@ -9,35 +9,35 @@ datasource db {
 
 model User {
   id                       String                    @id @default(cuid())
-  points                   Int                       @default(50)  // 唯一的积分字段，用于所有积分操作
+  points                   Int                       @default(50)
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
-  avatar                   String?                   // 角色key（如 'hangli'），API层转换为URL
-  customAvatar             String?                   // 用户自定义上传的头像URL（优先级高于avatar）
+  avatar                   String?
   email                    String?                   @unique
   name                     String
   emailVerified            Boolean                   @default(false)
   isActive                 Boolean                   @default(true)
   lastLogin                DateTime?
   password                 String?
+  customAvatar             String?
+  aiUsages                 AiUsage[]
+  ownedCharacters          CharacterPurchase[]
+  createdCharacters        Character[]               @relation("CreatedCharacters")
   conversationParticipants ConversationParticipant[]
   sentMessages             Message[]
   relatedNotifications     Notification[]            @relation("NotificationRelatedUser")
   notifications            Notification[]
   player                   Player?
+  pointsHistory            PointsHistory[]
   postLikes                PostLike[]
   postReplies              PostReply[]
   posts                    Post[]
-  pointsHistory            PointsHistory[]
-  aiUsages                 AiUsage[]
   statusHistory            StatusHistory[]
   timeTracking             TimeTracking[]
   onlineStatus             UserOnlineStatus?
   sessions                 UserSession[]
   workstations             UserWorkstation[]
   workSessions             WorkSession[]
-  ownedCharacters          CharacterPurchase[]       // 拥有的角色形象
-  createdCharacters        Character[]               @relation("CreatedCharacters") // 创建的角色形象
 
   @@index([email])
   @@index([isActive])
@@ -74,8 +74,8 @@ model UserWorkstation {
   userId        String
   workstationId Int
   boundAt       DateTime  @default(now())
-  expiresAt     DateTime?
   cost          Int       @default(0)
+  expiresAt     DateTime?
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workstationId])
@@ -186,16 +186,13 @@ model Post {
   viewCount     Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-
-  // 博客相关字段
-  summary       String?                      // 摘要（前200字或自定义）
-  wordCount     Int            @default(0)  // 字数统计
-  readTime      Int            @default(1)  // 预估阅读时间（分钟）
-  tags          String[]       @default([]) // 标签
-  coverImage    String?                      // 封面图片
-  isDraft       Boolean        @default(false) // 是否草稿
-  publishedAt   DateTime?                    // 发布时间
-
+  coverImage    String?
+  isDraft       Boolean        @default(false)
+  publishedAt   DateTime?
+  readTime      Int            @default(1)
+  summary       String?
+  tags          String[]       @default([])
+  wordCount     Int            @default(0)
   notifications Notification[]
   likes         PostLike[]
   replies       PostReply[]
@@ -263,15 +260,15 @@ model Player {
   id              String   @id @default(cuid())
   userId          String   @unique
   playerName      String
-  characterSprite String   // 当前使用的角色形象名称
+  characterSprite String
   currentX        Int      @default(400)
   currentY        Int      @default(300)
   currentScene    String   @default("Start")
   lastActiveAt    DateTime @default(now())
   playerState     Json?
-  totalPlayTime   Int      @default(0) // 总游戏时长（分钟）
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  totalPlayTime   Int      @default(0)
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -300,6 +297,212 @@ model UserSession {
   @@map("user_sessions")
 }
 
+model PointsConfig {
+  id          String         @id @default(cuid())
+  key         String         @unique
+  value       Int
+  description String
+  category    PointsCategory
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([key])
+  @@index([category])
+  @@map("points_config")
+}
+
+model Admin {
+  id          String     @id @default(cuid())
+  username    String     @unique
+  email       String     @unique
+  password    String
+  role        AdminRole  @default(ADMIN)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  lastLoginAt DateTime?
+  isActive    Boolean    @default(true)
+  logs        AdminLog[]
+
+  @@index([email])
+  @@index([username])
+  @@index([isActive])
+  @@map("admins")
+}
+
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, createdAt])
+  @@index([resource, createdAt])
+  @@index([action])
+  @@map("admin_logs")
+}
+
+model Character {
+  id              String              @id @default(cuid())
+  name            String              @unique
+  displayName     String
+  description     String?
+  imageUrl        String
+  frameWidth      Int                 @default(48)
+  frameHeight     Int                 @default(48)
+  totalFrames     Int                 @default(8)
+  isCompactFormat Boolean             @default(false)
+  price           Int                 @default(0)
+  isDefault       Boolean             @default(false)
+  isActive        Boolean             @default(true)
+  sortOrder       Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  creatorId       String?
+  isUserGenerated Boolean             @default(false)
+  salesCount      Int                 @default(0)
+  logs            CharacterLog[]
+  purchases       CharacterPurchase[]
+  creator         User?               @relation("CreatedCharacters", fields: [creatorId], references: [id])
+
+  @@index([isActive, sortOrder])
+  @@index([price])
+  @@index([createdAt])
+  @@index([isDefault])
+  @@index([isUserGenerated])
+  @@index([creatorId])
+  @@map("characters")
+}
+
+model CharacterPurchase {
+  id          String    @id @default(cuid())
+  userId      String
+  characterId String
+  price       Int
+  purchasedAt DateTime  @default(now())
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, characterId])
+  @@index([userId])
+  @@index([characterId])
+  @@index([purchasedAt])
+  @@map("character_purchases")
+}
+
+model CharacterLog {
+  id          String    @id @default(cuid())
+  characterId String
+  adminId     String
+  action      String
+  changes     Json
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, createdAt])
+  @@index([adminId])
+  @@map("character_logs")
+}
+
+model WorkstationConfig {
+  id                 String   @id @default(cuid())
+  totalWorkstations  Int      @default(1000)
+  bindingCost        Int      @default(10)
+  renewalCost        Int      @default(5)
+  unbindingRefund    Int      @default(5)
+  teleportCost       Int      @default(2)
+  defaultDuration    Int      @default(24)
+  maxBindingsPerUser Int      @default(1)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  updatedBy          String?
+
+  @@map("workstation_config")
+}
+
+model PointsHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  reason    String
+  type      String
+  balance   Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("points_history")
+}
+
+model AiNpc {
+  id          String   @id @default(cuid())
+  name        String
+  sprite      String
+  x           Int
+  y           Int
+  personality String
+  greeting    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  knowledge   String?
+  role        String?
+  isFixed     Boolean  @default(false)
+
+  @@map("ai_npcs")
+}
+
+model AiGlobalConfig {
+  id          String   @id @default(cuid())
+  provider    String   @default("gemini")
+  apiKey      String?
+  modelName   String?
+  baseUrl     String?
+  temperature Float    @default(0.7)
+  maxTokens   Int      @default(1000)
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  dailyLimit  Int      @default(20)
+
+  @@map("ai_global_config")
+}
+
+model AiUsage {
+  id               String   @id @default(cuid())
+  userId           String
+  count            Int      @default(0)
+  date             String
+  updatedAt        DateTime @updatedAt
+  completionTokens Int      @default(0)
+  promptTokens     Int      @default(0)
+  totalTokens      Int      @default(0)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("ai_usage")
+}
+
+model AiChatHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  npcId     String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, npcId, createdAt])
+  @@map("ai_chat_history")
+}
+
 enum PostType {
   TEXT
   IMAGE
@@ -313,234 +516,13 @@ enum NotificationType {
   SYSTEM
 }
 
-// 积分配置表 - 用于管理各种积分奖励和消耗规则
-model PointsConfig {
-  id          String   @id @default(cuid())
-  key         String   @unique  // 配置键，如 'reply_post_reward', 'create_blog_reward', 'bind_workstation_cost'
-  value       Int                // 积分数值
-  description String             // 配置说明
-  category    PointsCategory     // 分类：奖励或消耗
-  isActive    Boolean  @default(true)  // 是否启用
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([key])
-  @@index([category])
-  @@map("points_config")
-}
-
 enum PointsCategory {
-  REWARD    // 积分奖励
-  COST      // 积分消耗
-}
-
-// ==================== 后台管理系统相关模型 ====================
-
-// 管理员表
-model Admin {
-  id          String    @id @default(cuid())
-  username    String    @unique
-  email       String    @unique
-  password    String    // bcrypt 加密
-  role        AdminRole @default(ADMIN)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lastLoginAt DateTime?
-  isActive    Boolean   @default(true)
-  logs        AdminLog[]
-
-  @@index([email])
-  @@index([username])
-  @@index([isActive])
-  @@map("admins")
+  REWARD
+  COST
 }
 
 enum AdminRole {
-  SUPER_ADMIN // 超级管理员，所有权限
-  ADMIN       // 普通管理员，大部分权限
-  VIEWER      // 只读权限
-}
-
-// 管理员操作日志
-model AdminLog {
-  id         String   @id @default(cuid())
-  adminId    String
-  action     String   // 'CREATE', 'UPDATE', 'DELETE'
-  resource   String   // 'Player', 'Character', 'WorkstationConfig'
-  resourceId String?
-  details    Json?    // 详细信息
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
-
-  @@index([adminId, createdAt])
-  @@index([resource, createdAt])
-  @@index([action])
-  @@map("admin_logs")
-}
-
-// 角色形象表
-model Character {
-  id              String                @id @default(cuid())
-  name            String                @unique // 例如 'hangli', 'Premade_Character_48x48_01'
-  displayName     String                // 显示名称，例如 '寒黎', '角色01'
-  description     String?               // 描述
-  imageUrl        String                // 图片存储路径
-  frameWidth      Int                   @default(48)
-  frameHeight     Int                   @default(48)
-  totalFrames     Int                   @default(8)
-  isCompactFormat Boolean               @default(false) // 是否为紧凑格式（2行4列）
-  price           Int                   @default(0) // 积分价格，0表示免费
-  isDefault       Boolean               @default(false) // 是否为默认角色
-  isActive        Boolean               @default(true) // 是否启用
-  isUserGenerated Boolean               @default(false) // 是否为用户上传
-  creatorId       String?               // 创建者ID（用户上传的角色）
-  salesCount      Int                   @default(0) // 销售数量
-  sortOrder       Int                   @default(0) // 排序顺序
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-
-  // 关联关系
-  creator         User?                 @relation("CreatedCharacters", fields: [creatorId], references: [id], onDelete: SetNull)
-  purchases       CharacterPurchase[]
-  logs            CharacterLog[]
-
-  @@index([isActive, sortOrder])
-  @@index([price])
-  @@index([createdAt])
-  @@index([isDefault])
-  @@index([isUserGenerated])
-  @@index([creatorId])
-  @@map("characters")
-}
-
-// 角色形象购买记录（为形象商店准备）
-model CharacterPurchase {
-  id          String    @id @default(cuid())
-  userId      String
-  characterId String
-  price       Int       // 购买时的价格
-  purchasedAt DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, characterId]) // 同一角色只能购买一次
-  @@index([userId])
-  @@index([characterId])
-  @@index([purchasedAt])
-  @@map("character_purchases")
-}
-
-// 角色形象修改日志
-model CharacterLog {
-  id          String   @id @default(cuid())
-  characterId String
-  adminId     String   // 修改者（管理员ID）
-  action      String   // 'UPDATE'
-  changes     Json     // 修改内容，如 { "price": { "from": 100, "to": 200 } }
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
-  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
-
-  @@index([characterId, createdAt])
-  @@index([adminId])
-  @@map("character_logs")
-}
-
-// 工位配置表
-model WorkstationConfig {
-  id                 String   @id @default(cuid())
-  totalWorkstations  Int      @default(1000) // 总工位数
-  bindingCost        Int      @default(10) // 绑定工位消耗积分
-  renewalCost        Int      @default(5) // 续期工位消耗积分
-  unbindingRefund    Int      @default(5) // 解绑退还积分
-  teleportCost       Int      @default(2) // 传送消耗积分
-  defaultDuration    Int      @default(24) // 默认绑定时长（小时）
-  maxBindingsPerUser Int      @default(1) // 每个用户最多绑定工位数
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  updatedBy          String?  // 更新者ID（管理员）
-
-  @@map("workstation_config")
-}
-
-// 积分历史记录
-model PointsHistory {
-  id          String   @id @default(cuid())
-  userId      String
-  amount      Int      // 变动金额 (+2, -50)
-  reason      String   // 原因 ("发布帖子", "绑定工位")
-  type        String   // "EARN" (赚取), "SPEND" (消费)
-  balance     Int      // 变动后的余额
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([createdAt])
-  @@map("points_history")
-}
-
-// AI NPC 定义
-model AiNpc {
-  id          String   @id @default(cuid())
-  name        String
-  role        String?  // 角色职能，如 'Receptionist', 'Cleaner', 'IT Support'
-  sprite      String   // 精灵资源名
-  x           Int      // 初始 X 坐标
-  y           Int      // 初始 Y 坐标
-  personality String   @db.Text // 系统提示词 (System Prompt)
-  knowledge   String?  @db.Text // 专属知识库，用于提供业务相关回答
-  greeting    String?  // 默认打招呼语
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("ai_npcs")
-}
-
-// AI 全局配置表 - 由管理员配置
-model AiGlobalConfig {
-  id            String   @id @default(cuid())
-  provider      String   @default("gemini") // 'gemini', 'openai', 'deepseek', 'anthropic' 等
-  apiKey        String?  // AI 供应商的 API Key
-  modelName     String?  // 模型名称，如 'gemini-1.5-flash', 'gpt-4o'
-  baseUrl       String?  // API 代理或供应商的基础 URL
-  temperature   Float    @default(0.7)
-  maxTokens     Int      @default(1000)
-  dailyLimit    Int      @default(20)    // 每个用户每日最大对话次数
-  isActive      Boolean  @default(true)
-  updatedAt     DateTime @updatedAt
-
-  @@map("ai_global_config")
-}
-
-// AI 使用记录 (每日限制)
-model AiUsage {
-  id               String   @id @default(cuid())
-  userId           String
-  count            Int      @default(0) // 当日已对话次数
-  totalTokens      Int      @default(0) // 总 Token 消耗
-  promptTokens     Int      @default(0) // 输入 Token
-  completionTokens Int      @default(0) // 输出 Token
-  date             String   // 日期 YYYY-MM-DD
-  updatedAt        DateTime @updatedAt
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, date]) // 确保每人每天只有一条记录
-  @@map("ai_usage")
-}
-
-// AI NPC 聊天历史记录
-model AiChatHistory {
-  id        String   @id @default(cuid())
-  userId    String   // 用户ID
-  npcId     String   // NPC ID
-  role      String   // 'user' 或 'assistant'
-  content   String   @db.Text // 消息内容
-  createdAt DateTime @default(now())
-
-  @@index([userId, npcId, createdAt]) // 复合索引，用于快速查询特定用户和NPC的对话
-  @@map("ai_chat_history")
+  SUPER_ADMIN
+  ADMIN
+  VIEWER
 }

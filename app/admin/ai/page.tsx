@@ -423,6 +423,56 @@ export default function AiAdminPage() {
                                     onChange={e => handleNpcChange(npc.id, 'greeting', e.target.value)}
                                 />
                             </div>
+
+                            <div className="space-y-4 pt-4 border-t border-gray-800">
+                                <label className="text-[10px] font-mono text-gray-500 uppercase flex items-center gap-2">
+                                    坐标与移动 (POSITION & MOBILITY)
+                                    <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-500/20 lowercase font-normal italic">
+                                        new_feature
+                                    </span>
+                                </label>
+                                <div className="flex flex-wrap items-center gap-6 bg-gray-950/50 p-4 rounded-xl border border-gray-800/50">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            id={`fixed-${npc.id}`}
+                                            className="w-5 h-5 rounded-lg accent-pink-500 bg-gray-950 border border-gray-800 cursor-pointer"
+                                            checked={npc.isFixed || false}
+                                            onChange={e => handleNpcChange(npc.id, 'isFixed', e.target.checked)}
+                                        />
+                                        <label htmlFor={`fixed-${npc.id}`} className="text-sm text-gray-300 cursor-pointer font-medium">
+                                            固定位置 (No Wandering)
+                                        </label>
+                                    </div>
+
+                                    <div className="h-6 w-px bg-gray-800 mx-2 hidden sm:block"></div>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-mono text-gray-500">X:</span>
+                                            <input
+                                                type="number"
+                                                className="w-24 bg-gray-950 border border-gray-800 rounded-lg p-2 text-sm text-cyan-400 font-mono focus:border-cyan-500 outline-none"
+                                                value={npc.x || 0}
+                                                onChange={e => handleNpcChange(npc.id, 'x', parseInt(e.target.value) || 0)}
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-mono text-gray-500">Y:</span>
+                                            <input
+                                                type="number"
+                                                className="w-24 bg-gray-950 border border-gray-800 rounded-lg p-2 text-sm text-cyan-400 font-mono focus:border-cyan-500 outline-none"
+                                                value={npc.y || 0}
+                                                onChange={e => handleNpcChange(npc.id, 'y', parseInt(e.target.value) || 0)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <p className="text-[10px] text-gray-600 italic sm:ml-auto">
+                                        * 开启固定后，NPC 将精准定位在该坐标并停止随机走动。
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}

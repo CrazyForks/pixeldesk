@@ -1404,6 +1404,126 @@ export class WorkstationManager {
             workstation.occupiedIcon.destroy();
             workstation.occupiedIcon = null;
         }
+        // 同时清理状态图标
+        this.removeStatusIcon(workstation);
+    }
+
+    // 🏷️ 新增：为工位添加/更新旋转的状态图标
+    updateWorkstationStatusIcon(workstation, statusData) {
+        if (!workstation || !workstation.sprite || !this.isSceneValid()) return;
+
+        // 如果已经有状态图标，先移除
+        this.removeStatusIcon(workstation);
+
+        // 如果没有状态数据，或者状态是“下班了”，则不创建图标
+        if (!statusData || statusData.type === 'off_work') return;
+
+        const emoji = statusData.emoji || '💼';
+
+        // 计算图标位置（桌面正上方）
+        const iconX = workstation.position.x + workstation.size.width / 2;
+        const iconY = workstation.position.y - 35; // 稍高一点
+
+        // 创建状态容器
+        const container = this.scene.add.container(iconX, iconY);
+        container.setDepth(2000);
+
+        // 1. 创建阴影（增加深度）
+        const shadow = this.scene.add.ellipse(0, 30, 20, 8, 0x000000, 0.3);
+
+        // 2. 创建发光光环 (Glow Aura)
+        const aura = this.scene.add.graphics();
+        aura.lineStyle(2, 0x00FFFF, 0.6);
+        aura.strokeCircle(0, 0, 22);
+
+        // 为光环增加点缀
+        for (let i = 0; i < 4; i++) {
+            const dot = this.scene.add.circle(Math.cos(i * Math.PI / 2) * 22, Math.sin(i * Math.PI / 2) * 22, 2, 0x00FFFF, 0.8);
+            container.add(dot);
+            // 点缀旋转动画
+            this.scene.tweens.add({
+                targets: dot,
+                alpha: 0.2,
+                duration: 800,
+                yoyo: true,
+                repeat: -1,
+                delay: i * 200
+            });
+        }
+
+        // 3. 创建磨砂玻璃底座
+        const base = this.scene.add.circle(0, 0, 18, 0xffffff, 0.15);
+        base.setStrokeStyle(1.5, 0xffffff, 0.3);
+
+        // 4. Emoji 文本
+        const text = this.scene.add.text(0, 0, emoji, {
+            fontSize: '26px',
+            fontFamily: 'Arial'
+        });
+        text.setOrigin(0.5, 0.5);
+
+        container.add([shadow, aura, base, text]);
+        workstation.statusIcon = container;
+
+        // --- 豪华动画组合 ---
+
+        // A. 悬浮动画 (Floating)
+        this.scene.tweens.add({
+            targets: container,
+            y: iconY - 12,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // B. 阴影同步缩放
+        this.scene.tweens.add({
+            targets: shadow,
+            scaleX: 0.7,
+            scaleY: 0.7,
+            alpha: 0.1,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // C. 光环持续旋转 (Rotation)
+        this.scene.tweens.add({
+            targets: aura,
+            angle: 360,
+            duration: 5000,
+            repeat: -1
+        });
+
+        // D. 整体轻微晃动
+        this.scene.tweens.add({
+            targets: container,
+            angle: 8,
+            duration: 2500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // E. 底座脉冲发光
+        this.scene.tweens.add({
+            targets: base,
+            scale: 1.1,
+            alpha: 0.25,
+            duration: 1200,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Cubic.easeInOut'
+        });
+    }
+
+    removeStatusIcon(workstation) {
+        if (workstation.statusIcon) {
+            workstation.statusIcon.destroy();
+            workstation.statusIcon = null;
+        }
     }
 
     // ===== 快速回到工位功能 =====

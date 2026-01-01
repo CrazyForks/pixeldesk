@@ -570,18 +570,6 @@ export class Start extends Phaser.Scene {
         实际FPS: this.game.loop.actualFps
       });
 
-      // 创建坐标显示 UI (固定在屏幕底部中间，避免被面板遮挡)
-      const gameWidth = this.cameras.main.width
-      this.coordsText = this.add.text(gameWidth / 2, 30, 'X: 0, Y: 0', {
-        fontFamily: 'monospace',
-        fontSize: '16px',
-        color: '#00FFFF', // 青色，与绿色背景形成对比
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: { x: 10, y: 5 }
-      })
-      this.coordsText.setOrigin(0.5, 0) // 居中对齐
-      this.coordsText.setScrollFactor(0) // 固定在屏幕上，不随相机移动
-      this.coordsText.setDepth(9999) // 确保在最上层
     }
   }
 
@@ -589,11 +577,9 @@ export class Start extends Phaser.Scene {
     // 只处理需要每帧更新的核心逻辑
     this.handlePlayerMovement()
 
-    // 更新坐标显示
-    if (this.coordsText && this.player) {
-      const x = Math.round(this.player.x)
-      const y = Math.round(this.player.y)
-      this.coordsText.setText(`X: ${x}, Y: ${y}`)
+    // 记录并在控制台打印坐标 (每隔 2 秒打印一次，避免刷屏)
+    if (this.player && this.updateCounter % 120 === 0) {
+      console.log(`📍 当前坐标: X=${Math.round(this.player.x)}, Y=${Math.round(this.player.y)}`);
     }
 
     // 检查T键按下，快速回到工位（临时禁用）
@@ -1506,8 +1492,8 @@ export class Start extends Phaser.Scene {
   setupCameraFollow() {
     if (this.player) {
       this.cameras.main.startFollow(this.player)
-      // 设置较小的lerp值，使相机跟随更平滑
-      this.cameras.main.setLerp(0.05, 0.05)
+      // 设置较小的lerp值，使相机跟随更平滑 (从 0.05 提升到 0.1 以增强响应速度)
+      this.cameras.main.setLerp(0.1, 0.1)
       // 设置死区，允许玩家在屏幕内移动
       this.updateDeadzone()
     } else {
@@ -1515,8 +1501,8 @@ export class Start extends Phaser.Scene {
       this.time.delayedCall(100, () => {
         if (this.player) {
           this.cameras.main.startFollow(this.player)
-          // 设置较小的lerp值，使相机跟随更平滑
-          this.cameras.main.setLerp(0.05, 0.05)
+          // 设置较小的lerp值，使相机跟随更平滑 (从 0.05 提升到 0.1 以增强响应速度)
+          this.cameras.main.setLerp(0.1, 0.1)
           // 设置死区
           this.updateDeadzone()
         }
@@ -1567,10 +1553,11 @@ export class Start extends Phaser.Scene {
       const screenWidth = this.game.config.width
       const screenHeight = this.game.config.height
 
-      // 动态计算死区大小，基于缩放级别
+      // 缩小死区范围，让人物更靠近屏幕中心
+      // 增加排除比例，从 0.2 提高到 0.6，意味着死区只占投影面积的 40%
       const baseReduction = Math.min(
-        200,
-        Math.min(screenWidth, screenHeight) * 0.2
+        400,
+        Math.min(screenWidth, screenHeight) * 0.6
       )
       const adjustedWidth = (screenWidth - baseReduction) / zoom
       const adjustedHeight = (screenHeight - baseReduction) / zoom
@@ -1968,15 +1955,20 @@ export class Start extends Phaser.Scene {
     if (typeof window !== "undefined") {
       window.updateMyStatus = async (statusData) => {
         this.myStatus = statusData
-        // 根据状态更新工位角色可见性
         if (this.currentUser && this.workstationManager) {
           const userWorkstation = this.workstationManager.getWorkstationByUser(
             this.currentUser.id
           )
-          if (userWorkstation && userWorkstation.character) {
-            // 如果状态是"下班了"，隐藏角色；否则显示角色
-            const isOffWork = statusData.type === "off_work"
-            userWorkstation.character.player.setVisible(!isOffWork)
+          if (userWorkstation) {
+            // 更新工位上的图标
+            this.workstationManager.updateWorkstationStatusIcon(userWorkstation, statusData)
+
+            // 如果状态涉及角色可见性
+            if (userWorkstation.character) {
+              // 如果状态是"下班了"，隐藏角色；否则显示角色
+              const isOffWork = statusData.type === "off_work"
+              userWorkstation.character.player.setVisible(!isOffWork)
+            }
           }
         }
 

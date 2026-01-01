@@ -8,9 +8,9 @@ export async function PUT(
     try {
         const id = params.id
         const body = await request.json()
-        const { name, role, personality, knowledge, greeting, isActive } = body
+        const { name, role, personality, knowledge, greeting, isActive, x, y, isFixed } = body
 
-        const updated = await prisma.aiNpc.update({
+        const updated = await (prisma.aiNpc as any).update({
             where: { id },
             data: {
                 name,
@@ -18,7 +18,10 @@ export async function PUT(
                 personality,
                 knowledge,
                 greeting,
-                isActive
+                isActive,
+                isFixed: isFixed !== undefined ? Boolean(isFixed) : undefined,
+                x: x !== undefined ? Number(x) : undefined,
+                y: y !== undefined ? Number(y) : undefined
             }
         })
 

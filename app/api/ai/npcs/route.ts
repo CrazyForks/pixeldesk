@@ -8,13 +8,12 @@ export async function GET(request: Request) {
         const force = url.searchParams.get('force') === 'true';
 
         if (force) {
+            console.log('🗑️ [NPC Seed] 正在强制清空 NPC 数据...');
             await prisma.aiNpc.deleteMany({});
         }
 
-        // 获取现有 NPC 名单
-        const existingNpcs = await prisma.aiNpc.findMany({
-            where: { isActive: true }
-        });
+        // 获取现有 NPC 名单 - 使用原生查询绕过 Prisma Client 缓存问题
+        const existingNpcs = await prisma.$queryRaw`SELECT * FROM ai_npcs WHERE "isActive" = true` as any[];
 
         // 定义目标 NPC 组
         const seedNpcs = [
@@ -24,6 +23,7 @@ export async function GET(request: Request) {
                 sprite: 'Premade_Character_48x48_01',
                 x: 5800,
                 y: 750,
+                isFixed: true,
                 personality: '热情的像素办公室前台，说话总是带着元气。',
                 knowledge: '这里是 PixelDesk。你可以绑定自己的工位（消耗10积分），也可以在世界频道聊天。',
                 greeting: '嘿！欢迎来到 PixelDesk！我是 Sarah，有什么我可以帮你的吗？'
@@ -64,6 +64,7 @@ export async function GET(request: Request) {
                 sprite: 'Male_Conference_man_idle_48x48',
                 x: 5800,
                 y: 400,
+                isFixed: true,
                 personality: '典型的老干部风格，喜欢喝茶，说话慢条斯理。',
                 knowledge: '工位配置目前由 WorkstationConfig 表管理，我是负责审批的。',
                 greeting: '小同志，来，坐下喝杯茶再走。'
@@ -94,6 +95,7 @@ export async function GET(request: Request) {
                 sprite: 'Molly_idle_48x48',
                 x: 6000,
                 y: 600,
+                isFixed: true,
                 personality: '永远在忙碌，身上带着一股好闻的焦糖味。',
                 knowledge: '茶水间的咖啡豆是今天早上刚送到的。',
                 greeting: '要来一杯超大杯美式吗？不加糖的那种。'
@@ -137,10 +139,16 @@ export async function GET(request: Request) {
             return NextResponse.json({ success: true, data: allNpcs });
         }
 
-        return NextResponse.json({ success: true, data: existingNpcs });
-    } catch (error) {
+        return new Response(JSON.stringify({ success: true, data: existingNpcs }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error: any) {
         console.error('Error fetching NPCs:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return NextResponse.json({
+            error: 'Internal server error',
+            details: error.message,
+            stack: error.stack
+        }, { status: 500 })
     }
 }
 

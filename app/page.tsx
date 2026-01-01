@@ -275,6 +275,14 @@ export default function Home() {
     }
   }, [user])
 
+  // 将 myStatus 同步到 Phaser 游戏实例
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).updateMyStatus && myStatus) {
+      console.log('📤 [React Sync] 发送状态到 Phaser:', myStatus);
+      (window as any).updateMyStatus(myStatus);
+    }
+  }, [myStatus])
+
   // 将 currentUser 同步到 Phaser 游戏实例
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).updatePhaserUserData && currentUser) {
