@@ -2016,6 +2016,11 @@ export class Start extends Phaser.Scene {
       } else {
         otherPlayer.setDirectionFrame(dy > 0 ? 'down' : 'up')
       }
+
+      // 🔧 特殊逻辑：碰撞时强制停止 NPC 的移动速度
+      if (otherPlayer.body) {
+        otherPlayer.body.setVelocity(0, 0)
+      }
     }
 
     // 如果这是一个新的碰撞

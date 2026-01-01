@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { StatusData } from '@/lib/eventBus'
+import UserAvatar from '@/components/UserAvatar'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -128,14 +129,41 @@ export default function AiChatTab({
 
     return (
         <div className="flex flex-col h-full bg-gray-900/30">
-            {/* Header / Usage Stats */}
-            <div className="px-4 py-2 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
-                <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">AI CONVERSATION</span>
-                {usage && (
-                    <span className="text-[10px] text-cyan-500 font-mono">
-                        LIMIT: {usage.remaining}/{usage.limit}
-                    </span>
-                )}
+            {/* Header / NPC Info */}
+            <div className="flex-shrink-0 p-4 border-b-2 border-retro-border/50 bg-gradient-to-r from-retro-bg-darker/60 to-retro-bg-dark/60 backdrop-blur-sm">
+                <div className="flex items-center space-x-4">
+                    {/* 头像区域 */}
+                    <div className="relative">
+                        <UserAvatar
+                            userId={npcId}
+                            userName={npcName}
+                            userAvatar={npcData?.avatar}
+                            size="lg"
+                            showStatus={true}
+                            isOnline={true}
+                        />
+                        {/* 互动标识 */}
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-retro-green to-retro-cyan rounded-full border-2 border-retro-bg-darker shadow-lg">
+                            <div className="w-full h-full bg-retro-green rounded-full opacity-60"></div>
+                        </div>
+                    </div>
+
+                    {/* 用户信息 */}
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-white font-pixel tracking-wide truncate">
+                            {npcName}
+                        </h3>
+                        <div className="flex items-center gap-1.5 overflow-hidden">
+                            <span className="text-xs font-medium text-retro-cyan font-retro whitespace-nowrap">
+                                {npcData?.currentStatus?.status || 'AI助手'}
+                            </span>
+                            <span className="text-gray-600 font-bold px-1">|</span>
+                            <p className="text-[10px] text-retro-textMuted font-retro truncate">
+                                {usage ? `LIMIT: ${usage.remaining}/${usage.limit}` : 'AI CONVERSATION'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Chat Area */}

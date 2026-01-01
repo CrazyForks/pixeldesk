@@ -100,6 +100,13 @@ export class AiNpcManager {
         const roamAction = () => {
             if (!npc.active || !npc.body) return;
 
+            // 🔧 关键逻辑：如果正在与玩家碰撞（对话中），严禁启动新的走动任务
+            if (npc.isColliding) {
+                // 每隔 2 秒检查一次是否脱离碰撞
+                this.scene.time.delayedCall(2000, roamAction);
+                return;
+            }
+
             // 随机做决定：60% 概率走动，40% 概率休息
             if (Phaser.Math.Between(0, 100) > 40) {
                 // 随机选择一个方向
@@ -189,6 +196,7 @@ export class AiNpcManager {
             {
                 id: id.startsWith('npc_') ? id : `npc_${id}`,
                 name: name,
+                avatar: textureKey, // 添加头像字段，供 UI 显示
                 currentStatus: {
                     type: 'available',
                     status: npcData.role || npcData.personality?.substring(0, 10) || 'AI助手',
