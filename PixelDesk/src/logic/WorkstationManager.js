@@ -144,6 +144,17 @@ export class WorkstationManager {
             debugLog(`Clicked workstation ${workstationId}:`, workstation);
             debugLog(`User bound: ${this.getUserByWorkstation(workstationId) || 'None'}`);
 
+            // 检查是否是书架
+            if (workstation.sprite && workstation.sprite.texture.key.includes("bookcase")) {
+                debugLog(`📚 点击书架 ${workstationId}，触发图书馆弹窗`);
+                window.dispatchEvent(new CustomEvent('open-library', {
+                    detail: {
+                        bookcaseId: workstationId
+                    }
+                }));
+                return; // 书架不执行后续工位逻辑
+            }
+
             this.highlightWorkstation(workstationId);
 
             // 只有未占用的工位才触发绑定事件

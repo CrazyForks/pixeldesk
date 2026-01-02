@@ -537,3 +537,18 @@ enum AdminRole {
   ADMIN
   VIEWER
 }
+
+model LibraryBook {
+  id          String   @id @default(cuid())
+  title       String
+  author      String
+  description String?
+  coverUrl    String?
+  content     String?  @db.Text
+  bookcaseId  String?  // Optional: Tiled Object ID binding
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([bookcaseId])
+  @@map("library_books")
+}

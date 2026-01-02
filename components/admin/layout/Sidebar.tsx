@@ -40,6 +40,11 @@ const menuItems = [
     icon: '🤖',
     href: '/admin/ai',
   },
+  {
+    title: '图书馆管理',
+    icon: '📚',
+    href: '/admin/library',
+  },
 ]
 
 export function Sidebar() {

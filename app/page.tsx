@@ -40,6 +40,8 @@ declare global {
       pointsDeducted?: number
       remainingPoints?: number
     }>
+    disableGameInput: () => void
+    enableGameInput: () => void
   }
 }
 
@@ -97,6 +99,11 @@ const PostDetailModal = dynamic(() => import('@/components/PostDetailModal'), {
 
 // AI 聊天弹窗
 const AiChatModal = dynamic(() => import('@/components/AiChatModal'), {
+  ssr: false
+})
+
+// 图书馆弹窗
+const LibraryModal = dynamic(() => import('@/components/LibraryModal'), {
   ssr: false
 })
 
@@ -451,6 +458,23 @@ export default function Home() {
       window.showTempPlayerAuthPrompt = (message: string) => {
         setAuthPromptMessage(message)
         setShowAuthPrompt(true)
+      }
+
+      // 禁用/启用游戏输入的全局函数
+      window.disableGameInput = () => {
+        const scene = (window as any).gameScene
+        if (scene && scene.input) {
+          scene.input.enabled = false
+          console.log('🎮 游戏输入已禁用')
+        }
+      }
+
+      window.enableGameInput = () => {
+        const scene = (window as any).gameScene
+        if (scene && scene.input) {
+          scene.input.enabled = true
+          console.log('🎮 游戏输入已启用')
+        }
       }
 
       // 监听Phaser游戏初始化完成事件
@@ -1132,6 +1156,10 @@ export default function Home() {
           initialMode={authModalMode}
         />
       )}
+
+      {/* 图书馆弹窗 - 始终监听，组件内部通过事件控制显示 */}
+      <LibraryModal onClose={() => console.log('Library closed')} />
+
       {/* 工位状态更新弹窗 */}
       <WorkstationStatusPopup
         isVisible={showStatusPopup}

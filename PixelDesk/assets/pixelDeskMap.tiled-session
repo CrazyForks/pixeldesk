@@ -7,7 +7,7 @@
     "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
         "": {
-            "scaleInDock": 0.25,
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "#tileset": {
@@ -52,6 +52,9 @@
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#characters_list": {
             "scaleInDock": 1
+        },
+        "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#coffee_shop": {
+            "scaleInEditor": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#grassgrand": {
             "dynamicWrapping": false,

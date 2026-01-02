@@ -449,6 +449,25 @@ export class Start extends Phaser.Scene {
       // 创建floor图层
       this.renderObjectLayer(map, "floor")
 
+      // 创建前台图层
+      try {
+        this.renderObjectLayer(map, "front_desk_objs")
+      } catch (e) {
+        console.warn("Front desk layer optional/missing")
+      }
+
+      // 创建书架图层
+      try {
+        this.renderObjectLayer(map, "bookcase_objs")
+      } catch (e) {
+        console.warn("Bookcase layer optional/missing")
+      }
+
+      // 所有对象层加载完毕后，统一初始化区块系统
+      if (this.workstationObjects.length > 0) {
+        this.initializeChunkSystem()
+      }
+
       // 从数据库加载玩家保存的位置和状态
       let playerStartX = null
       let playerStartY = null
@@ -751,6 +770,8 @@ export class Start extends Phaser.Scene {
         treeLayer?.setCollisionByProperty({ solid: true })
       }
 
+
+
       // 🔧 移除：group碰撞器会在第一次加载工位后创建，不在这里创建
       // 原因：此时deskColliders可能还是空的（区块异步加载）
 
@@ -926,7 +947,19 @@ export class Start extends Phaser.Scene {
     )
     this.load.image(
       "library_bookcase_tall",
+      "library_bookcase_tall",
       "/assets/desk/library_bookcase_tall.png"
+    )
+    // 注册正确的书架 key
+    this.load.image("bookcase_middle", "/assets/desk/library_bookcase_normal.png")
+    this.load.image("bookcase_tall", "/assets/desk/library_bookcase_tall.webp")
+    this.load.image(
+      "library_bookcase_tall_webp",
+      "/assets/desk/library_bookcase_tall.webp"
+    )
+    this.load.image(
+      "Classroom_and_Library_Singles_48x48_58",
+      "/assets/desk/Classroom_and_Library_Singles_48x48_58.png"
     )
 
     this.load.image(
@@ -1063,6 +1096,8 @@ export class Start extends Phaser.Scene {
       }
     }
 
+
+
     return layers
   }
 
@@ -1110,8 +1145,8 @@ export class Start extends Phaser.Scene {
       debugLog('✅ deskColliders group已创建')
     }
 
-    // 对于desk_objs图层，使用区块管理系统
-    if (layerName === "desk_objs") {
+    // 对于desk_objs和bookcase_objs图层，使用区块管理系统
+    if (layerName === "desk_objs" || layerName === "bookcase_objs") {
       debugLog(`📦 收集工位对象，总数: ${objectLayer.objects.length}`)
 
       // 收集所有工位对象（不立即创建精灵）
@@ -1121,10 +1156,10 @@ export class Start extends Phaser.Scene {
         }
       })
 
-      // 初始化区块管理器
-      this.initializeChunkSystem()
+      // ⚠️ 移除这里对 initializeChunkSystem 的调用，防止重复初始化
+      // 这里的逻辑改为只收集对象，统一在 create() 末尾初始化区块系统
 
-      // 更新工位总数
+      // 更新工位总数 (暂时更新，最后还会再次更新)
       this.userData.deskCount = this.workstationObjects.length
       this.sendUserDataToUI()
     } else {
@@ -1217,7 +1252,26 @@ export class Start extends Phaser.Scene {
   }
 
   renderTilesetObject(obj, adjustedY) {
-    const imageKey = obj.name || "desk_image"
+    let imageKey = obj.name
+
+    // 如果名字为空，尝试根据 GID 推断
+    if (!imageKey && obj.gid) {
+      // 这里的 GID 硬编码基于 officemap.json 的分析
+      // GID 106 -> bookcase_tall
+      if (obj.gid === 106) imageKey = "bookcase_tall"
+      // GID 107 -> bookcase_middle
+      else if (obj.gid === 107) imageKey = "bookcase_middle"
+    }
+
+    // 如果名字为空，尝试根据类型或其他属性推断
+    if (!imageKey) {
+      if (obj.type === "bookcase") {
+        imageKey = "bookcase_middle"
+      } else {
+        imageKey = "desk_image"
+      }
+    }
+
     if (!imageKey) return null
 
     const sprite = this.add.image(obj.x, adjustedY, imageKey)
@@ -1340,7 +1394,30 @@ export class Start extends Phaser.Scene {
     }
 
     // 创建group碰撞器（只有1个）
-    this.playerDeskCollider = this.physics.add.collider(this.player, this.deskColliders)
+    // 创建group碰撞器（只有1个），并添加回调函数处理书架交互
+    this.playerDeskCollider = this.physics.add.collider(
+      this.player,
+      this.deskColliders,
+      (player, deskSprite) => {
+        // 检查是否是书架
+        if (deskSprite.texture.key.includes("bookcase")) {
+          // 简单的防抖，防止频繁触发
+          if (this.lastLibraryTriggerTime && Date.now() - this.lastLibraryTriggerTime < 1000) {
+            return;
+          }
+          this.lastLibraryTriggerTime = Date.now();
+
+          // 触发前端弹窗
+          window.dispatchEvent(new CustomEvent('open-library', {
+            detail: {
+              bookcaseId: deskSprite.workstationId
+            }
+          }));
+
+          debugLog(`📚 触发图书馆弹窗，书架ID: ${deskSprite.workstationId}`);
+        }
+      }
+    )
     console.log(`✅✅✅ 玩家与工位group碰撞器已创建！(1个碰撞器管理${groupLength}个工位)`)
   }
 
@@ -1432,7 +1509,23 @@ export class Start extends Phaser.Scene {
   }
 
   createWorkstationSprite(obj, adjustedY) {
-    const imageKey = obj.name || "desk_image"
+    let imageKey = obj.name
+
+    // 如果名字为空，尝试根据 GID 推断
+    if (!imageKey && obj.gid) {
+      if (obj.gid === 106) imageKey = "bookcase_tall"
+      else if (obj.gid === 107) imageKey = "bookcase_middle"
+    }
+
+    // 如果名字为空，尝试根据类型或其他属性推断
+    if (!imageKey) {
+      if (obj.type === "bookcase") {
+        imageKey = "bookcase_middle"
+      } else {
+        imageKey = "desk_image"
+      }
+    }
+
     if (!imageKey) return null
 
     const sprite = this.add.image(obj.x, adjustedY, imageKey)
@@ -1442,15 +1535,15 @@ export class Start extends Phaser.Scene {
 
   // ===== 辅助方法 =====
   isDeskObject(obj) {
-    // 修改为同时识别desk和bookcase对象
+    // 修改为同时识别desk
     return (
       obj.name === "desk" ||
       obj.type === "desk" ||
       obj.name.includes("desk_") ||
-      obj.name === "library_bookcase_normal" ||
-      obj.name === "library_bookcase_tall" ||
       obj.type === "bookcase" ||
-      obj.type === "bookcase_tall" ||
+      obj.name.includes("bookcase") ||
+      obj.gid === 106 || // bookcase_tall
+      obj.gid === 107 || // bookcase_middle
       obj.type === "sofa" ||
       obj.type === "flower"
     )
