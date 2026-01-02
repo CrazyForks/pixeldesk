@@ -1,6 +1,4 @@
-/**
- * Email utility using Resend
- */
+import { getSystemSetting } from './systemSettings'
 
 export interface SendEmailParams {
     to: string | string[];
@@ -9,12 +7,12 @@ export interface SendEmailParams {
 }
 
 /**
- * 发送邮件 (使用原生 fetch 调用 Resend API)
+ * 发送邮件 (使用数据库或环境变量配置)
  */
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
     try {
-        const apiKey = process.env.RESEND_API_KEY;
-        const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+        const apiKey = await getSystemSetting('RESEND_API_KEY');
+        const fromEmail = await getSystemSetting('RESEND_FROM_EMAIL', 'support@infyniclick.com');
 
         if (!apiKey) {
             console.warn('RESEND_API_KEY is not configured, skipping email delivery');

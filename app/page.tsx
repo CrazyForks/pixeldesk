@@ -947,7 +947,7 @@ export default function Home() {
       <WorkstationBindingModal
         isVisible={bindingModal.isVisible}
         workstation={bindingModal.workstation}
-        user={bindingModal.user}
+        user={currentUser || bindingModal.user}
         onConfirm={handleBindingConfirm}
         onCancel={handleBindingCancel}
         onClose={handleBindingModalClose}

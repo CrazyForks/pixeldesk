@@ -312,6 +312,17 @@ model PointsConfig {
   @@map("points_config")
 }
 
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  category    String   @default("general")
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_config")
+}
+
 model Admin {
   id          String     @id @default(cuid())
   username    String     @unique
