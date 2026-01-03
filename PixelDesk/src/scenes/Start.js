@@ -1474,8 +1474,8 @@ export class Start extends Phaser.Scene {
           // 触发前台聊天弹窗
           window.dispatchEvent(new CustomEvent('open-front-desk-chat', {
             detail: {
-              deskId: deskSprite.deskId,
-              deskName: deskSprite.deskName,
+              id: deskSprite.deskId,  // 修复：使用 id 而不是 deskId
+              name: deskSprite.deskName,
               serviceScope: deskSprite.serviceScope,
               greeting: deskSprite.greeting,
               workingHours: deskSprite.workingHours
@@ -2342,9 +2342,13 @@ export class Start extends Phaser.Scene {
 
   // 处理工位家具重叠
   handleWorkstationFurnitureOverlap(player, desk) {
+    // ⚡ 性能优化：只在玩家停止移动时检查（避免帧帧触发）
+    if (player.body && (player.body.velocity.x !== 0 || player.body.velocity.y !== 0)) {
+      return
+    }
+
     if (!this.currentUser || !desk.workstationId) {
-      if (!this.currentUser) debugWarn('Collision Skip: No currentUser')
-      if (!desk.workstationId) debugWarn('Collision Skip: Desk has no workstationId')
+      // 静默返回，不再打印日志以优化性能
       return
     }
 
@@ -2357,8 +2361,7 @@ export class Start extends Phaser.Scene {
       this.workstationManager.getWorkstationByUser(this.currentUser.id)
 
     if (!userWorkstation || String(userWorkstation.id) !== String(desk.workstationId)) {
-      // 调试：记录不匹配的情况
-      console.log(`⏭️ [工位碰撞] 跳过: desk ${desk.workstationId} 不是用户的工位 ${userWorkstation?.id}`)
+      // 不匹配用户的工位，静默返回
       return
     }
 

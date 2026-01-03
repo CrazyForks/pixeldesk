@@ -78,6 +78,21 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
     setIsLoading(true)
 
     try {
+      console.log(`📤 发送消息到前台: deskInfo.id=${deskInfo.id}, userMessage=${userMessage}`)
+
+      // 调试：检查deskInfo是否完整
+      console.log('📋 deskInfo完整数据:', {
+        id: deskInfo.id,
+        name: deskInfo.name,
+        hasServiceScope: !!deskInfo.serviceScope,
+        hasGreeting: !!deskInfo.greeting
+      })
+
+      if (!deskInfo.id) {
+        console.error('❌ deskInfo.id 为空！')
+        throw new Error('前台ID未定义，无法发送消息')
+      }
+
       const response = await fetch('/api/front-desk/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,7 +102,9 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
         })
       })
 
+      console.log(`📥 收到响应: ${response.status}, ${response.statusText}`)
       const data = await response.json()
+      console.log('📋 响应数据:', data)
 
       if (data.success) {
         // 添加AI回复
@@ -115,7 +132,7 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
       console.error('Chat error:', error)
       const errorMessage: Message = {
         role: 'assistant',
-        content: '网络连接失败，请稍后重试',
+        content: `网络连接失败: ${error.message}`,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])

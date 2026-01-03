@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. 获取前台信息、AI配置、聊天历史
+        console.log(`🔍 [DEBUG] 开始获取前台信息: ${deskId}`);
+
         const [desk, aiConfig, chatHistory] = await Promise.all([
             prisma.front_desk.findUnique({ where: { id: deskId } }),
             prisma.ai_global_config.findFirst({ where: { isActive: true } }),
@@ -40,13 +42,18 @@ export async function POST(request: NextRequest) {
             })
         ])
 
+        console.log(`🔍 [DEBUG] 获取结果: desk=${!!desk}, aiConfig=${!!aiConfig}, historyCount=${chatHistory.length}`);
+        console.log(`🔍 [DEBUG] AI配置详情:`, aiConfig);
+
         if (!desk) {
+            console.error(`❌ [ERROR] 找不到前台: ${deskId}`);
             return NextResponse.json({ error: '找不到该前台' }, { status: 404 })
         }
 
         // 如果没有配置 AI Provider，回退到模拟
         if (!aiConfig || !aiConfig.apiKey) {
             console.warn('⚠️ [Front Desk Chat] 未配置 AI API Key，回退到模拟模式');
+            console.warn('⚠️ aiConfig:', aiConfig);
             return NextResponse.json({
                 success: true,
                 reply: `[${desk.name}]: 抱歉，系统暂时无法连接，请稍后再试。如有紧急问题，请联系管理员。`,
@@ -109,6 +116,7 @@ export async function POST(request: NextRequest) {
             ]
 
             console.log(`🤖 [${desk.name}] 发送给AI: 系统提示词(1条) + 历史消息(${historicalMessages.length}条) + 新消息(1条) = 共${messagesToSend.length}条`)
+            console.log(`🤖 [${desk.name}] AI配置: provider=${aiConfig.provider}, model=${desk.modelId || finalModelName}, hasApiKey=${!!aiConfig.apiKey}`);
 
             const aiResponse = await callAiProvider(
                 messagesToSend,
@@ -171,6 +179,12 @@ export async function POST(request: NextRequest) {
             })
         } catch (aiError: any) {
             console.error('❌ [Front Desk AI ERROR]:', aiError);
+            console.error('❌ [Front Desk AI ERROR DETAILS]:', {
+                message: aiError.message,
+                stack: aiError.stack,
+                provider: aiConfig.provider,
+                model: desk.modelId || finalModelName
+            });
             return NextResponse.json({
                 success: false,
                 reply: `[${desk.name}]: 系统暂时繁忙，请稍后再试。给您带来不便，敬请谅解。`,
