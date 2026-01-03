@@ -1042,7 +1042,9 @@ export class WorkstationManager {
             // 如果图片还没加载，先加载
             if (!this.scene.textures.exists(characterKey)) {
                 debugLog(`📥 [addCharacterToWorkstation] 加载角色纹理: ${characterKey}`);
-                this.scene.load.image(characterKey, `/assets/characters/${characterKey}.png`);
+                this.scene.load.spritesheet(characterKey, `/assets/characters/${characterKey}.png`, {
+                    frameWidth: 48, frameHeight: 48
+                });
                 this.scene.load.once(`complete`, () => {
                     debugLog(`✅ [addCharacterToWorkstation] 纹理加载完成: ${characterKey}`);
                     this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
@@ -1317,28 +1319,6 @@ export class WorkstationManager {
         }
 
         return { x: characterX, y: characterY, direction: characterDirection };
-    }
-
-    // 设置角色方向帧（复制Player类的逻辑）
-    setCharacterDirectionFrame(headSprite, bodySprite, direction) {
-        switch (direction) {
-            case 'up':
-                headSprite.setFrame(1);
-                bodySprite.setFrame(57);
-                break;
-            case 'left':
-                headSprite.setFrame(2);
-                bodySprite.setFrame(58);
-                break;
-            case 'down':
-                headSprite.setFrame(3);
-                bodySprite.setFrame(59);
-                break;
-            case 'right':
-                headSprite.setFrame(0);
-                bodySprite.setFrame(56);
-                break;
-        }
     }
 
     // ===== 交互图标管理 =====

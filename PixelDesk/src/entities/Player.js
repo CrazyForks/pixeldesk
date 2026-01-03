@@ -47,42 +47,32 @@ export class Player extends Phaser.GameObjects.Container {
         this.collisionStartTime = null;
         this.collisionDebounceTimer = null;
 
-        // 🔧 动态检测是否为紧凑8帧格式
-        // 优先使用传入的 characterConfig，如果没有则从 scene 获取，最后回退到检查角色名
-        if (characterConfig) {
-            this.isCompactFormat = characterConfig.isCompactFormat;
-        } else if (scene.characterConfigs && scene.characterConfigs.has(spriteKey)) {
-            this.isCompactFormat = scene.characterConfigs.get(spriteKey).isCompactFormat;
-        } else {
-            // 后备方案：检查是否为已知的紧凑格式角色
-            this.isCompactFormat = this.spriteKey === 'hangli';
-        }
-
-        // 创建分离的身体和头部精灵（两种格式都使用这个结构）
+        // 创建分离的身体和头部精灵
         this.bodySprite = scene.add.image(0, 48, this.spriteKey);
         this.headSprite = scene.add.image(0, 0, this.spriteKey);
-        this.add([this.headSprite, this.bodySprite]);
 
-        if (this.isCompactFormat) {
-            // 紧凑格式（hangli）：第一行是头部（0-3），第二行是身体（4-7）
-            // 列顺序：右、上、左、下
-            this.headSprite.setFrame(3);  // 默认朝下的头部（第四列）
-            this.bodySprite.setFrame(7);  // 默认朝下的身体（第四列）
-        } else {
-            // 传统格式：使用原有的帧编号
-            this.bodySprite.setFrame(56); // user_body对应的帧
-            this.headSprite.setFrame(0);  // user_head对应的帧
-        }
+        // 确保身体在头部下面渲染
+        this.add([this.bodySprite, this.headSprite]);
+
+        // 设置深度，头部在上层
+        this.bodySprite.setDepth(0);
+        this.headSprite.setDepth(1);
+
+        // 统一标准：头部占第一行(0-3)，身体占第二行(4-7)
+        // 布局标准：下(0)、左(1)、右(2)、上(3)
+        // 默认设置为朝下（正面：Head 0, Body 4）
+        this.headSprite.setFrame(0);
+        this.bodySprite.setFrame(4);
 
         // 启用物理特性
         scene.physics.world.enable(this);
 
         // 初始化角色浮动动画（必须在物理体创建后）
-        // 仅为其他玩家启用浮动动画，主玩家不启用
         if (this.isOtherPlayer) {
             this.initCharacterFloatAnimation();
         }
-        // 修改碰撞体大小和偏移量，使其与玩家精灵重叠 (恢复到正常 commit 的设置)
+
+        // 修改碰撞体大小和偏移量
         this.body.setSize(40, 60);
         this.body.setOffset(-20, -12);
 
@@ -97,57 +87,41 @@ export class Player extends Phaser.GameObjects.Container {
         }
     }
 
+    /**
+     * 设置角色方向对应的帧
+     * 统一标准：下(0)、左(1)、右(2)、上(3)
+     * 第一行（帧0-3）：头部
+     * 第二行（帧4-7）：身体
+     */
     setDirectionFrame(direction) {
+        if (!this.headSprite || !this.bodySprite) return;
+
         this.currentDirection = direction;
 
-        if (this.isCompactFormat) {
-            // 紧凑格式（hangli）：192×96像素，2行4列
-            // 第一行（帧0-3）：头部的 右、上、左、下
-            // 第二行（帧4-7）：身体的 右、上、左、下
-            switch (direction) {
-                case 'right':
-                    this.headSprite.setFrame(0);  // 第一行第一列：向右
-                    this.bodySprite.setFrame(4);  // 第二行第一列：向右
-                    break;
-                case 'up':
-                    this.headSprite.setFrame(1);  // 第一行第二列：背面（上）
-                    this.bodySprite.setFrame(5);  // 第二行第二列：背面（上）
-                    break;
-                case 'left':
-                    this.headSprite.setFrame(2);  // 第一行第三列：向左
-                    this.bodySprite.setFrame(6);  // 第二行第三列：向左
-                    break;
-                case 'down':
-                    this.headSprite.setFrame(3);  // 第一行第四列：正面（下）
-                    this.bodySprite.setFrame(7);  // 第二行第四列：正面（下）
-                    break;
-            }
-        } else {
-            // 传统格式：分离的头部和身体帧
-            switch (direction) {
-                case 'up':
-                    this.headSprite.setFrame(1);
-                    this.bodySprite.setFrame(57);
-                    break;
-                case 'left':
-                    this.headSprite.setFrame(2);
-                    this.bodySprite.setFrame(58);
-                    break;
-                case 'down':
-                    this.headSprite.setFrame(3);
-                    this.bodySprite.setFrame(59);
-                    break;
-                case 'right':
-                    this.headSprite.setFrame(0);
-                    this.bodySprite.setFrame(56);
-                    break;
-            }
+        switch (direction) {
+            case 'right':
+                this.headSprite.setFrame(0);  // 第一行第一列：向右
+                this.bodySprite.setFrame(4);  // 第二行第一列：向右
+                break;
+            case 'up':
+                this.headSprite.setFrame(1);  // 第一行第二列：背面（上）
+                this.bodySprite.setFrame(5);  // 第二行第二列：背面（上）
+                break;
+            case 'left':
+                this.headSprite.setFrame(2);  // 第一行第三列：向左
+                this.bodySprite.setFrame(6);  // 第二行第三列：向左
+                break;
+            case 'down':
+                this.headSprite.setFrame(3);  // 第一行第四列：正面（下）
+                this.bodySprite.setFrame(7);  // 第二行第四列：正面（下）
+                break;
         }
 
         // 保存方向变化
-        this.saveState();
+        if (this.isMainPlayer) {
+            this.saveState();
+        }
     }
-
     move(velocityX, velocityY, direction) {
         if (!this.body) return;
 

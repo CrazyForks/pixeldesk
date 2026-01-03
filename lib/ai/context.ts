@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db'
 export async function getSystemContext() {
     try {
         // 1. 获取在线用户数量和名单 (限制前10个)
-        const onlineUsers = await prisma.userOnlineStatus.findMany({
+        const onlineUsers = await (prisma as any).user_online_status.findMany({
             where: { isOnline: true },
             take: 10,
             include: {
@@ -15,7 +15,7 @@ export async function getSystemContext() {
                     select: { name: true }
                 }
             }
-        })
+        }) as any[]
 
         // 2. 获取工位状态概览
         const totalDesks = 1000 // 假设总数
@@ -29,24 +29,24 @@ export async function getSystemContext() {
         })
 
         // 3. 获取最近的动态 (可选，限制前5条)
-        const latestPosts = await prisma.post.findMany({
+        const latestPosts = await (prisma as any).posts.findMany({
             where: { isPublic: true, isDraft: false },
             orderBy: { createdAt: 'desc' },
             take: 5,
             select: {
-                author: { select: { name: true } },
+                users: { select: { name: true } },
                 content: true,
                 createdAt: true
             }
-        })
+        }) as any[]
 
         // 格式化上下文
         return {
             time: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
             onlineCount: onlineUsers.length,
-            onlineSample: onlineUsers.map(u => u.user.name).join(', '),
+            onlineSample: onlineUsers.map((u: any) => u.users.name).join(', '),
             workstationStats: `总计 ${totalDesks} 个工位，当前已占用 ${occupiedDesks} 个`,
-            latestBuzz: latestPosts.map(p => `${p.author.name}刚才说: "${p.content.substring(0, 30)}..."`).join('\n')
+            latestBuzz: latestPosts.map((p: any) => `${p.users.name}刚才说: "${p.content.substring(0, 30)}..."`).join('\n')
         }
     } catch (error) {
         console.error('Error gathering system context:', error)
