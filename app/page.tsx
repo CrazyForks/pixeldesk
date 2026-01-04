@@ -637,7 +637,7 @@ export default function Home() {
       })
     }
 
-    // 监听前台客服聊天事件
+    // 监听前台客服聊天事件（由 F 键触发）
     const handleOpenFrontDeskChat = (event: CustomEvent) => {
       const { id, name, serviceScope, greeting } = event.detail
       console.log('🏢 打开前台客服聊天:', name)
@@ -650,8 +650,20 @@ export default function Home() {
       })
     }
 
+    // 监听前台碰撞事件（显示 toast 提示）
+    const handleFrontDeskCollision = (event: CustomEvent) => {
+      const { id, name, serviceScope, greeting } = event.detail
+      console.log('🏢 显示前台交互提示:', name)
+
+      // 在 Phaser 中显示提示（如果 gameScene 存在）
+      if (typeof window !== 'undefined' && (window as any).gameScene) {
+        (window as any).gameScene.showCollisionNotification('按 F 键与 ' + name + ' 对话', 'info')
+      }
+    }
+
     window.addEventListener('open-ai-chat', handleOpenAiChat as EventListener)
     window.addEventListener('open-front-desk-chat', handleOpenFrontDeskChat as EventListener)
+    window.addEventListener('front-desk-collision-start', handleFrontDeskCollision as EventListener)
 
     // 监听碰到自己工位的事件
     const handleMyWorkstationCollision = (e: any) => {
@@ -669,6 +681,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('open-ai-chat', handleOpenAiChat as EventListener)
       window.removeEventListener('open-front-desk-chat', handleOpenFrontDeskChat as EventListener)
+      window.removeEventListener('front-desk-collision-start', handleFrontDeskCollision as EventListener)
       window.removeEventListener('my-workstation-collision-start', handleMyWorkstationCollision)
       window.removeEventListener('my-workstation-collision-end', handleMyWorkstationCollisionEnd)
     }

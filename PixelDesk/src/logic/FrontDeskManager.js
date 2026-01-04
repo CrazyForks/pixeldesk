@@ -193,6 +193,34 @@ export class FrontDeskManager {
     }
 
     /**
+     * 获取玩家在碰撞范围内的所有前台
+     */
+    getCollidingDesks(player, distance = 80) {
+        const collidingDesks = [];
+
+        this.desks.forEach((deskData, sprite) => {
+            if (sprite && sprite.active && sprite.body) {
+                // 使用物理体边界进行更精确的碰撞检测
+                const bounds = sprite.body;
+                const dist = Phaser.Math.Distance.Between(
+                    player.x, player.y,
+                    sprite.x, sprite.y
+                );
+
+                if (dist < distance) {
+                    collidingDesks.push({
+                        sprite,
+                        deskData,
+                        distance: dist
+                    });
+                }
+            }
+        });
+
+        return collidingDesks;
+    }
+
+    /**
      * 获取玩家附近的前台（用于交互提示）
      */
     getNearbyDesk(player, distance = 80) {

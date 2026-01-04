@@ -638,9 +638,6 @@ export class Start extends Phaser.Scene {
     //   this.handleTeleportKeyPress()
     // }
 
-    // 🏢 前台交互已改为自动碰撞触发,不再使用F键
-    // 碰撞逻辑在 ensurePlayerDeskCollider() 中处理
-
     // 为 update 循环添加一个简单的计数器（如果还不存在）
     if (!this.updateCounter) this.updateCounter = 0
     this.updateCounter++
@@ -659,6 +656,31 @@ export class Start extends Phaser.Scene {
           workstationId: this.currentUser?.workstationId,
           activeCollisions: this.collisionManager?.activeCollisions?.size
         })
+      }
+    }
+
+    // 每帧检测前台碰撞，触发离开时的事件
+    if (this.updateCounter % 30 === 0 && this.frontDeskManager && this.player) {
+      this.checkFrontDeskCollisionEnd()
+    }
+  }
+
+  // 检查前台碰撞是否结束（玩家离开前台范围）
+  checkFrontDeskCollisionEnd() {
+    // 检查是否有碰撞中的前台
+    if (!this.currentCollidingDesk) return
+
+    // 检查玩家是否还在碰撞范围内
+    const collidingDesks = this.frontDeskManager.getCollidingDesks(this.player, 80)
+
+    if (collidingDesks.length === 0) {
+      // 玩家已离开前台范围
+      console.log(`🏢 [碰撞结束] 离开前台: ${this.currentCollidingDesk.name}`)
+      this.currentCollidingDesk = null
+
+      // 触发碰撞结束事件
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('front-desk-collision-end'))
       }
     }
   }
@@ -708,7 +730,7 @@ export class Start extends Phaser.Scene {
 
     const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, deskCenterX, deskCenterY)
 
-    // 如果在 100 像素范围内 (再次放大范围以防万一)，视为“在工位”
+    // 如果在 100 像素范围内 (再次放大范围以防万一)，视为"在工位"
     if (dist < 100) {
       if (!this.collisionManager.activeCollisions.has(`workstation_${myWorkstationId}`)) {
         console.log(`[Proximity] 接近工位: ${myWorkstationId}, 距离: ${Math.round(dist)}`)
@@ -1471,18 +1493,21 @@ export class Start extends Phaser.Scene {
           }
           this.lastFrontDeskTriggerTime = Date.now();
 
-          // 触发前台聊天弹窗
-          window.dispatchEvent(new CustomEvent('open-front-desk-chat', {
-            detail: {
-              id: deskSprite.deskId,  // 修复：使用 id 而不是 deskId
-              name: deskSprite.deskName,
-              serviceScope: deskSprite.serviceScope,
-              greeting: deskSprite.greeting,
-              workingHours: deskSprite.workingHours
-            }
+          // 记录当前碰撞的前台
+          this.currentCollidingDesk = {
+            id: deskSprite.deskId,
+            name: deskSprite.deskName,
+            serviceScope: deskSprite.serviceScope,
+            greeting: deskSprite.greeting,
+            workingHours: deskSprite.workingHours
+          };
+
+          // 触发前台交互提示（改为显示 toast，而不是直接打开弹窗）
+          window.dispatchEvent(new CustomEvent('front-desk-collision-start', {
+            detail: this.currentCollidingDesk
           }));
 
-          console.log(`🏢 [碰撞触发] 打开前台聊天: ${deskSprite.deskName} (${deskSprite.serviceScope})`);
+          console.log(`🏢 [碰撞触发] 显示前台交互提示: ${deskSprite.deskName} (${deskSprite.serviceScope})`);
         }
       }
     )
@@ -1759,10 +1784,45 @@ export class Start extends Phaser.Scene {
       Phaser.Input.Keyboard.KeyCodes.T
     )
 
-    // 🏢 [已废弃] F键与前台客服交互 - 已改为自动碰撞触发
-    // this.frontDeskKey = this.input.keyboard.addKey(
-    //   Phaser.Input.Keyboard.KeyCodes.F
-    // )
+    // 🏢 配置前台客服的 F 键交互
+    this.frontDeskKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.F
+    )
+
+    // 监听 F 键按下，打开前台对话框
+    if (this.frontDeskKey) {
+      this.frontDeskKey.on('down', () => {
+        // 检查前台管理器是否存在
+        if (!this.frontDeskManager) {
+          console.warn('🏢 [F键] FrontDeskManager 未初始化')
+          return
+        }
+
+        // 获取碰撞范围内的前台
+        const collidingDesks = this.frontDeskManager.getCollidingDesks(this.player, 150)
+
+        if (collidingDesks.length > 0) {
+          // 找到最近的前台
+          const nearestDesk = collidingDesks.reduce((nearest, current) =>
+            current.distance < nearest.distance ? current : nearest
+          )
+
+          const deskSprite = nearestDesk.sprite
+          console.log(`🏢 [F键] 打开前台对话框: ${deskSprite.deskName}`)
+
+          // 触发前台聊天弹窗
+          window.dispatchEvent(new CustomEvent('open-front-desk-chat', {
+            detail: {
+              id: deskSprite.deskId,
+              name: deskSprite.deskName,
+              serviceScope: deskSprite.serviceScope,
+              greeting: deskSprite.greeting,
+              workingHours: deskSprite.workingHours
+            }
+          }))
+        }
+      })
+    }
   }
 
   // ===== 全局函数方法 =====

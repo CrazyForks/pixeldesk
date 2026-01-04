@@ -29,6 +29,7 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
   const [isLoading, setIsLoading] = useState(false)
   const [usage, setUsage] = useState({ current: 0, limit: 50, remaining: 50 })
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // 初始化时添加问候语
   useEffect(() => {
@@ -62,6 +63,17 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // 自动对焦输入框
+  useEffect(() => {
+    if (isOpen) {
+      // 延迟一点，等弹窗完全显示后再对焦
+      const timer = setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen])
+
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
 
@@ -78,21 +90,6 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
     setIsLoading(true)
 
     try {
-      console.log(`📤 发送消息到前台: deskInfo.id=${deskInfo.id}, userMessage=${userMessage}`)
-
-      // 调试：检查deskInfo是否完整
-      console.log('📋 deskInfo完整数据:', {
-        id: deskInfo.id,
-        name: deskInfo.name,
-        hasServiceScope: !!deskInfo.serviceScope,
-        hasGreeting: !!deskInfo.greeting
-      })
-
-      if (!deskInfo.id) {
-        console.error('❌ deskInfo.id 为空！')
-        throw new Error('前台ID未定义，无法发送消息')
-      }
-
       const response = await fetch('/api/front-desk/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -102,9 +99,7 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
         })
       })
 
-      console.log(`📥 收到响应: ${response.status}, ${response.statusText}`)
       const data = await response.json()
-      console.log('📋 响应数据:', data)
 
       if (data.success) {
         // 添加AI回复
@@ -177,17 +172,17 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
         onPointerUp={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex justify-between items-center">
+        <div className="bg-gradient-to-r from-cyan-600 via-teal-600 to-cyan-700 text-white p-4 rounded-t-lg flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold">{deskInfo.name}</h2>
-            <p className="text-sm text-blue-100">{deskInfo.serviceScope}</p>
+            <p className="text-sm text-cyan-100">{deskInfo.serviceScope}</p>
             {deskInfo.workingHours && (
-              <p className="text-xs text-blue-200 mt-1">工作时间: {deskInfo.workingHours}</p>
+              <p className="text-xs text-cyan-200 mt-1">工作时间: {deskInfo.workingHours}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:bg-blue-800 rounded-full p-2 transition-colors"
+            className="text-white hover:bg-cyan-500/30 rounded-full p-2 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -246,6 +241,7 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
         <div className="border-t p-4">
           <div className="flex space-x-2">
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -253,12 +249,12 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
               onKeyDown={handleInputKeyDown}
               placeholder="输入您的问题..."
               disabled={isLoading}
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:bg-gray-100 bg-white text-gray-800"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !inputValue.trim()}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               发送
             </button>
