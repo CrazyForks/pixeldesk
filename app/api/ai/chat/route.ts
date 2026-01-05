@@ -161,15 +161,18 @@ ${systemContext?.latestBuzz}
             }
 
             // 9. 保存聊天历史（用户消息 + AI回复）
+            const cuid = (await import('cuid')).default
             await prisma.ai_chat_history.createMany({
                 data: [
                     {
+                        id: cuid(),
                         userId,
                         npcId,
                         role: 'user',
                         content: message
                     },
                     {
+                        id: cuid(),
                         userId,
                         npcId,
                         role: 'assistant',

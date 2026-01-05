@@ -149,10 +149,11 @@ export async function POST(request: NextRequest) {
             }
 
             // 8. 保存聊天历史
+            const cuid = (await import('cuid')).default
             await prisma.ai_chat_history.createMany({
                 data: [
                     {
-                        id: `chat_${Date.now()}_user`,
+                        id: cuid(),
                         userId,
                         npcId: deskId,
                         chatType: 'front_desk',
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
                         content: message
                     },
                     {
-                        id: `chat_${Date.now()}_assistant`,
+                        id: cuid(),
                         userId,
                         npcId: deskId,
                         chatType: 'front_desk',
