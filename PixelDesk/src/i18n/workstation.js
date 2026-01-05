@@ -7,13 +7,13 @@ export const workstationI18n = {
         type: '类型',
         bindingFee: '绑定费用',
         duration: '30天',
-        points: '积分',
-        yourPoints: '您的积分',
+        points: '象素币',
+        yourPoints: '您的象素币',
         confirm: '确认绑定',
         cancel: '取消',
         success: '绑定成功！',
         failed: '绑定失败，请重试',
-        insufficientPoints: '积分不足',
+        insufficientPoints: '象素币不足',
 
         // 状态更新
         updateStatus: '更新状态',
@@ -32,13 +32,13 @@ export const workstationI18n = {
         type: 'Type',
         bindingFee: 'Binding Fee',
         duration: '30 Days',
-        points: 'Points',
-        yourPoints: 'Your Points',
+        points: 'PixelCoins',
+        yourPoints: 'Your PixelCoins',
         confirm: 'Confirm Binding',
         cancel: 'Cancel',
         success: 'Binding Successful!',
         failed: 'Binding failed, please retry',
-        insufficientPoints: 'Insufficient Points',
+        insufficientPoints: 'Insufficient PixelCoins',
 
         // 状态更新
         updateStatus: 'Update Status',

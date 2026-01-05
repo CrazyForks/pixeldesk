@@ -18,6 +18,9 @@ interface BindingInfo {
   expiresAt?: string
   remainingDays?: number
   isExpiringSoon?: boolean
+  adText?: string | null
+  adImage?: string | null
+  adUpdatedAt?: string | null
 }
 
 interface UserInfo {
@@ -289,8 +292,8 @@ const WorkstationInfoModal = memo(({
                   <div className="flex items-center space-x-4">
                     {userInfo.avatar ? (
                       <div className="relative">
-                        <img 
-                          src={userInfo.avatar} 
+                        <img
+                          src={userInfo.avatar}
                           alt={userInfo.name}
                           className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border-2 border-white/20 shadow-lg"
                         />
@@ -317,6 +320,59 @@ const WorkstationInfoModal = memo(({
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* 工位广告 - 像素艺术广告卡片 */}
+            {bindingInfo && (bindingInfo.adText || bindingInfo.adImage) && (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-retro-yellow/5 to-retro-orange/5 rounded-xl opacity-0 group-hover:opacity-100 "></div>
+                <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-4 shadow-lg hover:border-retro-yellow/40 ">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-6 h-6 bg-gradient-to-br from-retro-yellow/30 to-retro-orange/30 rounded-lg flex items-center justify-center shadow-lg">
+                      <span className="text-sm">📢</span>
+                    </div>
+                    <h3 className="text-white font-bold text-sm font-pixel tracking-wide">WORKSTATION AD</h3>
+                  </div>
+
+                  {/* 广告图片 */}
+                  {bindingInfo.adImage && (
+                    <div className="relative mb-4 rounded-lg overflow-hidden border-2 border-retro-border/30 shadow-lg">
+                      <img
+                        src={bindingInfo.adImage}
+                        alt="工位广告"
+                        className="w-full h-auto object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/0 pointer-events-none"></div>
+                    </div>
+                  )}
+
+                  {/* 广告文案 */}
+                  {bindingInfo.adText && (
+                    <div className="bg-gradient-to-r from-retro-bg-darker/30 to-retro-bg-dark/30 rounded-lg p-3 border border-retro-border/30 mb-3">
+                      <p className="text-white text-sm font-retro leading-relaxed whitespace-pre-wrap break-words">
+                        {bindingInfo.adText}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 更新时间 */}
+                  {bindingInfo.adUpdatedAt && (
+                    <div className="flex items-center justify-end gap-2 text-retro-textMuted text-xs font-retro">
+                      <span>⏰</span>
+                      <span>Updated: {new Date(bindingInfo.adUpdatedAt).toLocaleString('zh-CN', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

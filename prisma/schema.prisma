@@ -268,10 +268,11 @@ model players {
   @@index([userId])
 }
 
+// 象素币(PixelCoin)配置表 - 虚拟货币系统配置
 model points_config {
   id          String         @id
   key         String         @unique
-  value       Int
+  value       Int            // 象素币数量
   description String
   category    PointsCategory
   isActive    Boolean        @default(true)
@@ -282,13 +283,14 @@ model points_config {
   @@index([key])
 }
 
+// 象素币(PixelCoin)历史记录表 - 用户虚拟货币交易记录
 model points_history {
   id        String   @id
   userId    String
-  amount    Int
-  reason    String
-  type      String
-  balance   Int
+  amount    Int      // 象素币变动数量(正数为获得,负数为消费)
+  reason    String   // 变动原因
+  type      String   // 交易类型
+  balance   Int      // 交易后余额
   createdAt DateTime @default(now())
   users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -438,6 +440,10 @@ model user_workstations {
   boundAt       DateTime  @default(now())
   cost          Int       @default(0)
   expiresAt     DateTime?
+  adText        String?   // 广告文案
+  adImage       String?   // 广告图片 URL
+  adUrl         String?   // 广告链接 URL
+  adUpdatedAt   DateTime? // 广告更新时间
   users         users     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workstationId])
@@ -449,7 +455,7 @@ model user_workstations {
 
 model users {
   id                                               String                      @id
-  points                                           Int                         @default(100)
+  points                                           Int                         @default(100) // 象素币(PixelCoin)余额
   createdAt                                        DateTime                    @default(now())
   updatedAt                                        DateTime
   avatar                                           String?

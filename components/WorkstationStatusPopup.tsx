@@ -8,6 +8,7 @@ interface WorkstationStatusPopupProps {
     onStatusUpdate: (status: any) => void
     onClose: () => void
     userId?: string
+    workstationId?: number
     language?: 'zh-CN' | 'en'
 }
 
@@ -23,6 +24,7 @@ const WorkstationStatusPopup = memo(({
     onStatusUpdate,
     onClose,
     userId,
+    workstationId,
     language = 'zh-CN'
 }: WorkstationStatusPopupProps) => {
     const [selectedId, setSelectedId] = useState('working')
@@ -30,6 +32,15 @@ const WorkstationStatusPopup = memo(({
     const [customEmoji, setCustomEmoji] = useState('📝')
     const [customLabel, setCustomLabel] = useState('')
     const [customHistory, setCustomHistory] = useState<Array<{ emoji: string, label: string }>>([])
+
+    // 广告管理状态
+    const [currentTab, setCurrentTab] = useState<'status' | 'ad'>('status')
+    const [adText, setAdText] = useState('')
+    const [adImage, setAdImage] = useState('')
+    const [adUrl, setAdUrl] = useState('')
+    const [isAdSaving, setIsAdSaving] = useState(false)
+    const [adError, setAdError] = useState<string | null>(null)
+    const [adSuccess, setAdSuccess] = useState(false)
 
     // Load custom status history from localStorage
     useEffect(() => {
@@ -44,6 +55,60 @@ const WorkstationStatusPopup = memo(({
             }
         }
     }, [])
+
+    // 获取当前广告信息
+    useEffect(() => {
+        if (isVisible && workstationId && currentTab === 'ad') {
+            fetch(`/api/workstations/${workstationId}/advertisement`)
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success && result.data) {
+                        setAdText(result.data.adText || '')
+                        setAdImage(result.data.adImage || '')
+                        setAdUrl(result.data.adUrl || '')
+                    }
+                })
+                .catch(err => console.error('Failed to load advertisement:', err))
+        }
+    }, [isVisible, workstationId, currentTab])
+
+    // 保存广告
+    const handleSaveAd = useCallback(async () => {
+        if (!workstationId) {
+            setAdError(language === 'zh-CN' ? '工位ID无效' : 'Invalid workstation ID')
+            return
+        }
+
+        setIsAdSaving(true)
+        setAdError(null)
+        setAdSuccess(false)
+
+        try {
+            const response = await fetch(`/api/workstations/${workstationId}/advertisement`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    adText: adText.trim() || null,
+                    adImage: adImage.trim() || null,
+                    adUrl: adUrl.trim() || null
+                })
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                setAdSuccess(true)
+                setTimeout(() => setAdSuccess(false), 3000)
+            } else {
+                setAdError(result.error || (language === 'zh-CN' ? '保存失败' : 'Save failed'))
+            }
+        } catch (error) {
+            console.error('Failed to save advertisement:', error)
+            setAdError(language === 'zh-CN' ? '保存失败' : 'Save failed')
+        } finally {
+            setIsAdSaving(false)
+        }
+    }, [workstationId, adText, adImage, adUrl, language])
 
     const handleConfirm = useCallback(async () => {
         let fullStatus
@@ -144,11 +209,15 @@ const WorkstationStatusPopup = memo(({
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isVisible) {
+                // 阻止事件冒泡到 Phaser
+                e.stopPropagation()
+                e.preventDefault()
                 onClose()
             }
         }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
+        // 使用 capture 阶段监听，优先级高于 Phaser
+        window.addEventListener('keydown', handleKeyDown, true)
+        return () => window.removeEventListener('keydown', handleKeyDown, true)
     }, [isVisible, onClose])
 
     // 常用 emoji 列表
@@ -214,58 +283,88 @@ const WorkstationStatusPopup = memo(({
                                 </button>
                             </div>
 
-                            {/* 模式切换 */}
+                            {/* 主标签切换 */}
                             <div className="flex gap-2 mb-4">
                                 <button
-                                    onClick={() => setIsCustomMode(false)}
-                                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${!isCustomMode
+                                    onClick={() => setCurrentTab('status')}
+                                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${currentTab === 'status'
                                         ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white'
                                         : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
                                         }`}
                                 >
-                                    {language === 'zh-CN' ? '快捷状态' : 'Quick Status'}
+                                    {language === 'zh-CN' ? '更新状态' : 'Update Status'}
                                 </button>
-                                <button
-                                    onClick={() => setIsCustomMode(true)}
-                                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${isCustomMode
-                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                                        : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
-                                        }`}
-                                >
-                                    {language === 'zh-CN' ? '自定义' : 'Custom'}
-                                </button>
+                                {workstationId && (
+                                    <button
+                                        onClick={() => setCurrentTab('ad')}
+                                        className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${currentTab === 'ad'
+                                            ? 'bg-gradient-to-r from-yellow-600 to-orange-600 text-white'
+                                            : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
+                                            }`}
+                                    >
+                                        📢 {language === 'zh-CN' ? '工位广告' : 'Ad'}
+                                    </button>
+                                )}
                             </div>
 
-                            {!isCustomMode ? (
-                                /* 预设状态网格 */
-                                <div className="grid grid-cols-2 gap-3 mb-6">
-                                    {statusOptions.map((status) => (
+                            {currentTab === 'status' && (
+                                <>
+                                    {/* 状态模式切换 */}
+                                    <div className="flex gap-2 mb-4">
                                         <button
-                                            key={status.id}
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                setSelectedId(status.id)
-                                            }}
-                                            className={`relative group flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all duration-300 ${selectedId === status.id
-                                                ? `bg-gradient-to-br ${status.color} border-white/30 text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] scale-[1.02]`
-                                                : 'bg-gray-800/40 border-gray-700/50 text-gray-400 hover:border-gray-500 hover:bg-gray-800/60'
+                                            onClick={() => setIsCustomMode(false)}
+                                            className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${!isCustomMode
+                                                ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white'
+                                                : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
                                                 }`}
                                         >
-                                            <span className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform">{status.emoji}</span>
-                                            <span className="text-xs font-black tracking-widest uppercase">{status.label[language]}</span>
-
-                                            {selectedId === status.id && (
-                                                <motion.div
-                                                    layoutId="active-highlight"
-                                                    className="absolute inset-0 bg-white/10 rounded-2xl ring-2 ring-white/20"
-                                                />
-                                            )}
+                                            {language === 'zh-CN' ? '快捷状态' : 'Quick Status'}
                                         </button>
-                                    ))}
-                                </div>
-                            ) : (
-                                /* 自定义状态输入 */
-                                <div className="space-y-4 mb-6">
+                                        <button
+                                            onClick={() => setIsCustomMode(true)}
+                                            className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${isCustomMode
+                                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                                                : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
+                                                }`}
+                                        >
+                                            {language === 'zh-CN' ? '自定义' : 'Custom'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {currentTab === 'status' ? (
+                                <>
+                                    {!isCustomMode ? (
+                                        /* 预设状态网格 */
+                                        <div className="grid grid-cols-2 gap-3 mb-6">
+                                            {statusOptions.map((status) => (
+                                                <button
+                                                    key={status.id}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setSelectedId(status.id)
+                                                    }}
+                                                    className={`relative group flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all duration-300 ${selectedId === status.id
+                                                        ? `bg-gradient-to-br ${status.color} border-white/30 text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] scale-[1.02]`
+                                                        : 'bg-gray-800/40 border-gray-700/50 text-gray-400 hover:border-gray-500 hover:bg-gray-800/60'
+                                                        }`}
+                                                >
+                                                    <span className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform">{status.emoji}</span>
+                                                    <span className="text-xs font-black tracking-widest uppercase">{status.label[language]}</span>
+
+                                                    {selectedId === status.id && (
+                                                        <motion.div
+                                                            layoutId="active-highlight"
+                                                            className="absolute inset-0 bg-white/10 rounded-2xl ring-2 ring-white/20"
+                                                        />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        /* 自定义状态输入 */
+                                        <div className="space-y-4 mb-6">
                                     {/* History Section */}
                                     {customHistory.length > 0 && (
                                         <div>
@@ -320,6 +419,15 @@ const WorkstationStatusPopup = memo(({
                                             type="text"
                                             value={customLabel}
                                             onChange={(e) => setCustomLabel(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                // 阻止事件冒泡到 Phaser
+                                                e.stopPropagation()
+                                                // 处理 Enter 键提交
+                                                if (e.key === 'Enter' && customLabel.trim()) {
+                                                    e.preventDefault()
+                                                    handleConfirm()
+                                                }
+                                            }}
                                             placeholder={language === 'zh-CN' ? '输入你的状态...' : 'Enter your status...'}
                                             maxLength={30}
                                             className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
@@ -342,22 +450,147 @@ const WorkstationStatusPopup = memo(({
                                         </div>
                                     )}
                                 </div>
-                            )}
+                                    )}
 
-                            {/* 确认按钮 */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleConfirm()
-                                }}
-                                disabled={isCustomMode && !customLabel.trim()}
-                                className={`w-full py-4 rounded-2xl font-black text-sm tracking-[0.2em] transition-all duration-300 active:scale-[0.97] uppercase ${isCustomMode && !customLabel.trim()
-                                    ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-500 hover:via-teal-500 hover:to-emerald-500 text-white shadow-[0_10px_30px_rgba(6,182,212,0.3)] hover:shadow-[0_15px_40px_rgba(6,182,212,0.4)]'
-                                    }`}
-                            >
-                                {language === 'zh-CN' ? '确认并同步' : 'CONFIRM & SYNC'}
-                            </button>
+                                    {/* 确认按钮 - 仅状态页显示 */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleConfirm()
+                                        }}
+                                        disabled={isCustomMode && !customLabel.trim()}
+                                        className={`w-full py-4 rounded-2xl font-black text-sm tracking-[0.2em] transition-all duration-300 active:scale-[0.97] uppercase ${isCustomMode && !customLabel.trim()
+                                            ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-500 hover:via-teal-500 hover:to-emerald-500 text-white shadow-[0_10px_30px_rgba(6,182,212,0.3)] hover:shadow-[0_15px_40px_rgba(6,182,212,0.4)]'
+                                            }`}
+                                    >
+                                        {language === 'zh-CN' ? '确认并同步' : 'CONFIRM & SYNC'}
+                                    </button>
+                                </>
+                            ) : (
+                                /* 广告编辑界面 */
+                                <div className="space-y-4 mb-6">
+                                    {/* 成功提示 */}
+                                    {adSuccess && (
+                                        <div className="bg-gradient-to-r from-green-600/20 to-teal-600/20 border border-green-500/30 rounded-xl p-3 flex items-center gap-3">
+                                            <span className="text-2xl">✅</span>
+                                            <span className="text-green-400 text-sm font-bold">
+                                                {language === 'zh-CN' ? '保存成功!' : 'Saved successfully!'}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* 错误提示 */}
+                                    {adError && (
+                                        <div className="bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-xl p-3 flex items-center gap-3">
+                                            <span className="text-2xl">⚠️</span>
+                                            <span className="text-red-400 text-sm">{adError}</span>
+                                        </div>
+                                    )}
+
+                                    {/* 广告文案输入 */}
+                                    <div>
+                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                            📝 {language === 'zh-CN' ? '广告文案' : 'Ad Text'} ({adText.length}/200)
+                                        </label>
+                                        <textarea
+                                            value={adText}
+                                            onChange={(e) => setAdText(e.target.value)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            placeholder={language === 'zh-CN' ? '输入广告文案，向访客展示你的信息...' : 'Enter your ad text...'}
+                                            maxLength={200}
+                                            rows={4}
+                                            className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all resize-none"
+                                        />
+                                    </div>
+
+                                    {/* 广告图片 URL 输入 */}
+                                    <div>
+                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                            🖼️ {language === 'zh-CN' ? '广告图片 URL' : 'Ad Image URL'} ({adImage.length}/500)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={adImage}
+                                            onChange={(e) => setAdImage(e.target.value)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            placeholder={language === 'zh-CN' ? '输入图片 URL...' : 'Enter image URL...'}
+                                            maxLength={500}
+                                            className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                                        />
+                                    </div>
+
+                                    {/* 广告链接 URL 输入 */}
+                                    <div>
+                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                            🔗 {language === 'zh-CN' ? '广告链接 URL' : 'Ad Link URL'} ({adUrl.length}/500)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={adUrl}
+                                            onChange={(e) => setAdUrl(e.target.value)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            placeholder={language === 'zh-CN' ? '输入广告跳转链接（可选）...' : 'Enter ad link URL (optional)...'}
+                                            maxLength={500}
+                                            className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                                        />
+                                    </div>
+
+                                    {/* 图片预览 */}
+                                    {adImage && (
+                                        <div>
+                                            <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                👁️ {language === 'zh-CN' ? '图片预览' : 'Image Preview'}
+                                            </label>
+                                            <div className="relative rounded-xl overflow-hidden border-2 border-gray-700 bg-gray-800/40">
+                                                <img
+                                                    src={adImage}
+                                                    alt="Ad preview"
+                                                    className="w-full h-auto object-cover max-h-48"
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement
+                                                        target.style.display = 'none'
+                                                        const parent = target.parentElement
+                                                        if (parent) {
+                                                            const errorDiv = document.createElement('div')
+                                                            errorDiv.className = 'flex items-center justify-center h-32 text-gray-500 text-sm'
+                                                            errorDiv.textContent = language === 'zh-CN' ? '图片加载失败' : 'Failed to load image'
+                                                            parent.appendChild(errorDiv)
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 保存按钮 */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleSaveAd()
+                                        }}
+                                        disabled={isAdSaving}
+                                        className={`w-full py-4 rounded-2xl font-black text-sm tracking-[0.2em] transition-all duration-300 active:scale-[0.97] uppercase ${isAdSaving
+                                            ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 hover:from-yellow-500 hover:via-orange-500 hover:to-red-500 text-white shadow-[0_10px_30px_rgba(234,179,8,0.3)] hover:shadow-[0_15px_40px_rgba(234,179,8,0.4)]'
+                                            }`}
+                                    >
+                                        {isAdSaving
+                                            ? (language === 'zh-CN' ? '保存中...' : 'SAVING...')
+                                            : (language === 'zh-CN' ? '💾 保存广告' : '💾 SAVE AD')
+                                        }
+                                    </button>
+
+                                    {/* 说明 */}
+                                    <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3">
+                                        <p className="text-gray-400 text-xs leading-relaxed">
+                                            {language === 'zh-CN'
+                                                ? '💡 提示：您的广告将展示在工位信息卡片中，其他用户点击您的工位时可以看到。'
+                                                : '💡 Tip: Your ad will be displayed on your workstation card when other users click on it.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* 底部提示 */}
                             <div className="flex flex-col items-center gap-1 mt-5">

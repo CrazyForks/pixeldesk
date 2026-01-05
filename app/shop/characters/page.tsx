@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import CharacterPurchaseConfirmModal from '@/components/CharacterPurchaseConfirmModal'
+import { useBrandConfig } from '@/lib/hooks/useBrandConfig'
+import { tc } from '@/lib/i18n/currency'
 
 interface ShopCharacter {
   id: string
@@ -29,6 +32,7 @@ interface ShopCharacter {
 
 export default function CharacterShopPage() {
   const router = useRouter()
+  const { config: brandConfig, isLoading: isBrandLoading } = useBrandConfig('zh-CN')
   const [characters, setCharacters] = useState<ShopCharacter[]>([])
   const [userPoints, setUserPoints] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
@@ -50,6 +54,10 @@ export default function CharacterShopPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+
+  // 购买确认弹窗状态
+  const [showPurchaseConfirm, setShowPurchaseConfirm] = useState(false)
+  const [selectedCharacter, setSelectedCharacter] = useState<ShopCharacter | null>(null)
 
   useEffect(() => {
     fetchShopCharacters()
@@ -145,19 +153,27 @@ export default function CharacterShopPage() {
     }
   }
 
-  const handlePurchase = async (characterId: string, price: number, displayName: string) => {
+  // 打开购买确认弹窗
+  const handlePurchaseClick = (character: ShopCharacter) => {
     if (!isAuthenticated) {
       setError('请先登录后再购买')
       return
     }
 
-    if (userPoints < price) {
-      setError(`积分不足！需要 ${price} 积分，您当前有 ${userPoints} 积分`)
-      return
-    }
+    setSelectedCharacter(character)
+    setShowPurchaseConfirm(true)
+  }
+
+  // 确认购买
+  const handleConfirmPurchase = async () => {
+    if (!selectedCharacter) return
+
+    const characterId = selectedCharacter.id
+    const price = selectedCharacter.price
 
     try {
       setIsPurchasing(characterId)
+      setShowPurchaseConfirm(false)
       setError(null)
       setSuccess(null)
 
@@ -186,7 +202,7 @@ export default function CharacterShopPage() {
           )
         )
 
-        // 触发积分更新事件
+        // 触发象素币更新事件
         if (typeof window !== 'undefined' && userId) {
           window.dispatchEvent(
             new CustomEvent('user-points-updated', {
@@ -208,7 +224,14 @@ export default function CharacterShopPage() {
       setError('购买失败，请重试')
     } finally {
       setIsPurchasing(null)
+      setSelectedCharacter(null)
     }
+  }
+
+  // 取消购买
+  const handleCancelPurchase = () => {
+    setShowPurchaseConfirm(false)
+    setSelectedCharacter(null)
   }
 
   if (isLoading) {
@@ -229,18 +252,22 @@ export default function CharacterShopPage() {
             onClick={() => router.push('/')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 overflow-hidden">
+              {isBrandLoading ? (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              ) : (
+                <img src={brandConfig.app_logo} alt={brandConfig.app_name} className="w-full h-full object-cover" />
+              )}
             </div>
             <div className="flex flex-col">
-              <span className="text-white font-bold text-lg">角色形象商店</span>
-              <span className="text-gray-400 text-xs font-mono">Character Shop</span>
+              <span className="text-white font-bold text-lg">{isBrandLoading ? '加载中...' : brandConfig.app_name}</span>
+              <span className="text-gray-400 text-xs font-mono">{isBrandLoading ? 'Loading...' : brandConfig.app_slogan}</span>
             </div>
           </button>
 
-          {/* 用户积分 */}
+          {/* 用户象素币 */}
           <div className="flex items-center gap-4">
             {isAuthenticated && (
               <>
@@ -251,7 +278,7 @@ export default function CharacterShopPage() {
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
                     </svg>
                     <span className="text-yellow-400 font-bold">{userPoints}</span>
-                    <span className="text-gray-400 text-sm">积分</span>
+                    <span className="text-gray-400 text-sm">{tc('currencyName')}</span>
                   </div>
                 </div>
 
@@ -475,7 +502,7 @@ export default function CharacterShopPage() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => handlePurchase(character.id, character.price, character.displayName)}
+                      onClick={() => handlePurchaseClick(character)}
                       disabled={isPurchasing === character.id || !character.canPurchase}
                       className="cursor-pointer px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
@@ -508,7 +535,7 @@ export default function CharacterShopPage() {
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
               <div>
                 <h2 className="text-2xl font-bold text-white">上传角色形象</h2>
-                <p className="text-sm text-gray-400 mt-1">创建并出售你的角色形象，赚取积分</p>
+                <p className="text-sm text-gray-400 mt-1">创建并出售你的角色形象，赚取{tc('currencyName')}</p>
               </div>
               <button
                 onClick={() => {
@@ -604,10 +631,10 @@ export default function CharacterShopPage() {
               {/* 价格 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  售价（积分）<span className="text-red-400">*</span>
+                  售价（{tc('currencyName')}）<span className="text-red-400">*</span>
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  设置为0表示免费。当其他玩家购买时，你将获得100%的积分收入
+                  设置为0表示免费。当其他玩家购买时，你将获得100%的{tc('currencyName')}收入
                 </p>
                 <input
                   type="number"
@@ -650,6 +677,15 @@ export default function CharacterShopPage() {
           </div>
         </div>
       )}
+
+      {/* 购买确认弹窗 */}
+      <CharacterPurchaseConfirmModal
+        isVisible={showPurchaseConfirm}
+        character={selectedCharacter}
+        userPoints={userPoints}
+        onConfirm={handleConfirmPurchase}
+        onCancel={handleCancelPurchase}
+      />
     </div>
   )
 }

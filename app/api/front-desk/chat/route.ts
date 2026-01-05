@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         );
 
         // 构建增强的系统提示词
-        const blogInfo = `你是一位智能客服助手，可以访问平台的社区文章库。当前有以下${postsData.length}篇公开的文章可供推荐：\n\n${postsData.map((post: any, idx: number) => `${idx + 1}. "${post.title}" (${post.type})\n   摘要：${post.summary}\n   链接：${post.url}\n   标签：${post.tags?.join(', ') || '无'}`).join('\n\n')}\n\n当用户询问相关问题、寻求建议或对某些话题感兴趣时，你可以适当推荐相关的文章，并直接提供文章链接（URL）。\n\n重要限制：你只能推荐现有的文章，不能创建或修改。文章内容是只读的。`;
+        const blogInfo = `你是一位智能客服助手，可以访问平台的社区文章库。当前有以下${postsData.length}篇公开的文章可供推荐：\n\n${postsData.map((post: any, idx: number) => `${idx + 1}. "${post.title}" (${post.type})\n   摘要：${post.summary}\n   链接：${post.url}\n   标签：${post.tags?.join(', ') || '无'}`).join('\n\n')}\n\n**重要的回复格式要求：**\n1. 当用户询问文章、帖子、内容时，必须使用以下格式回复：\n   - 使用 Markdown 格式\n   - 文章标题必须是可点击的链接格式：[文章标题](文章URL)\n   - 使用列表或表格形式展示多篇文章\n\n2. 推荐的回复格式示例：\n\n   **找到以下相关文章：**\n\n   1. [文章标题1](/posts/1) - 这是一篇关于...的文章\n   2. [文章标题2](/posts/2) - 介绍了...\n\n   或使用表格格式：\n\n   | 标题 | 类型 | 简介 |\n   |------|------|------|\n   | [文章1](/posts/1) | 技术 | 关于... |\n   | [文章2](/posts/2) | 教程 | 介绍... |\n\n3. 每个文章链接必须：\n   - 使用 [标题](URL) 格式\n   - URL 必须是完整的路径，如 /posts/123\n   - 点击后在新窗口打开（前端会处理）\n\n4. 重要限制：\n   - 只能推荐现有的文章，不能创建或修改\n   - 文章内容是只读的\n   - 必须提供正确的 URL 链接`;
 
         const enhancedSystemPrompt = `${desk.systemPrompt || ''}\n\n--- 文章库信息 ---\n\n${blogInfo}`;
 

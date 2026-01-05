@@ -177,13 +177,16 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.stopPropagation()
+        e.preventDefault()
         onClose()
       }
     }
 
-    window.addEventListener('keydown', handleEsc)
+    // 使用 capture 阶段监听，优先级高于 Phaser
+    window.addEventListener('keydown', handleEsc, true)
     return () => {
-      window.removeEventListener('keydown', handleEsc)
+      window.removeEventListener('keydown', handleEsc, true)
     }
   }, [isOpen, onClose])
 
@@ -297,54 +300,144 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
     }
   }
 
-  // 渲染消息内容，自动检测并转换博客链接
+  // 渲染消息内容，支持 Markdown 格式的链接和纯 URL 链接
   const renderMessageContent = (content: string) => {
-    // 使用正则表达式匹配 /posts/ 链接，并提取ID
-    const blogUrlRegex = /\/posts\/([a-f0-9\-]+)/g
+    // 匹配 Markdown 链接格式: [标题](/posts/xxx)
+    const markdownLinkRegex = /\[([^\]]+)\]\((\/posts\/[a-f0-9\-]+)\)/g
+    // 匹配纯 URL 格式: /posts/xxx (但不在 Markdown 链接中)
+    const plainUrlRegex = /(?<!\]\()\/posts\/([a-f0-9\-]+)(?!\))/g
 
-    if (!blogUrlRegex.test(content)) {
-      return <p className="whitespace-pre-wrap break-words">{content}</p>
+    // 首先检查是否有任何链接
+    const hasMarkdownLinks = markdownLinkRegex.test(content)
+    const hasPlainUrls = plainUrlRegex.test(content)
+
+    if (!hasMarkdownLinks && !hasPlainUrls) {
+      // 如果没有链接，检查是否有 Markdown 表格或列表等格式
+      // 简单处理 Markdown 粗体和换行
+      const formatted = content
+        .split('\n')
+        .map((line, i) => {
+          // 处理粗体 **text**
+          const boldFormatted = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          return <div key={i} dangerouslySetInnerHTML={{ __html: boldFormatted }} />
+        })
+      return <div className="whitespace-pre-wrap break-words">{formatted}</div>
     }
 
-    // 重置正则表达式的lastIndex
-    blogUrlRegex.lastIndex = 0
+    // 重置正则表达式
+    markdownLinkRegex.lastIndex = 0
+    plainUrlRegex.lastIndex = 0
 
     const parts: JSX.Element[] = []
     let lastIndex = 0
-    let match
 
-    while ((match = blogUrlRegex.exec(content)) !== null) {
+    // 收集所有匹配项（Markdown 链接和纯 URL）
+    interface Match {
+      type: 'markdown' | 'plain'
+      index: number
+      length: number
+      title?: string
+      url: string
+      postId: string
+    }
+
+    const matches: Match[] = []
+
+    // 收集 Markdown 链接
+    let match
+    while ((match = markdownLinkRegex.exec(content)) !== null) {
+      const [fullMatch, title, url] = match
+      const postId = url.match(/\/posts\/([a-f0-9\-]+)/)?.[1]
+      if (postId) {
+        matches.push({
+          type: 'markdown',
+          index: match.index,
+          length: fullMatch.length,
+          title,
+          url,
+          postId
+        })
+      }
+    }
+
+    // 收集纯 URL（排除已经被 Markdown 链接覆盖的）
+    plainUrlRegex.lastIndex = 0
+    while ((match = plainUrlRegex.exec(content)) !== null) {
       const [fullMatch, postId] = match
       const matchIndex = match.index
 
+      // 检查这个 URL 是否已经在 Markdown 链接中
+      const isInMarkdown = matches.some(m =>
+        m.type === 'markdown' &&
+        matchIndex >= m.index &&
+        matchIndex < m.index + m.length
+      )
+
+      if (!isInMarkdown) {
+        matches.push({
+          type: 'plain',
+          index: matchIndex,
+          length: fullMatch.length,
+          url: fullMatch,
+          postId
+        })
+      }
+    }
+
+    // 按索引排序
+    matches.sort((a, b) => a.index - b.index)
+
+    // 构建结果
+    matches.forEach((m, i) => {
       // 添加匹配前的文本
-      if (matchIndex > lastIndex) {
+      if (m.index > lastIndex) {
+        const textBefore = content.substring(lastIndex, m.index)
+        // 处理文本中的粗体
+        const formatted = textBefore.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
         parts.push(
-          <span key={lastIndex} className="whitespace-pre-wrap break-words">
-            {content.substring(lastIndex, matchIndex)}
-          </span>
+          <span key={`text-${lastIndex}`} dangerouslySetInnerHTML={{ __html: formatted }} className="whitespace-pre-wrap break-words" />
         )
       }
 
-      // 添加可点击的链接（使用ArticleRecommendation组件）
-      parts.push(
-        <div key={`link-${matchIndex}`} className="my-2">
-          <ArticleRecommendation
-            url={fullMatch}
-            postId={postId}
-          />
-        </div>
-      )
+      // 添加链接卡片
+      if (m.type === 'markdown') {
+        // Markdown 链接：显示为简洁的内联链接
+        parts.push(
+          <Link
+            key={`link-${i}`}
+            href={m.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-cyan-600 hover:text-cyan-700 hover:underline font-medium"
+          >
+            {m.title}
+            <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </Link>
+        )
+      } else {
+        // 纯 URL：显示为文章推荐卡片
+        parts.push(
+          <div key={`card-${i}`} className="my-2">
+            <ArticleRecommendation
+              url={m.url}
+              postId={m.postId}
+              articlesData={articleDetailsMap.flat()}
+            />
+          </div>
+        )
+      }
 
-      lastIndex = matchIndex + fullMatch.length
-    }
+      lastIndex = m.index + m.length
+    })
 
     // 添加剩余的文本
     if (lastIndex < content.length) {
+      const textAfter = content.substring(lastIndex)
+      const formatted = textAfter.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       parts.push(
-        <span key={lastIndex} className="whitespace-pre-wrap break-words">
-          {content.substring(lastIndex)}
-        </span>
+        <span key={`text-${lastIndex}`} dangerouslySetInnerHTML={{ __html: formatted }} className="whitespace-pre-wrap break-words" />
       )
     }
 

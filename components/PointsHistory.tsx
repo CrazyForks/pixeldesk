@@ -89,7 +89,7 @@ export default function PointsHistory({ userId, isOpen, onClose }: PointsHistory
                             <span className="text-yellow-500 text-lg">💰</span>
                         </div>
                         <div>
-                            <h3 className="text-gray-100 font-medium font-mono">Points History</h3>
+                            <h3 className="text-gray-100 font-medium font-mono">象素币历史 / PixelCoin History</h3>
                             <p className="text-xs text-gray-500 font-mono">Total Transactions: {total}</p>
                         </div>
                     </div>

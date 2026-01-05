@@ -23,12 +23,12 @@ const translations = {
     rentalCost: '租赁费用',
     bindingFee: '绑定费用',
     duration: '30 天',
-    points: '积分',
+    points: '象素币',
     yourBalance: '您的账户余额',
-    currentPoints: '当前积分',
+    currentPoints: '当前象素币',
     afterRental: '租赁后',
-    insufficientPoints: '积分不足',
-    insufficientPointsMsg: '您需要至少 {cost} 积分来绑定此工位',
+    insufficientPoints: '象素币不足',
+    insufficientPointsMsg: '您需要至少 {cost} 象素币来绑定此工位',
     confirm: '确认绑定',
     cancel: '取消',
     processing: '处理中...',
@@ -45,12 +45,12 @@ const translations = {
     rentalCost: 'Rental Cost',
     bindingFee: 'Binding Fee',
     duration: '30 Days',
-    points: 'Points',
+    points: 'PixelCoins',
     yourBalance: 'Your Balance',
-    currentPoints: 'Current Points',
+    currentPoints: 'Current PixelCoins',
     afterRental: 'After Rental',
-    insufficientPoints: 'Insufficient Points',
-    insufficientPointsMsg: 'Need at least {cost} points to bind workstation',
+    insufficientPoints: 'Insufficient PixelCoins',
+    insufficientPointsMsg: 'Need at least {cost} PixelCoins to bind workstation',
     confirm: 'Confirm Binding',
     cancel: 'Cancel',
     processing: 'Processing...',
@@ -88,7 +88,7 @@ const WorkstationBindingModal = memo(({
     }
   }, [isVisible])
 
-  // 加载积分配置
+  // 加载象素币(PixelCoin)配置
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -100,7 +100,7 @@ const WorkstationBindingModal = memo(({
           }
         }
       } catch (error) {
-        console.error('Failed to load points config:', error)
+        console.error('Failed to load PixelCoin config:', error)
       }
     }
 
@@ -161,6 +161,28 @@ const WorkstationBindingModal = memo(({
     onClose()
     resetState()
   }, [onClose, resetState, isProcessing])
+
+  // 处理键盘事件（ESC 关闭）
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 阻止事件冒泡到 Phaser
+      e.stopPropagation()
+
+      if (e.key === 'Escape' && !isProcessing) {
+        e.preventDefault()
+        handleClose()
+      }
+    }
+
+    if (isVisible) {
+      // 使用 capture 阶段监听，优先级高于 Phaser
+      window.addEventListener('keydown', handleKeyDown, true)
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true)
+    }
+  }, [isVisible, isProcessing, handleClose])
 
   // 如果弹窗不可见，返回null
   if (!isVisible || !workstation || !user) {

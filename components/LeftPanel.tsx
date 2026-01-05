@@ -186,14 +186,14 @@ export default function LeftPanel({
                 </button>
               </div>
 
-              {/* 积分和快捷操作 - 一行显示 */}
+              {/* 象素币和快捷操作 - 一行显示 */}
               <div className="flex items-center gap-2 mb-2">
-                {/* 积分 */}
+                {/* 象素币 */}
                 {currentUser.points !== undefined && (
                   <div
                     onClick={() => setShowHistory(true)}
                     className="flex-1 flex items-center gap-1.5 p-2 bg-yellow-600/10 border border-yellow-500/20 rounded cursor-pointer hover:bg-yellow-600/20 transition-all select-none"
-                    title="点击查看积分历史"
+                    title="点击查看象素币历史"
                   >
                     <svg className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
@@ -383,7 +383,7 @@ export default function LeftPanel({
         </div>
       </div>
 
-      {/* 积分历史弹窗 */}
+      {/* 象素币历史弹窗 */}
       {showHistory && currentUser && (
         <PointsHistory
           userId={currentUser.id}

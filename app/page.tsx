@@ -1220,6 +1220,7 @@ export default function Home() {
         onStatusUpdate={handleStatusUpdate}
         onClose={() => setShowStatusPopup(false)}
         userId={currentUser?.id}
+        workstationId={currentUser?.workstationId ? parseInt(currentUser.workstationId) : undefined}
         language={(typeof window !== 'undefined' ? (localStorage.getItem('pixeldesk-language') || 'zh-CN') : 'zh-CN') as any}
       />
     </div>

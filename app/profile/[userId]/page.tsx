@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
+import { useBrandConfig } from '@/lib/hooks/useBrandConfig'
+import { tc } from '@/lib/i18n/currency'
 import UserAvatar from '@/components/UserAvatar'
 import PostListItem from '@/components/PostListItem'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -42,11 +44,20 @@ interface Post {
   }
 }
 
+interface WorkstationAd {
+  workstationId: number
+  adText: string | null
+  adImage: string | null
+  adUrl: string | null
+  adUpdatedAt: string | null
+}
+
 export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
   const userId = params.userId as string
   const { currentUser, userId: currentUserId } = useCurrentUser()
+  const { config: brandConfig, isLoading: isBrandLoading } = useBrandConfig('zh-CN')
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
@@ -55,14 +66,62 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'posts' | 'blogs'>('posts')
+  const [workstationAd, setWorkstationAd] = useState<WorkstationAd | null>(null)
+  const [isLoadingAd, setIsLoadingAd] = useState(false)
 
   const isOwnProfile = currentUserId === userId
 
   useEffect(() => {
     if (userId) {
       fetchProfile()
+      fetchWorkstationAd()
     }
   }, [userId, currentUserId])
+
+  // 设置页面标题
+  useEffect(() => {
+    if (!isBrandLoading && profile) {
+      document.title = `${profile.name} - ${brandConfig.app_name} | ${brandConfig.app_slogan}`
+    }
+  }, [isBrandLoading, profile, brandConfig])
+
+  // 获取工位广告
+  const fetchWorkstationAd = async () => {
+    setIsLoadingAd(true)
+    try {
+      // 1. 获取用户绑定的工位信息
+      const bindingResponse = await fetch(`/api/workstations/user-bindings?userId=${userId}`)
+      const bindingResult = await bindingResponse.json()
+
+      if (bindingResult.success && bindingResult.data && bindingResult.data.length > 0) {
+        // 获取第一个有效的工位绑定
+        const binding = bindingResult.data[0]
+
+        // 2. 获取该工位的广告信息
+        const adResponse = await fetch(`/api/workstations/${binding.workstationId}/advertisement`)
+        const adResult = await adResponse.json()
+
+        if (adResult.success && adResult.data && (adResult.data.adText || adResult.data.adImage)) {
+          setWorkstationAd({
+            workstationId: binding.workstationId,
+            adText: adResult.data.adText,
+            adImage: adResult.data.adImage,
+            adUrl: adResult.data.adUrl,
+            adUpdatedAt: adResult.data.adUpdatedAt
+          })
+        } else {
+          setWorkstationAd(null)
+        }
+      } else {
+        setWorkstationAd(null)
+      }
+    } catch (error) {
+      console.error('获取工位广告失败:', error)
+      setWorkstationAd(null)
+    } finally {
+      setIsLoadingAd(false)
+    }
+  }
 
   const fetchProfile = async () => {
     try {
@@ -173,14 +232,18 @@ export default function ProfilePage() {
             onClick={() => router.push('/')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
+            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20 overflow-hidden">
+              {isBrandLoading ? (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              ) : (
+                <img src={brandConfig.app_logo} alt={brandConfig.app_name} className="w-full h-full object-cover" />
+              )}
             </div>
             <div className="flex flex-col">
-              <span className="text-white font-bold text-lg">象素工坊</span>
-              <span className="text-gray-400 text-xs font-mono">Social Platform</span>
+              <span className="text-white font-bold text-lg">{brandConfig.app_name}</span>
+              <span className="text-gray-400 text-xs font-mono">{brandConfig.app_slogan}</span>
             </div>
           </button>
 
@@ -200,55 +263,184 @@ export default function ProfilePage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* 用户信息卡片 */}
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl p-8 mb-8 shadow-xl">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            {/* 头像 */}
-            <div className="flex-shrink-0">
-              <UserAvatar
-                userId={profile.id}
-                userName={profile.name}
-                userAvatar={profile.avatar}
-                size="xl"
-                showStatus={false}
-                className="ring-4 ring-cyan-500/30"
-              />
-            </div>
+        {/* 用户信息卡片 + 工位广告并列布局 */}
+        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+          {/* 主用户信息卡片 */}
+          <div className={`bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl p-8 shadow-xl ${workstationAd ? 'lg:flex-1' : 'flex-1'}`}>
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              {/* 头像 */}
+              <div className="flex-shrink-0">
+                <UserAvatar
+                  userId={profile.id}
+                  userName={profile.name}
+                  userAvatar={profile.avatar}
+                  size="xl"
+                  showStatus={false}
+                  className="ring-4 ring-cyan-500/30"
+                />
+              </div>
 
-            {/* 用户信息 */}
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-3xl font-bold text-white mb-2">{profile.name}</h1>
-              <p className="text-gray-400 text-sm mb-4">加入于 {formatDate(profile.createdAt)}</p>
+              {/* 用户信息 */}
+              <div className="flex-1 text-center md:text-left">
+                <h1 className="text-3xl font-bold text-white mb-2">{profile.name}</h1>
+                <p className="text-gray-400 text-sm mb-4">加入于 {formatDate(profile.createdAt)}</p>
 
-              {/* 统计数据 */}
-              <div className="flex flex-wrap justify-center md:justify-start gap-6 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                    {profile.postsCount}
+                {/* 统计数据 */}
+                <div className="flex flex-wrap justify-center md:justify-start gap-6 mb-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+                      {profile.postsCount}
+                    </div>
+                    <div className="text-gray-400 text-xs font-mono">帖子</div>
                   </div>
-                  <div className="text-gray-400 text-xs font-mono">帖子</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                    {totalBlogs}
+                  <div className="text-center">
+                    <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+                      {totalBlogs}
+                    </div>
+                    <div className="text-gray-400 text-xs font-mono">博客</div>
                   </div>
-                  <div className="text-gray-400 text-xs font-mono">博客</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-                    {profile.likesCount}
+                  <div className="text-center">
+                    <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+                      {profile.likesCount}
+                    </div>
+                    <div className="text-gray-400 text-xs font-mono">获赞</div>
                   </div>
-                  <div className="text-gray-400 text-xs font-mono">获赞</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
-                    {profile.points}
+                  <div className="text-center">
+                    <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
+                      {profile.points}
+                    </div>
+                    <div className="text-gray-400 text-xs font-mono">{tc('currencyName')}</div>
                   </div>
-                  <div className="text-gray-400 text-xs font-mono">积分</div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* 工位广告卡片 - 侧边紧凑布局 */}
+          {isLoadingAd ? (
+            <div className="lg:w-80 bg-gray-900 border border-gray-800 rounded-xl p-6 flex items-center justify-center shadow-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 border-2 border-cyan-500/40 border-t-cyan-500 rounded-sm animate-spin"></div>
+                <span className="text-xs font-pixel text-cyan-500 tracking-wider">加载中...</span>
+              </div>
+            </div>
+          ) : workstationAd ? (
+            <div className="lg:w-80 flex-shrink-0">
+              {workstationAd.adUrl ? (
+                <a
+                  href={workstationAd.adUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/90 via-orange-500/90 to-pink-500/90 shadow-xl hover:shadow-[0_0_20px_rgba(251,146,60,0.4)] transition-all duration-300 hover:scale-[1.02] cursor-pointer h-full"
+                >
+                  {/* 像素点装饰背景 */}
+                  <div className="absolute inset-0 opacity-20" style={{
+                    backgroundImage: `
+                      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px),
+                      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)
+                    `,
+                    backgroundSize: '8px 8px'
+                  }}></div>
+
+                  {/* 顶部光晕效果 */}
+                  <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                  {/* 点击提示图标 */}
+                  <div className="absolute top-3 right-3 w-6 h-6 bg-white/20 backdrop-blur-sm rounded-md flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </div>
+
+                  {/* 内容区域 */}
+                  <div className="relative p-4">
+                    {/* 工位标识 */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-1.5 h-1.5 bg-white rounded-sm shadow-md"></div>
+                      <span className="text-white font-pixel text-xs tracking-widest drop-shadow-md uppercase">
+                        WS#{workstationAd.workstationId}
+                      </span>
+                    </div>
+
+                    {/* 广告图片 */}
+                    {workstationAd.adImage && (
+                      <div className="relative mb-3 rounded-lg overflow-hidden shadow-lg">
+                        <img
+                          src={workstationAd.adImage}
+                          alt="工位广告"
+                          className="w-full h-auto object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                      </div>
+                    )}
+
+                    {/* 广告文案 */}
+                    {workstationAd.adText && (
+                      <div className="bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-md">
+                        <p className="text-gray-800 text-xs font-retro leading-relaxed whitespace-pre-wrap break-words">
+                          {workstationAd.adText}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </a>
+              ) : (
+                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/90 via-orange-500/90 to-pink-500/90 shadow-xl h-full">
+                  {/* 像素点装饰背景 */}
+                  <div className="absolute inset-0 opacity-20" style={{
+                    backgroundImage: `
+                      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px),
+                      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)
+                    `,
+                    backgroundSize: '8px 8px'
+                  }}></div>
+
+                  {/* 顶部光晕效果 */}
+                  <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                  {/* 内容区域 */}
+                  <div className="relative p-4">
+                    {/* 工位标识 */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-1.5 h-1.5 bg-white rounded-sm shadow-md"></div>
+                      <span className="text-white font-pixel text-xs tracking-widest drop-shadow-md uppercase">
+                        WS#{workstationAd.workstationId}
+                      </span>
+                    </div>
+
+                    {/* 广告图片 */}
+                    {workstationAd.adImage && (
+                      <div className="relative mb-3 rounded-lg overflow-hidden shadow-lg">
+                        <img
+                          src={workstationAd.adImage}
+                          alt="工位广告"
+                          className="w-full h-auto object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                      </div>
+                    )}
+
+                    {/* 广告文案 */}
+                    {workstationAd.adText && (
+                      <div className="bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-md">
+                        <p className="text-gray-800 text-xs font-retro leading-relaxed whitespace-pre-wrap break-words">
+                          {workstationAd.adText}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
 
         {/* 标签页切换 */}

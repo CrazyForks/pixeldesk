@@ -8,6 +8,14 @@ interface PlayerClickModalProps {
   onClose: () => void
 }
 
+interface WorkstationAd {
+  workstationId: number
+  adText: string | null
+  adImage: string | null
+  adUrl: string | null
+  adUpdatedAt: string | null
+}
+
 const PlayerClickModal = memo(({
   isVisible,
   player,
@@ -15,6 +23,8 @@ const PlayerClickModal = memo(({
 }: PlayerClickModalProps) => {
   const [activeTab, setActiveTab] = useState<'status' | 'interaction' | 'info'>('status')
   const inputRef = useRef<HTMLInputElement>(null)
+  const [workstationAd, setWorkstationAd] = useState<WorkstationAd | null>(null)
+  const [isLoadingAd, setIsLoadingAd] = useState(false)
 
   // 监听标签切换，自动聚焦输入框
   useEffect(() => {
@@ -22,6 +32,50 @@ const PlayerClickModal = memo(({
       setTimeout(() => inputRef.current?.focus(), 200)
     }
   }, [isVisible, activeTab])
+
+  // 获取玩家的工位广告信息
+  useEffect(() => {
+    const fetchWorkstationAd = async () => {
+      if (!isVisible || !player?.id) return
+
+      setIsLoadingAd(true)
+      try {
+        // 1. 获取玩家绑定的工位信息
+        const bindingResponse = await fetch(`/api/workstations/user-bindings?userId=${player.id}`)
+        const bindingResult = await bindingResponse.json()
+
+        if (bindingResult.success && bindingResult.data && bindingResult.data.length > 0) {
+          // 获取第一个有效的工位绑定
+          const binding = bindingResult.data[0]
+
+          // 2. 获取该工位的广告信息
+          const adResponse = await fetch(`/api/workstations/${binding.workstationId}/advertisement`)
+          const adResult = await adResponse.json()
+
+          if (adResult.success && adResult.data && (adResult.data.adText || adResult.data.adImage)) {
+            setWorkstationAd({
+              workstationId: binding.workstationId,
+              adText: adResult.data.adText,
+              adImage: adResult.data.adImage,
+              adUrl: adResult.data.adUrl,
+              adUpdatedAt: adResult.data.adUpdatedAt
+            })
+          } else {
+            setWorkstationAd(null)
+          }
+        } else {
+          setWorkstationAd(null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch workstation ad:', error)
+        setWorkstationAd(null)
+      } finally {
+        setIsLoadingAd(false)
+      }
+    }
+
+    fetchWorkstationAd()
+  }, [isVisible, player?.id])
 
   // 处理关闭
   const handleClose = useCallback(() => {
@@ -385,6 +439,214 @@ const PlayerClickModal = memo(({
                   </div>
                 </div>
               </div>
+
+              {/* 工位广告卡片 */}
+              {isLoadingAd ? (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-retro-yellow/5 to-retro-orange/5 rounded-xl opacity-60 pointer-events-none"></div>
+                  <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-5 shadow-lg">
+                    <div className="flex items-center justify-center gap-3 text-retro-textMuted">
+                      <div className="w-5 h-5 border-2 border-retro-yellow border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm font-retro">加载工位信息...</span>
+                    </div>
+                  </div>
+                </div>
+              ) : workstationAd ? (
+                <div className="relative">
+                  {/* 名片容器 - 可点击 */}
+                  {workstationAd.adUrl ? (
+                    <a
+                      href={workstationAd.adUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/95 via-orange-500/95 to-pink-500/95 shadow-2xl hover:shadow-[0_0_30px_rgba(251,146,60,0.5)] transition-all duration-300 hover:scale-[1.01] cursor-pointer"
+                    >
+                      {/* 像素点装饰背景 */}
+                      <div className="absolute inset-0 opacity-20" style={{
+                        backgroundImage: `
+                          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px),
+                          repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)
+                        `,
+                        backgroundSize: '8px 8px'
+                      }}></div>
+
+                      {/* 顶部光晕效果 */}
+                      <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/30 to-transparent"></div>
+
+                      {/* 点击提示图标 */}
+                      <div className="absolute top-4 right-4 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </div>
+
+                      {/* 内容区域 */}
+                      <div className="relative p-6">
+                        {/* 标题栏 */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-white rounded-sm shadow-lg"></div>
+                            <span className="text-white font-pixel text-sm tracking-widest drop-shadow-lg uppercase">
+                              WORKSTATION #{workstationAd.workstationId}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-white rounded-sm animate-pulse"></div>
+                            <div className="w-2 h-2 bg-white/70 rounded-sm animate-pulse delay-75"></div>
+                            <div className="w-2 h-2 bg-white/40 rounded-sm animate-pulse delay-150"></div>
+                          </div>
+                        </div>
+
+                        {/* 广告图片 */}
+                        {workstationAd.adImage && (
+                          <div className="relative mb-4 rounded-xl overflow-hidden shadow-xl">
+                            <img
+                              src={workstationAd.adImage}
+                              alt="工位广告"
+                              className="w-full h-auto object-cover max-h-48"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                          </div>
+                        )}
+
+                        {/* 广告文案 */}
+                        {workstationAd.adText && (
+                          <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-lg mb-3">
+                            <p className="text-gray-800 text-base font-retro leading-relaxed whitespace-pre-wrap break-words">
+                              {workstationAd.adText}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* 底部装饰线 + 时间戳 */}
+                        <div className="flex items-center justify-between pt-3">
+                          <div className="flex gap-1">
+                            <div className="w-8 h-0.5 bg-white/60 rounded-full"></div>
+                            <div className="w-4 h-0.5 bg-white/40 rounded-full"></div>
+                            <div className="w-2 h-0.5 bg-white/20 rounded-full"></div>
+                          </div>
+                          {workstationAd.adUpdatedAt && (
+                            <span className="text-white/80 text-xs font-pixel tracking-wide">
+                              {new Date(workstationAd.adUpdatedAt).toLocaleString('zh-CN', {
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 右下角像素装饰 */}
+                      <div className="absolute bottom-0 right-0 w-20 h-20 opacity-20">
+                        <div className="absolute bottom-2 right-2 w-3 h-3 bg-white rounded-sm"></div>
+                        <div className="absolute bottom-2 right-6 w-2 h-2 bg-white rounded-sm"></div>
+                        <div className="absolute bottom-6 right-2 w-2 h-2 bg-white rounded-sm"></div>
+                      </div>
+                    </a>
+                  ) : (
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/95 via-orange-500/95 to-pink-500/95 shadow-2xl">
+                      {/* 像素点装饰背景 */}
+                      <div className="absolute inset-0 opacity-20" style={{
+                        backgroundImage: `
+                          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px),
+                          repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)
+                        `,
+                        backgroundSize: '8px 8px'
+                      }}></div>
+
+                      {/* 顶部光晕效果 */}
+                      <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/30 to-transparent"></div>
+
+                      {/* 内容区域 */}
+                      <div className="relative p-6">
+                        {/* 标题栏 */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-white rounded-sm shadow-lg"></div>
+                            <span className="text-white font-pixel text-sm tracking-widest drop-shadow-lg uppercase">
+                              WORKSTATION #{workstationAd.workstationId}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-white rounded-sm animate-pulse"></div>
+                            <div className="w-2 h-2 bg-white/70 rounded-sm animate-pulse delay-75"></div>
+                            <div className="w-2 h-2 bg-white/40 rounded-sm animate-pulse delay-150"></div>
+                          </div>
+                        </div>
+
+                        {/* 广告图片 */}
+                        {workstationAd.adImage && (
+                          <div className="relative mb-4 rounded-xl overflow-hidden shadow-xl">
+                            <img
+                              src={workstationAd.adImage}
+                              alt="工位广告"
+                              className="w-full h-auto object-cover max-h-48"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                          </div>
+                        )}
+
+                        {/* 广告文案 */}
+                        {workstationAd.adText && (
+                          <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-lg mb-3">
+                            <p className="text-gray-800 text-base font-retro leading-relaxed whitespace-pre-wrap break-words">
+                              {workstationAd.adText}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* 底部装饰线 + 时间戳 */}
+                        <div className="flex items-center justify-between pt-3">
+                          <div className="flex gap-1">
+                            <div className="w-8 h-0.5 bg-white/60 rounded-full"></div>
+                            <div className="w-4 h-0.5 bg-white/40 rounded-full"></div>
+                            <div className="w-2 h-0.5 bg-white/20 rounded-full"></div>
+                          </div>
+                          {workstationAd.adUpdatedAt && (
+                            <span className="text-white/80 text-xs font-pixel tracking-wide">
+                              {new Date(workstationAd.adUpdatedAt).toLocaleString('zh-CN', {
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 右下角像素装饰 */}
+                      <div className="absolute bottom-0 right-0 w-20 h-20 opacity-20">
+                        <div className="absolute bottom-2 right-2 w-3 h-3 bg-white rounded-sm"></div>
+                        <div className="absolute bottom-2 right-6 w-2 h-2 bg-white rounded-sm"></div>
+                        <div className="absolute bottom-6 right-2 w-2 h-2 bg-white rounded-sm"></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-retro-textMuted/5 to-retro-border/5 rounded-xl opacity-60 pointer-events-none"></div>
+                  <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border-2 border-retro-border/50 rounded-xl p-5 shadow-lg">
+                    <div className="flex flex-col items-center justify-center gap-3 text-retro-textMuted py-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-retro-textMuted/20 to-retro-border/20 rounded-xl flex items-center justify-center">
+                        <span className="text-2xl opacity-50">📢</span>
+                      </div>
+                      <p className="text-sm font-retro text-center">该玩家暂未设置工位广告</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
