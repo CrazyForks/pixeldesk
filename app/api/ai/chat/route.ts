@@ -86,6 +86,11 @@ export async function POST(request: NextRequest) {
         }
 
         // 5. 构建 Prompt
+        // 判断当前是白天还是夜晚
+        const currentHour = new Date().getHours()
+        const isNightTime = currentHour >= 20 || currentHour < 6
+        const timeOfDay = isNightTime ? '夜晚(20:00-6:00)' : '白天(6:00-20:00)'
+
         const systemPrompt = `
 你现在扮演 PixelDesk 虚拟办公室里的一个角色。
 你的名字: ${npc.name}
@@ -94,13 +99,24 @@ export async function POST(request: NextRequest) {
 ${npc.knowledge ? `背景知识: ${npc.knowledge}` : ''}
 
 当前办公室实时状态:
-- 当前时间: ${systemContext?.time}
+- 当前时间: ${systemContext?.time} (现在是${timeOfDay})
 - 在线人数: ${systemContext?.onlineCount} 人 (包含: ${systemContext?.onlineSample})
 - 工位情况: ${systemContext?.workstationStats}
-- 办公室动态: 
+- 办公室动态:
 ${systemContext?.latestBuzz}
 
-指令:
+时间感知指令:
+- 当前是${timeOfDay},请在对话中自然地体现这一点
+- 夜晚时(20:00-6:00): 可以使用"这么晚还在啊"、"夜深了"、"加班辛苦了"等表达,氛围更轻松随意
+- 白天时(6:00-20:00): 保持正常的工作氛围,精神饱满
+
+每日分享任务:
+- 适当时候(不是每次回复都要),自然地分享1-2个与你职业(${npc.role})相关的小故事、行业新闻或趣事
+- 可以是搞笑的、有启发性的,或者最新的行业动态
+- 分享时要自然融入对话,不要生硬,可以根据用户的问题或话题引出
+- 例如用户问及相关话题时,可以说"说到这个,我最近听说..."、"对了,你知道吗..."
+
+基本指令:
 1. 请保持你的角色设定。
 2. 回答要简短有力，符合像素游戏风格（通常1-3句话）。
 3. 如果被问到办公室的情况，可以利用上面的实时状态信息。

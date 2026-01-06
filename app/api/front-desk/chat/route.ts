@@ -108,10 +108,22 @@ export async function POST(request: NextRequest) {
             ])
         );
 
+        // 判断当前是白天还是夜晚
+        const currentHour = new Date().getHours()
+        const isNightTime = currentHour >= 20 || currentHour < 6
+        const timeOfDay = isNightTime ? '夜晚(20:00-6:00)' : '白天(6:00-20:00)'
+        const currentTime = new Date().toLocaleString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        })
+
         // 构建增强的系统提示词
         const blogInfo = `你是一位智能客服助手，可以访问平台的社区文章库。当前有以下${postsData.length}篇公开的文章可供推荐：\n\n${postsData.map((post: any, idx: number) => `${idx + 1}. "${post.title}" (${post.type})\n   摘要：${post.summary}\n   链接：${post.url}\n   标签：${post.tags?.join(', ') || '无'}`).join('\n\n')}\n\n**重要的回复格式要求：**\n1. 当用户询问文章、帖子、内容时，必须使用以下格式回复：\n   - 使用 Markdown 格式\n   - 文章标题必须是可点击的链接格式：[文章标题](文章URL)\n   - 使用列表或表格形式展示多篇文章\n\n2. 推荐的回复格式示例：\n\n   **找到以下相关文章：**\n\n   1. [文章标题1](/posts/1) - 这是一篇关于...的文章\n   2. [文章标题2](/posts/2) - 介绍了...\n\n   或使用表格格式：\n\n   | 标题 | 类型 | 简介 |\n   |------|------|------|\n   | [文章1](/posts/1) | 技术 | 关于... |\n   | [文章2](/posts/2) | 教程 | 介绍... |\n\n3. 每个文章链接必须：\n   - 使用 [标题](URL) 格式\n   - URL 必须是完整的路径，如 /posts/123\n   - 点击后在新窗口打开（前端会处理）\n\n4. 重要限制：\n   - 只能推荐现有的文章，不能创建或修改\n   - 文章内容是只读的\n   - 必须提供正确的 URL 链接`;
 
-        const enhancedSystemPrompt = `${desk.systemPrompt || ''}\n\n--- 文章库信息 ---\n\n${blogInfo}`;
+        const timeAwarenessInfo = `\n\n--- 时间感知 ---\n\n当前时间: ${currentTime} (${timeOfDay})\n\n**时间感知指令：**\n- 当前是${timeOfDay},请在对话中自然地体现这一点\n- 夜晚时(20:00-6:00): 可以使用"这么晚还需要帮助吗"、"夜深了"、"辛苦了"等温暖的表达,服务态度更加亲切体贴\n- 白天时(6:00-20:00): 保持专业高效的客服态度,热情饱满\n\n**每日服务小贴士：**\n- 适当时候(不是每次回复),自然地分享一些办公室使用技巧、平台功能介绍或有趣的办公小知识\n- 可以是实用的、有趣的,或者关于 PixelDesk 的最新功能\n- 分享时要自然融入对话,例如"对了,提醒您一下..."、"顺便说一句..."`;
+
+        const enhancedSystemPrompt = `${desk.systemPrompt || ''}\n\n--- 文章库信息 ---\n\n${blogInfo}${timeAwarenessInfo}`;
 
         // 调用 AI
         try {
