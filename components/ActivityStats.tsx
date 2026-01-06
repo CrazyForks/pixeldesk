@@ -1,17 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-
-interface StatusBreakdown {
-  [key: string]: number
-}
-
-interface TotalStats {
-  totalMinutes: number
-  totalDays: number
-  statusBreakdown: StatusBreakdown
-  averageMinutesPerDay: number
-}
+import { useUserActivity, type TotalStats } from '@/lib/hooks/useUserActivity'
 
 interface ActivityStatsProps {
   userId: string
@@ -19,30 +8,8 @@ interface ActivityStatsProps {
 }
 
 export default function ActivityStats({ userId, days = 90 }: ActivityStatsProps) {
-  const [stats, setStats] = useState<TotalStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    if (!userId) return
-
-    const fetchStats = async () => {
-      try {
-        setIsLoading(true)
-        const response = await fetch(`/api/user/${userId}/activity?days=${days}`)
-        const result = await response.json()
-
-        if (result.success) {
-          setStats(result.data.totalStats)
-        }
-      } catch (error) {
-        console.error('Failed to fetch stats:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchStats()
-  }, [userId, days])
+  const { data: activityData, isLoading } = useUserActivity(userId, days)
+  const stats = activityData?.totalStats || null
 
   // 格式化时间
   const formatTime = (minutes: number) => {

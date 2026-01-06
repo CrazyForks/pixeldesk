@@ -6,6 +6,8 @@ import { WorkstationBindingUI } from "../components/WorkstationBindingUI.js"
 import { ChunkManager } from "../logic/ChunkManager.js"
 import { AiNpcManager } from "../logic/AiNpcManager.js"
 import { FrontDeskManager } from "../logic/FrontDeskManager.js"
+import { DayNightManager } from "../logic/DayNightManager.js"
+import { IndoorAreasManager } from "../logic/IndoorAreasManager.js"
 
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
@@ -31,6 +33,8 @@ export class Start extends Phaser.Scene {
     this.chunkManager = null // 区块管理器
     this.aiNpcManager = null // AI NPC管理器
     this.frontDeskManager = null // 前台客服管理器
+    this.dayNightManager = null // 昼夜管理器
+    this.indoorAreasManager = null // 室内区域管理器
     this.player = null
     this.cursors = null
     this.wasdKeys = null
@@ -605,6 +609,9 @@ export class Start extends Phaser.Scene {
       this.saveGameScene()
 
       // AI NPC 已经在上方的 aiNpcManager.init() 中加载
+
+      // 🌓 初始化昼夜系统
+      this.initializeDayNightSystem()
 
       console.log('🎮 游戏配置信息:', {
         渲染器: this.game.renderer.type === 0 ? 'CANVAS' : 'WEBGL',
@@ -3163,7 +3170,71 @@ export class Start extends Phaser.Scene {
   // ===== AI NPC 系统 (由 AiNpcManager.js 管理) =====
 
 
+  // ===== 昼夜系统方法 =====
+  initializeDayNightSystem() {
+    debugLog('🌓 初始化昼夜系统')
+
+    // 创建室内区域管理器
+    this.indoorAreasManager = new IndoorAreasManager(this)
+
+    // 尝试从 Tiled 地图加载室内区域（如果有的话）
+    // this.indoorAreasManager.loadFromTiledMap('indoor-areas')
+
+    // 手动定义室内区域（示例，根据实际地图调整坐标）
+    // 如果你知道室内区域的坐标，可以在这里定义
+    this.indoorAreasManager.defineIndoorAreas([
+      // 示例：办公室内部区域
+      // { x: 500, y: 500, width: 800, height: 600, name: '办公室主区域' },
+      // { x: 1400, y: 500, width: 400, height: 400, name: '会议室' }
+      // TODO: 根据实际地图添加室内区域坐标
+    ])
+
+    // 创建昼夜管理器（只对 background 图块层应用夜晚效果）
+    this.dayNightManager = new DayNightManager(this, this.mapLayers, {
+      nightStart: 20,  // 晚上8点开始
+      nightEnd: 6,     // 早上6点结束
+      transitionDuration: 2000, // 2秒过渡时间
+      checkInterval: 60000, // 每分钟检查一次
+      nightTint: 0x3030aa,  // 夜晚色调（深蓝紫色）
+      nightAlpha: 0.7      // 夜晚透明度
+    })
+
+    // 🔧 暂时禁用室内外检测以优化性能
+    // 添加定时器，每500ms检查一次玩家位置并调整遮罩
+    // this.indoorCheckTimer = this.time.addEvent({
+    //   delay: 500, // 每500ms检查一次
+    //   callback: this.updateNightOverlayForPlayerPosition,
+    //   callbackScope: this,
+    //   loop: true
+    // })
+
+    // 添加全局函数用于测试和调试
+    if (typeof window !== 'undefined') {
+      window.forceNight = () => this.dayNightManager.forceNight()
+      window.forceDay = () => this.dayNightManager.forceDay()
+      window.isNight = () => this.dayNightManager.isNightTime()
+      window.getTimeDescription = () => this.dayNightManager.getTimeDescription()
+      window.isPlayerIndoor = () => this.indoorAreasManager.isPlayerIndoor()
+      window.addIndoorArea = (x, y, w, h, name) => {
+        this.indoorAreasManager.addArea({ x, y, width: w, height: h, name })
+        debugLog(`🏠 已添加室内区域: ${name} (${x}, ${y}, ${w}x${h})`)
+      }
+    }
+
+    debugLog('✅ 昼夜系统初始化完成 (影响 background 和 tree 图块层)')
+  }
+
   shutdown() {
+    // 清理昼夜系统
+    if (this.dayNightManager) {
+      this.dayNightManager.destroy()
+      this.dayNightManager = null
+    }
+    if (this.indoorAreasManager) {
+      this.indoorAreasManager.destroy()
+      this.indoorAreasManager = null
+    }
+
     // 清理定时器
     if (this.collisionCheckTimer) {
       this.collisionCheckTimer.remove()
@@ -3174,6 +3245,12 @@ export class Start extends Phaser.Scene {
       this.uiUpdateTimer.remove()
       this.uiUpdateTimer = null
     }
+
+    // 🔧 室内外检测已禁用，相应的清理代码也注释掉
+    // if (this.indoorCheckTimer) {
+    //   this.indoorCheckTimer.remove()
+    //   this.indoorCheckTimer = null
+    // }
 
     // 清理区块管理器
     if (this.chunkManager) {

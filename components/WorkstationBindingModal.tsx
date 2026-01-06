@@ -88,19 +88,16 @@ const WorkstationBindingModal = memo(({
     }
   }, [isVisible])
 
-  // 加载象素币(PixelCoin)配置
+  // 加载象素币(PixelCoin)配置 - 使用全局 ConfigStore 避免重复调用
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/points-config?key=bind_workstation_cost')
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setBindCost(data.data.value)
-          }
-        }
+        const { configStore } = await import('@/lib/stores/ConfigStore')
+        const config = await configStore.getPointsConfig()
+        setBindCost(config.bind_workstation_cost || 10)
       } catch (error) {
         console.error('Failed to load PixelCoin config:', error)
+        setBindCost(10) // 默认值
       }
     }
 

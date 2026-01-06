@@ -26,6 +26,11 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
+// 全局 Promise 缓存,防止并发重复请求
+let settingsLoadingPromise: Promise<Response> | null = null
+let settingsCache: { data: User | null; timestamp: number } | null = null
+const SETTINGS_CACHE_DURATION = 30 * 1000 // 30秒缓存
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -40,26 +45,63 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const checkAuth = async () => {
       try {
-        // Get user info from cookie-based session
-        const response = await fetch('/api/auth/settings', {
+        // 检查缓存
+        if (settingsCache && Date.now() - settingsCache.timestamp < SETTINGS_CACHE_DURATION) {
+          console.log('📦 [UserContext] 使用缓存的用户设置')
+          if (settingsCache.data) {
+            setUser(settingsCache.data)
+            const playerSyncResult = await initializePlayerSync()
+            setPlayerExists(playerSyncResult.hasPlayer)
+          }
+          setIsLoading(false)
+          return
+        }
+
+        // 如果正在加载,等待现有的 Promise
+        if (settingsLoadingPromise) {
+          console.log('⏳ [UserContext] 等待现有的设置请求')
+          const response = await settingsLoadingPromise
+          if (response.ok) {
+            const data = await response.json()
+            if (data.success && data.data) {
+              setUser(data.data)
+              const playerSyncResult = await initializePlayerSync()
+              setPlayerExists(playerSyncResult.hasPlayer)
+            }
+          }
+          setIsLoading(false)
+          return
+        }
+
+        // 创建新的加载 Promise
+        console.log('🌐 [UserContext] 发起新的设置请求')
+        settingsLoadingPromise = fetch('/api/auth/settings', {
           method: 'GET',
-          credentials: 'include', // Include cookies
+          credentials: 'include',
         })
+
+        const response = await settingsLoadingPromise
 
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.data) {
             setUser(data.data)
+            // 更新缓存
+            settingsCache = { data: data.data, timestamp: Date.now() }
             // Initialize player sync for authenticated user
             const playerSyncResult = await initializePlayerSync()
             setPlayerExists(playerSyncResult.hasPlayer)
+          } else {
+            settingsCache = { data: null, timestamp: Date.now() }
           }
         } else {
           // 忽略预期的认证失败日志以优化性能
+          settingsCache = { data: null, timestamp: Date.now() }
         }
       } catch (error) {
         // 静默处理认证错误以减少日志噪音
       } finally {
+        settingsLoadingPromise = null
         setIsLoading(false)
       }
     }
@@ -181,19 +223,43 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const response = await fetch('/api/auth/settings', {
+      // 清除缓存,强制重新加载
+      settingsCache = null
+
+      // 如果正在加载,等待现有的 Promise
+      if (settingsLoadingPromise) {
+        console.log('⏳ [UserContext.refreshUser] 等待现有的设置请求')
+        const response = await settingsLoadingPromise
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data) {
+            setUser(data.data)
+          }
+        }
+        return
+      }
+
+      // 创建新的加载 Promise
+      console.log('🌐 [UserContext.refreshUser] 发起新的设置请求')
+      settingsLoadingPromise = fetch('/api/auth/settings', {
         method: 'GET',
-        credentials: 'include', // Include cookies
+        credentials: 'include',
       })
+
+      const response = await settingsLoadingPromise
 
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.data) {
           setUser(data.data)
+          // 更新缓存
+          settingsCache = { data: data.data, timestamp: Date.now() }
         }
       }
     } catch (error) {
       console.error('Failed to refresh user:', error)
+    } finally {
+      settingsLoadingPromise = null
     }
   }
 

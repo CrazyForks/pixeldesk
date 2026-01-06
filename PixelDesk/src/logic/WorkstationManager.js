@@ -1503,16 +1503,23 @@ export class WorkstationManager {
         // 计算传送位置（工位前方）
         const teleportPosition = this.calculateTeleportPosition(workstation);
 
-        // 从配置获取传送所需积分
+        // 从全局配置获取传送所需积分（优先使用预加载的配置，避免API调用）
         let teleportCost = 3; // 默认值
         try {
-            console.log('🟢 [teleportToWorkstation] 获取传送积分配置...');
-            const configResponse = await fetch('/api/points-config?key=teleport_workstation_cost');
-            if (configResponse.ok) {
-                const configData = await configResponse.json();
-                if (configData.success && configData.data) {
-                    teleportCost = configData.data.value;
-                    console.log('🟢 [teleportToWorkstation] 传送费用:', teleportCost);
+            // 优先从全局预加载的配置中获取
+            if (typeof window !== 'undefined' && window.pointsConfig) {
+                teleportCost = window.pointsConfig.teleport_workstation_cost || 3;
+                console.log('🟢 [teleportToWorkstation] 从缓存获取传送费用:', teleportCost);
+            } else {
+                // 如果没有预加载，才调用 API
+                console.log('🟢 [teleportToWorkstation] 获取传送积分配置...');
+                const configResponse = await fetch('/api/points-config?key=teleport_workstation_cost');
+                if (configResponse.ok) {
+                    const configData = await configResponse.json();
+                    if (configData.success && configData.data) {
+                        teleportCost = configData.data.value;
+                        console.log('🟢 [teleportToWorkstation] 传送费用:', teleportCost);
+                    }
                 }
             }
         } catch (error) {

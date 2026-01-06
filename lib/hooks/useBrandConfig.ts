@@ -24,6 +24,7 @@ const defaultConfig: BrandConfig = {
 // 全局缓存
 let cachedConfig: BrandConfig | null = null
 let cacheTime: number | null = null
+let loadingPromise: Promise<BrandConfig> | null = null // 防止并发请求
 const CACHE_DURATION = 5 * 60 * 1000 // 5分钟缓存
 
 /**
@@ -33,31 +34,50 @@ async function fetchBrandConfig(locale: string = 'zh-CN'): Promise<BrandConfig> 
   try {
     // 检查缓存是否有效
     if (cachedConfig && cacheTime && Date.now() - cacheTime < CACHE_DURATION) {
+      console.log('📦 [useBrandConfig] 使用缓存的品牌配置')
       return cachedConfig
     }
 
-    const response = await fetch(`/api/brand-config?locale=${locale}`)
-    const result = await response.json()
-
-    if (result.success && result.data) {
-      const data = result.data as BrandConfigResponse
-      const config: BrandConfig = {
-        app_name: data.app_name?.value || defaultConfig.app_name,
-        app_slogan: data.app_slogan?.value || defaultConfig.app_slogan,
-        app_logo: data.app_logo?.value || defaultConfig.app_logo,
-        app_description: data.app_description?.value || defaultConfig.app_description
-      }
-
-      // 更新缓存
-      cachedConfig = config
-      cacheTime = Date.now()
-
-      return config
+    // 如果正在加载，返回现有的Promise（防止并发重复请求）
+    if (loadingPromise) {
+      console.log('⏳ [useBrandConfig] 等待现有的品牌配置请求')
+      return loadingPromise
     }
 
-    return defaultConfig
+    // 创建新的加载Promise
+    console.log('🌐 [useBrandConfig] 发起新的品牌配置请求')
+    loadingPromise = (async () => {
+      const response = await fetch(`/api/brand-config?locale=${locale}`)
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        const data = result.data as BrandConfigResponse
+        const config: BrandConfig = {
+          app_name: data.app_name?.value || defaultConfig.app_name,
+          app_slogan: data.app_slogan?.value || defaultConfig.app_slogan,
+          app_logo: data.app_logo?.value || defaultConfig.app_logo,
+          app_description: data.app_description?.value || defaultConfig.app_description
+        }
+
+        // 更新缓存
+        cachedConfig = config
+        cacheTime = Date.now()
+
+        return config
+      }
+
+      return defaultConfig
+    })()
+
+    try {
+      const config = await loadingPromise
+      return config
+    } finally {
+      loadingPromise = null
+    }
   } catch (error) {
-    console.error('Failed to fetch brand config:', error)
+    console.error('❌ [useBrandConfig] 加载品牌配置失败:', error)
+    loadingPromise = null
     return defaultConfig
   }
 }

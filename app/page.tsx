@@ -137,20 +137,16 @@ export default function Home() {
     }
   }, [user])
 
-  // 预加载积分配置（在应用启动时）
+  // 预加载积分配置（使用 ConfigStore，避免重复调用）
   useEffect(() => {
     const loadPointsConfig = async () => {
       try {
-        const response = await fetch('/api/points-config')
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success) {
-            console.log('✅ 积分配置已预加载:', data.data)
-            // 可以将配置存储到全局状态或localStorage中
-            if (typeof window !== 'undefined') {
-              (window as any).pointsConfig = data.data
-            }
-          }
+        const { configStore } = await import('@/lib/stores/ConfigStore')
+        const config = await configStore.getPointsConfig()
+        console.log('✅ 积分配置已预加载:', config)
+        // 将配置暴露到全局（用于 Phaser 游戏访问）
+        if (typeof window !== 'undefined') {
+          (window as any).pointsConfig = config
         }
       } catch (error) {
         console.error('⚠️ 预加载积分配置失败:', error)
@@ -687,18 +683,15 @@ export default function Home() {
     }
   }, [])
 
-  // 重新启用工位统计功能
+  // 重新启用工位统计功能 - 优化：使用 ConfigStore 避免重复 API 调用
   const loadWorkstationStats = useCallback(async () => {
     try {
-      const response = await fetch('/api/workstations/stats')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          setWorkstationStats(data.data)
-        }
-      }
+      const { configStore } = await import('@/lib/stores/ConfigStore')
+      const stats = await configStore.getStats()
+      setWorkstationStats(stats)
+      console.log('✅ [page.tsx] 工位统计已从 ConfigStore 加载')
     } catch (error) {
-      console.warn('Failed to load workstation stats:', error)
+      console.warn('❌ [page.tsx] 加载工位统计失败:', error)
     }
   }, [])
 

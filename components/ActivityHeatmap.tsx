@@ -1,14 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-
-interface DailyActivity {
-  date: string
-  totalMinutes: number
-  statusCount: { [key: string]: number }
-  activities: number
-  level: number
-}
+import { useState } from 'react'
+import { useUserActivity, type DailyActivity } from '@/lib/hooks/useUserActivity'
 
 interface ActivityHeatmapProps {
   userId: string
@@ -16,32 +9,11 @@ interface ActivityHeatmapProps {
 }
 
 export default function ActivityHeatmap({ userId, days = 90 }: ActivityHeatmapProps) {
-  const [data, setData] = useState<DailyActivity[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: activityData, isLoading } = useUserActivity(userId, days)
   const [hoveredDay, setHoveredDay] = useState<DailyActivity | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
-  useEffect(() => {
-    if (!userId) return
-
-    const fetchActivity = async () => {
-      try {
-        setIsLoading(true)
-        const response = await fetch(`/api/user/${userId}/activity?days=${days}`)
-        const result = await response.json()
-
-        if (result.success) {
-          setData(result.data.dailyActivity)
-        }
-      } catch (error) {
-        console.error('Failed to fetch activity:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchActivity()
-  }, [userId, days])
+  const data = activityData?.dailyActivity || []
 
   // 获取活跃度等级对应的颜色
   const getLevelColor = (level: number) => {
