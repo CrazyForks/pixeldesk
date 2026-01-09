@@ -1,8 +1,8 @@
 {
     "activeFile": "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json",
     "expandedProjectPaths": [
-        "templates",
-        "."
+        ".",
+        "templates"
     ],
     "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
@@ -39,11 +39,11 @@
             "scaleInDock": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json": {
-            "scale": 0.25,
-            "selectedLayer": 0,
+            "scale": 0.2075,
+            "selectedLayer": 11,
             "viewCenter": {
-                "x": -1202,
-                "y": -1788
+                "x": 9072.289156626506,
+                "y": -1291.566265060241
             }
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#bathroom": {

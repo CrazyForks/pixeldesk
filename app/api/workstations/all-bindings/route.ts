@@ -34,6 +34,13 @@ export async function GET() {
               select: {
                 characterSprite: true
               }
+            },
+            // 获取最新的一条状态历史作为当前状态
+            status_history: {
+              orderBy: {
+                timestamp: 'desc'
+              },
+              take: 1
             }
           }
         }
@@ -53,8 +60,17 @@ export async function GET() {
         ? (binding.expiresAt.getTime() - now.getTime()) <= (3 * 24 * 60 * 60 * 1000) // 3天内过期
         : false
 
+      // 提取最新状态
+      const users: any = binding.users;
+      if (users && users.status_history && users.status_history.length > 0) {
+        users.current_status = users.status_history[0];
+        // 清理掉不需要直接返回的数组
+        delete users.status_history;
+      }
+
       return {
         ...binding,
+        users,
         remainingDays,
         isExpiringSoon
       }

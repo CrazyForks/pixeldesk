@@ -648,7 +648,9 @@ export class WorkstationManager {
                     avatar: binding.users?.avatar || binding.user?.avatar,
                     points: binding.users?.points || binding.user?.points,
                     // 修复：API返回的players是对象(不是数组),直接访问characterSprite
-                    characterSprite: binding.users?.players?.characterSprite || binding.user?.player?.characterSprite || binding.user?.avatar
+                    characterSprite: binding.users?.players?.characterSprite || binding.user?.player?.characterSprite || binding.user?.avatar,
+                    // 传递用户当前状态
+                    currentStatus: binding.users?.current_status || binding.user?.current_status || binding.users?.currentStatus || binding.user?.currentStatus
                 };
                 workstation.boundAt = binding.boundAt;
 
@@ -666,8 +668,8 @@ export class WorkstationManager {
                 // 添加用户工位高亮
                 this.addUserWorkstationHighlight(workstation);
 
-                // 添加角色显示
-                this.addCharacterToWorkstation(workstation, binding.userId, workstation.userInfo);
+                // 添加角色显示和状态图标（统一由 updateWorkstationStatusIcon 处理逻辑）
+                this.updateWorkstationStatusIcon(workstation, workstation.userInfo?.currentStatus);
             } else {
                 // 确保工位显示为未绑定状态
                 if (workstation.isOccupied) {
@@ -990,12 +992,20 @@ export class WorkstationManager {
             isCurrentUser: currentUser && workstation.userId === currentUser.id
         });
 
+        // 🟢 新增：检查用户状态是否为"下班"
+        // 优先检查：如果是下班状态，不显示角色，而是显示"Closed"标识
+        // 这必须在检查"当前用户"之前执行，确保用户自己登录后也能看到自己的打烊牌子
+        if (userInfo && userInfo.currentStatus && userInfo.currentStatus.type === 'off_work') {
+            debugLog(`👤 [addCharacterToWorkstation] 用户 ${userId} 处于下班状态，不显示角色，显示 Closed 标识`);
+            this.addClosedSign(workstation);
+            return;
+        }
+
         // 如果是当前用户的工位，不显示角色（因为玩家自己已经在屏幕上显示了）
         if (currentUser && workstation.userId === currentUser.id) {
             debugLog(`👤 [addCharacterToWorkstation] 工位 ${workstation.id} 是当前用户 ${currentUser.id} 的工位，不显示角色（避免视觉重复）`);
             return;
         }
-
 
         // 根据工位方向计算角色位置
         const { x: charX, y: charY, direction: characterDirection } = this.calculateCharacterPosition(workstation);
@@ -1086,17 +1096,20 @@ export class WorkstationManager {
         }
 
         // 创建真正的Player实例（其他玩家）
+        const currentStatus = workstation.userInfo?.currentStatus || {
+            type: 'working',
+            status: '工作中',
+            emoji: '💼',
+            message: '正在工作中...',
+            timestamp: new Date().toISOString()
+        };
+
+        // 创建主玩家的playerData
         const playerData = {
             id: userId,
             name: workstation.userInfo?.name || workstation.userInfo?.username || `玩家${userId.slice(-4)}`,
-            isWorkstationPlayer: true, // 🔧 标记为工位玩家，用于调试日志过滤
-            currentStatus: {
-                type: 'working',
-                status: '工作中',
-                emoji: '💼',
-                message: '正在工作中...',
-                timestamp: new Date().toISOString()
-            }
+            isWorkstationPlayer: true,
+            currentStatus: currentStatus
         };
 
         debugLog(`👤 [createCharacterSprite] 创建Player实例，数据:`, playerData);
@@ -1359,8 +1372,31 @@ export class WorkstationManager {
         // 如果已经有状态图标，先移除
         this.removeStatusIcon(workstation);
 
-        // 如果没有状态数据，或者状态是“下班了”，则不创建图标
-        if (!statusData || statusData.type === 'off_work') return;
+        // 🟢 修改：处理"下班" (off_work) 状态
+        if (statusData && statusData.type === 'off_work') {
+            // 移除角色（如果存在）
+            this.removeCharacterFromWorkstation(workstation);
+            // 显示下班标识
+            this.addClosedSign(workstation);
+            // 移除普通状态图标
+            this.removeStatusIcon(workstation);
+            return;
+        } else {
+            // 如果不是下班状态，移除下班标识
+            this.removeClosedSign(workstation);
+
+            // 确保角色显示（如果应该显示但没显示）
+            if (workstation.userId && !workstation.characterSprite) {
+                // 注意：这里需要userInfo，我们假设workstation上的userInfo是最新的或者statusData包含足够信息
+                const userInfo = workstation.userInfo || {};
+                // 合并此状态更新
+                userInfo.currentStatus = statusData;
+                this.addCharacterToWorkstation(workstation, workstation.userId, userInfo);
+            }
+        }
+
+        // 如果没有状态数据，则不创建图标
+        if (!statusData) return;
 
         const emoji = statusData.emoji || '💼';
 
@@ -1467,6 +1503,103 @@ export class WorkstationManager {
         if (workstation.statusIcon) {
             workstation.statusIcon.destroy();
             workstation.statusIcon = null;
+        }
+    }
+
+    // ===== Closed 标识管理 =====
+    addClosedSign(workstation) {
+        if (workstation.closedSign) return; // 已有标识
+
+        if (!this.isSceneValid()) return;
+
+        // 计算显示位置（桌面正中心上方）
+        const iconX = workstation.position.x + workstation.size.width / 2;
+        const iconY = workstation.position.y - 45; // 提高一点，避免遮挡
+
+        // 创建容器
+        const container = this.scene.add.container(iconX, iconY);
+        container.setDepth(2000); // 确保在最上层
+
+        // 1. 绘制挂绳 (Graphics)
+        const ropes = this.scene.add.graphics();
+        ropes.lineStyle(2, 0x8B4513, 1); // 深褐色绳子
+        // 左绳
+        ropes.beginPath();
+        ropes.moveTo(-15, 0);
+        ropes.lineTo(0, -15);
+        ropes.strokePath();
+        // 右绳
+        ropes.beginPath();
+        ropes.moveTo(15, 0);
+        ropes.lineTo(0, -15);
+        ropes.strokePath();
+
+        // 挂点（钉子）
+        const nail = this.scene.add.circle(0, -15, 3, 0x555555);
+
+        // 2. 绘制木牌背景 (Graphics)
+        const board = this.scene.add.graphics();
+
+        // 木板主体 (深色木纹)
+        board.fillStyle(0x8B4513, 1); // SaddleBrown
+        board.fillRoundedRect(-25, 0, 50, 30, 4);
+
+        // 木板边框 (更深色)
+        board.lineStyle(2, 0x5D4037, 1);
+        board.strokeRoundedRect(-25, 0, 50, 30, 4);
+
+        // 木板纹理 (简单的线条)
+        board.lineStyle(1, 0xA0522D, 0.5); // Sienna
+        board.beginPath();
+        board.moveTo(-20, 10);
+        board.lineTo(20, 10);
+        board.moveTo(-15, 20);
+        board.lineTo(25, 20);
+        board.strokePath();
+
+        // 3. 绘制文字
+        const text = this.scene.add.text(0, 15, '打烊', {
+            fontSize: '16px',
+            fontFamily: '"Press Start 2P", monospace', // 尝试使用像素字体
+            fill: '#FFF8DC', // Cornsilk
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        });
+        text.setOrigin(0.5, 0.5);
+
+        // 将所有元素添加到容器
+        container.add([ropes, nail, board, text]);
+
+        workstation.closedSign = container;
+
+        // 4. 添加悬浮动画
+        this.scene.tweens.add({
+            targets: container,
+            y: iconY - 5,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // 5. 添加轻微摇晃动画 (像是风吹过)
+        this.scene.tweens.add({
+            targets: container,
+            angle: 2,
+            duration: 3000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: Math.random() * 1000 // 随机延迟，让多个牌子不同步
+        });
+    }
+
+    removeClosedSign(workstation) {
+        if (workstation.closedSign) {
+            this.scene.tweens.killTweensOf(workstation.closedSign);
+            workstation.closedSign.destroy();
+            workstation.closedSign = null;
         }
     }
 

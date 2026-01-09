@@ -593,7 +593,7 @@ export default function Home() {
       }
       loadBinding()
     }
-  }, [user])
+  }, [user, isLoading, syncAuthenticatedUser])
 
   // 监听积分更新事件 - 优化：使用useRef避免频繁重建监听器
   const currentUserRef = useRef(currentUser)
@@ -952,14 +952,30 @@ export default function Home() {
     )
   }
 
-  // 如果没有当前用户（既没有登录用户也没有临时玩家），直接显示游戏界面
-  // syncAuthenticatedUser会自动创建临时玩家
+  // 如果没有当前用户（既没有登录用户也没有临时玩家），显示准备中
   if (!currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 border-4 border-retro-purple border-t-transparent rounded-full "></div>
+          <div className="w-16 h-16 border-4 border-retro-purple border-t-transparent rounded-full animate-spin"></div>
           <p className="text-white text-lg">Preparing your gaming experience...</p>
+          <p className="text-gray-500 text-sm">正在初始化玩家数据... (isLoading: {String(isLoading)})</p>
+          <button
+            onClick={() => {
+              // 强制设置一个紧急的回退状态
+              setCurrentUser({
+                id: 'emergency-guest-' + Date.now(),
+                name: '访客',
+                character: 'hangli',
+                points: 100,
+                isTemporary: true
+              })
+              setIsTemporaryPlayer(true)
+            }}
+            className="mt-8 px-4 py-2 text-xs text-gray-400 hover:text-white border border-gray-800 rounded transition-colors"
+          >
+            如果长时间没响应，点击此处强制进入
+          </button>
         </div>
       </div>
     )

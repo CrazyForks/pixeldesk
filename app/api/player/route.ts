@@ -56,17 +56,23 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             email: true,
-            avatar: true
+            avatar: true,
+            status_history: {
+              orderBy: {
+                timestamp: 'desc'
+              },
+              take: 1
+            }
           }
         }
       }
-    })
+    }) as any
 
     if (!player) {
-      return NextResponse.json({ 
-        success: false, 
+      return NextResponse.json({
+        success: false,
         error: 'Player not found',
-        hasPlayer: false 
+        hasPlayer: false
       }, { status: 404 })
     }
 
@@ -84,19 +90,26 @@ export async function GET(request: NextRequest) {
       updatedAt: player.updatedAt
     })
 
+    // 提取最新状态
+    const responseUser = player.users;
+    if (responseUser && responseUser.status_history && responseUser.status_history.length > 0) {
+      responseUser.current_status = responseUser.status_history[0];
+      delete responseUser.status_history;
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         player: playerWithUrl,
-        user: player.users
+        user: responseUser
       },
       hasPlayer: true
     })
   } catch (error) {
     console.error('Get player error:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal server error' 
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }
@@ -116,9 +129,9 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingPlayer) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Player already exists' 
+      return NextResponse.json({
+        success: false,
+        error: 'Player already exists'
       }, { status: 400 })
     }
 
@@ -183,17 +196,17 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ 
-        success: false, 
+      return NextResponse.json({
+        success: false,
         error: 'Invalid input data',
         details: error.issues
       }, { status: 400 })
     }
-    
+
     console.error('Create player error:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal server error' 
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }
@@ -320,9 +333,9 @@ export async function DELETE(request: NextRequest) {
     })
 
     if (!existingPlayer) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Player not found' 
+      return NextResponse.json({
+        success: false,
+        error: 'Player not found'
       }, { status: 404 })
     }
 
@@ -336,9 +349,9 @@ export async function DELETE(request: NextRequest) {
     })
   } catch (error) {
     console.error('Delete player error:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal server error' 
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }

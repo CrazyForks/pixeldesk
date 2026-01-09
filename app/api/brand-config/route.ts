@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireAdmin } from '@/lib/admin/permissions'
+
 
 // GET - 获取品牌配置
 export async function GET(request: NextRequest) {
@@ -86,8 +88,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 这里应该添加管理员权限验证
-    // TODO: 验证用户是否是管理员
+    // 验证管理员权限
+    await requireAdmin()
 
     // 使用 upsert 创建或更新配置
     const config = await prisma.brand_config.upsert({
@@ -135,6 +137,10 @@ export async function PUT(request: NextRequest) {
         error: 'Configs array is required'
       }, { status: 400 })
     }
+
+    // 验证管理员权限
+    await requireAdmin()
+
 
     // 批量更新配置
     const results = await Promise.all(

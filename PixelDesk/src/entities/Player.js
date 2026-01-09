@@ -833,6 +833,28 @@ export class Player extends Phaser.GameObjects.Container {
         });
     }
 
+    /**
+     * 更新玩家角色形状
+     * @param {string} spriteKey 新的角色形象精灵键名
+     */
+    updateCharacterSprite(spriteKey) {
+        if (!spriteKey) return;
+
+        console.log('🔄 [Player] 正在更新角色形象:', spriteKey);
+        this.spriteKey = spriteKey;
+
+        // 更新现有精灵的纹理
+        if (this.headSprite) {
+            this.headSprite.setTexture(spriteKey);
+        }
+        if (this.bodySprite) {
+            this.bodySprite.setTexture(spriteKey);
+        }
+
+        // 重新应用方向帧，确保纹理切换后帧号正确
+        this.setDirectionFrame(this.currentDirection);
+    }
+
     destroy() {
         // 清理状态保存防抖计时器
         if (this.saveStateTimer) {

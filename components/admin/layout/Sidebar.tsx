@@ -58,6 +58,11 @@ const menuItems: MenuItem[] = [
         icon: '🎨',
         href: '/admin/settings/brand',
       },
+      {
+        title: '关于页面',
+        icon: 'ℹ️',
+        href: '/admin/settings/about',
+      },
     ],
   },
   {

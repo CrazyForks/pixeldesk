@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // 查找用户（包含密码字段用于验证）
     const user = await prisma.users.findUnique({
-      where: { 
+      where: {
         email: email.toLowerCase().trim(),
         isActive: true
       }
@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
 
     const userAgent = request.headers.get('user-agent') || 'Unknown'
     const ipAddress = request.headers.get('x-forwarded-for') ||
-                     request.headers.get('x-real-ip') ||
-                     'Unknown'
+      request.headers.get('x-real-ip') ||
+      'Unknown'
 
     const cuid = (await import('cuid')).default
     await prisma.user_sessions.create({
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     // 更新最后登录时间
     await prisma.users.update({
       where: { id: user.id },
-      data: { 
+      data: {
         lastLogin: new Date(),
         updatedAt: new Date()
       }
@@ -124,7 +124,8 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/'
     })
 
     return response

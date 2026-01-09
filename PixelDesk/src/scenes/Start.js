@@ -59,6 +59,8 @@ export class Start extends Phaser.Scene {
     this.loadTilemap()
     this.loadTilesetImages()
     this.loadLibraryImages()
+    // 加载下班标识
+    this.load.image('closed_sign', '/assets/ui/closed_sign.png')
   }
 
   async create() {
@@ -508,6 +510,16 @@ export class Start extends Phaser.Scene {
             playerStartX = data.data.player.currentX
             playerStartY = data.data.player.currentY
             playerDirection = data.data.player.playerState?.direction || null
+
+            // 🔧 关键修复：同步用户的当前状态
+            if (data.data.user && data.data.user.current_status) {
+              this.currentUser = {
+                ...this.currentUser,
+                currentStatus: data.data.user.current_status
+              }
+              debugLog('✅ 同步用户状态:', this.currentUser.currentStatus.type)
+            }
+
             debugLog('✅ Loaded player position from database:',
               playerStartX, playerStartY, 'direction:', playerDirection)
           } else {
@@ -774,7 +786,7 @@ export class Start extends Phaser.Scene {
     const mainPlayerData = {
       id: this.currentUser?.id || "main-player",
       name: this.currentUser?.username || "我",
-      currentStatus: {
+      currentStatus: this.currentUser?.currentStatus || {
         type: "working",
         status: "工作中",
         emoji: "💼",
@@ -795,12 +807,18 @@ export class Start extends Phaser.Scene {
     )
     this.add.existing(this.player)
 
+    // 如果当前下班了，初始化时就隐藏角色（针对主玩家自己）
+    if (mainPlayerData.currentStatus.type === 'off_work') {
+      this.player.setVisible(false)
+    }
+
     // 记录初始状态到 status_history（用于活动跟踪）
-    if (this.currentUser && typeof window !== 'undefined') {
+    if (this.currentUser && typeof window !== 'undefined' && mainPlayerData.currentStatus) {
       this.time.delayedCall(1000, async () => {
         if (window.updateMyStatus) {
-          await window.updateMyStatus(mainPlayerData.currentStatus)
-          debugLog('✅ 初始玩家状态已保存到 status_history')
+          // 仅同步，不触发重新记录历史（传入 true 表示跳过 API）
+          await window.updateMyStatus(mainPlayerData.currentStatus, true)
+          debugLog('✅ 初始玩家状态已同步')
         }
       })
     }
@@ -1558,12 +1576,11 @@ export class Start extends Phaser.Scene {
         // 重新应用绑定的视觉效果
         this.workstationManager.setupInteraction(workstation)
 
-        // 重新创建角色精灵
+        // 重新创建角色精灵和状态图标
         if (workstation.userId && workstation.userInfo) {
-          this.workstationManager.addCharacterToWorkstation(
+          this.workstationManager.updateWorkstationStatusIcon(
             workstation,
-            workstation.userId,
-            workstation.userInfo
+            workstation.userInfo.currentStatus
           )
 
           // 🔧 关键修复：为新创建的角色设置碰撞检测
@@ -2224,11 +2241,11 @@ export class Start extends Phaser.Scene {
   setupSocialFeatures() {
     // 监听状态更新事件
     if (typeof window !== "undefined") {
-      window.updateMyStatus = async (statusData) => {
+      window.updateMyStatus = async (statusData, skipApi = false) => {
         this.myStatus = statusData
 
-        // 记录状态历史（用于活动跟踪）- 通过API调用，避免在前端直接使用Prisma
-        if (this.currentUser) {
+        // 如果明确要求跳过API（通常是初始化同步），则不记录历史，不触发时间追踪
+        if (this.currentUser && !skipApi) {
           try {
             // 调用API来保存状态历史
             const response = await fetch('/api/status-history', {
@@ -2261,19 +2278,13 @@ export class Start extends Phaser.Scene {
           )
           if (userWorkstation) {
             // 更新工位上的图标
+            // 依赖 WorkstationManager.updateWorkstationStatusIcon 方法处理所有视图逻辑（包括下班牌、隐藏角色等）
             this.workstationManager.updateWorkstationStatusIcon(userWorkstation, statusData)
-
-            // 如果状态涉及角色可见性
-            if (userWorkstation.character) {
-              // 如果状态是"下班了"，隐藏角色；否则显示角色
-              const isOffWork = statusData.type === "off_work"
-              userWorkstation.character.player.setVisible(!isOffWork)
-            }
           }
         }
 
-        // 如果是下班状态，结束所有活动
-        if (statusData.type === "off_work" && this.currentUser) {
+        // 如果是下班状态且不是初始化同步，结束所有活动
+        if (statusData.type === "off_work" && this.currentUser && !skipApi) {
           try {
             const response = await fetch("/api/time-tracking", {
               method: "POST",
@@ -2837,14 +2848,26 @@ export class Start extends Phaser.Scene {
 
       // 2. 更新玩家角色形象
       if (this.player && characterSprite) {
-        console.log('🎨 [Start] 更新玩家角色形象:', characterSprite)
-        this.player.updateCharacterSprite(characterSprite)
+        console.log('🎨 [Start] 尝试更新玩家角色形象:', characterSprite)
+        if (typeof this.player.updateCharacterSprite === 'function') {
+          this.player.updateCharacterSprite(characterSprite)
+        } else {
+          console.warn('⚠️ [Start] this.player 缺少 updateCharacterSprite 方法，尝试手动更新纹理')
+          // 后备手动更新逻辑
+          if (this.player.headSprite && this.player.bodySprite) {
+            this.player.headSprite.setTexture(characterSprite)
+            this.player.bodySprite.setTexture(characterSprite)
+            if (this.player.setDirectionFrame) {
+              this.player.setDirectionFrame(this.player.currentDirection || 'down')
+            }
+          }
+        }
       }
 
       // 3. 重新同步工位绑定状态
       if (this.workstationManager) {
         console.log('🔄 [Start] 重新同步工位绑定状态')
-        await this.workstationManager.syncAllBindings()
+        await this.workstationManager.syncWorkstationBindings()
 
         // 4. 移除自己工位上的工位角色 (因为现在你就是工位的主人)
         const myWorkstation = this.workstationManager.getWorkstationByUser(userId)

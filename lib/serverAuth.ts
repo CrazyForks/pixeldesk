@@ -121,7 +121,7 @@ export async function getBasicUserFromRequest(request: NextRequest): Promise<Aut
 
     return { success: true, user: userData }
   } catch (error) {
-    console.error('Basic user verification failed:', error)
+    // console.error('Basic user verification failed:', error) // Removed as per instruction
     return { success: false, error: 'User verification failed' }
   }
 }
@@ -144,14 +144,14 @@ export function withAuth<T extends any[]>(
 ) {
   return async (request: NextRequest, ...args: T): Promise<Response> => {
     const authResult = await verifyAuthFromRequest(request)
-    
+
     if (!authResult.success || !authResult.user) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: authResult.error || 'Authentication required' 
+        JSON.stringify({
+          success: false,
+          error: authResult.error || 'Authentication required'
         }),
-        { 
+        {
           status: 401,
           headers: { 'Content-Type': 'application/json' }
         }

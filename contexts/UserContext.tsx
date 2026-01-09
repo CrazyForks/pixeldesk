@@ -11,6 +11,7 @@ interface User {
   avatar?: string
   points?: number
   emailVerified?: boolean
+  workstationId?: string
 }
 
 interface UserContextType {
@@ -26,240 +27,112 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-// 全局 Promise 缓存,防止并发重复请求
-let settingsLoadingPromise: Promise<Response> | null = null
-let settingsCache: { data: User | null; timestamp: number } | null = null
-const SETTINGS_CACHE_DURATION = 30 * 1000 // 30秒缓存
-
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [playerExists, setPlayerExists] = useState<boolean | null>(null)
-  const authCheckedRef = useRef(false) // 防止 React Strict Mode 重复请求
+  const authCheckedRef = useRef(false)
 
-  // Check for existing session on mount
-  useEffect(() => {
-    // 防止重复请求（React Strict Mode 会导致 useEffect 执行两次）
-    if (authCheckedRef.current) return
-    authCheckedRef.current = true
-
-    const checkAuth = async () => {
-      try {
-        // 检查缓存
-        if (settingsCache && Date.now() - settingsCache.timestamp < SETTINGS_CACHE_DURATION) {
-          console.log('📦 [UserContext] 使用缓存的用户设置')
-          if (settingsCache.data) {
-            setUser(settingsCache.data)
-            const playerSyncResult = await initializePlayerSync()
-            setPlayerExists(playerSyncResult.hasPlayer)
-          }
-          setIsLoading(false)
-          return
-        }
-
-        // 如果正在加载,等待现有的 Promise
-        if (settingsLoadingPromise) {
-          console.log('⏳ [UserContext] 等待现有的设置请求')
-          const response = await settingsLoadingPromise
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.data) {
-              setUser(data.data)
-              const playerSyncResult = await initializePlayerSync()
-              setPlayerExists(playerSyncResult.hasPlayer)
-            }
-          }
-          setIsLoading(false)
-          return
-        }
-
-        // 创建新的加载 Promise
-        console.log('🌐 [UserContext] 发起新的设置请求')
-        settingsLoadingPromise = fetch('/api/auth/settings', {
-          method: 'GET',
-          credentials: 'include',
-        })
-
-        const response = await settingsLoadingPromise
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setUser(data.data)
-            // 更新缓存
-            settingsCache = { data: data.data, timestamp: Date.now() }
-            // Initialize player sync for authenticated user
-            const playerSyncResult = await initializePlayerSync()
-            setPlayerExists(playerSyncResult.hasPlayer)
-          } else {
-            settingsCache = { data: null, timestamp: Date.now() }
-          }
-        } else {
-          // 忽略预期的认证失败日志以优化性能
-          settingsCache = { data: null, timestamp: Date.now() }
-        }
-      } catch (error) {
-        // 静默处理认证错误以减少日志噪音
-      } finally {
-        settingsLoadingPromise = null
-        setIsLoading(false)
-      }
-    }
-
-    checkAuth()
-  }, [])
-
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const checkAuth = async () => {
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies
-        body: JSON.stringify({ email, password }),
+      console.log('🌐 [UserContext] 正在验证身份...')
+      const response = await fetch('/api/auth/settings', {
+        method: 'GET',
+        credentials: 'include',
       })
 
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.data) {
+          console.log('✅ [UserContext] 身份验证成功:', data.data.name)
           setUser(data.data)
-
-          // 处理临时玩家迁移
-          const migrationResult = migrateTempPlayerToUser(data.data.id)
-          if (migrationResult.migrationSuccess) {
-            // 临时玩家数据迁移成功
-            console.log('临时玩家数据已迁移到正式用户')
-          }
-
-          // Clear any existing player data from localStorage for the user
-          clearPlayerFromLocalStorage()
-          clearTempPlayer() // 清理临时玩家数据
-
-          // Initialize player sync after successful login
+          // 登录成功后初始化玩家同步
           const playerSyncResult = await initializePlayerSync()
           setPlayerExists(playerSyncResult.hasPlayer)
-
-          // 🔧 新增：通知Phaser游戏刷新玩家和工位状态
-          if (typeof window !== 'undefined') {
-            // 触发游戏刷新事件
-            window.dispatchEvent(new CustomEvent('user-login-success', {
-              detail: {
-                userId: data.data.id,
-                characterSprite: playerSyncResult.player?.characterSprite,
-                needsRefresh: true
-              }
-            }))
-          }
-
-          return true
+        } else {
+          setUser(null)
         }
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('❌ [UserContext] 身份验证请求失败:', error)
+      setUser(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (authCheckedRef.current) return
+    authCheckedRef.current = true
+    checkAuth()
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+      if (response.ok && data.success) {
+        setUser(data.data)
+        const playerSyncResult = await initializePlayerSync()
+        setPlayerExists(playerSyncResult.hasPlayer)
+
+        // 触发 Phaser 刷新
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('user-login-success', {
+            detail: {
+              userId: data.data.id,
+              characterSprite: playerSyncResult.playerData?.character,
+              needsRefresh: true
+            }
+          }))
+        }
+        return true
       }
       return false
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error('Login error:', error)
       return false
     }
   }
 
-  const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const register = async (name: string, email: string, password: string) => {
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       })
 
       const data = await response.json()
-
       if (response.ok && data.success) {
-        // Registration successful, user is automatically logged in
         setUser(data.data)
-
-        // 处理临时玩家迁移
-        const migrationResult = migrateTempPlayerToUser(data.data.id)
-        if (migrationResult.migrationSuccess) {
-          // 临时玩家数据迁移成功
-        }
-
-        // Clear any existing player data from localStorage for new user
-        clearPlayerFromLocalStorage()
-        clearTempPlayer() // 清理临时玩家数据
-
-        // Initialize player sync after successful registration to check for player existence
-        // For new users, this will set playerExists to false, triggering character creation modal
-        const playerSyncResult = await initializePlayerSync()
-        setPlayerExists(playerSyncResult.hasPlayer)
-
+        await initializePlayerSync()
+        setPlayerExists(false) // 新注册用户通常没有玩家
         return { success: true }
-      } else {
-        return { success: false, error: data.error || 'Registration failed' }
       }
+      return { success: false, error: data.error || 'Registration failed' }
     } catch (error) {
-      console.error('Registration failed:', error)
-      return { success: false, error: 'Network error occurred' }
+      return { success: false, error: 'Network error' }
     }
   }
 
   const logout = async () => {
     try {
-      // Call logout API to invalidate session
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include', // Include cookies
-      })
-    } catch (error) {
-      console.error('Logout API call failed:', error)
+      await fetch('/api/auth/logout', { method: 'POST' })
     } finally {
-      // Always clear user state and player data regardless of API success
       setUser(null)
       setPlayerExists(null)
       await clearPlayerFromLocalStorage()
-    }
-  }
-
-  const refreshUser = async () => {
-    try {
-      // 清除缓存,强制重新加载
-      settingsCache = null
-
-      // 如果正在加载,等待现有的 Promise
-      if (settingsLoadingPromise) {
-        console.log('⏳ [UserContext.refreshUser] 等待现有的设置请求')
-        const response = await settingsLoadingPromise
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setUser(data.data)
-          }
-        }
-        return
-      }
-
-      // 创建新的加载 Promise
-      console.log('🌐 [UserContext.refreshUser] 发起新的设置请求')
-      settingsLoadingPromise = fetch('/api/auth/settings', {
-        method: 'GET',
-        credentials: 'include',
-      })
-
-      const response = await settingsLoadingPromise
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data) {
-          setUser(data.data)
-          // 更新缓存
-          settingsCache = { data: data.data, timestamp: Date.now() }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to refresh user:', error)
-    } finally {
-      settingsLoadingPromise = null
+      clearTempPlayer()
+      window.location.reload() // 退出时刷新页面最保险
     }
   }
 
@@ -271,7 +144,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
-      refreshUser,
+      refreshUser: checkAuth,
       setPlayerExists
     }}>
       {children}
@@ -279,7 +152,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useUser() {
+export const useUser = () => {
   const context = useContext(UserContext)
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider')

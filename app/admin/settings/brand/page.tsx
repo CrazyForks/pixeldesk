@@ -43,6 +43,7 @@ export default function BrandSettingsPage() {
   const [originalConfigs, setOriginalConfigs] = useState<BrandConfigItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [hasChanges, setHasChanges] = useState(false)
@@ -134,6 +135,38 @@ export default function BrandSettingsPage() {
     setConfigs(JSON.parse(JSON.stringify(originalConfigs)))
   }
 
+  const handleFileUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setError('')
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'brand')
+
+    try {
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        handleConfigChange(key, result.url)
+      } else {
+        setError(result.error || '上传失败')
+      }
+    } catch (err) {
+      console.error('Upload error:', err)
+      setError('上传过程中出错')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
       {/* 顶部导航 */}
@@ -172,11 +205,10 @@ export default function BrandSettingsPage() {
               <button
                 key={locale.code}
                 onClick={() => setCurrentLocale(locale.code)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  currentLocale === locale.code
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${currentLocale === locale.code
                     ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white shadow-lg'
                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
-                }`}
+                  }`}
               >
                 {locale.name}
               </button>
@@ -212,13 +244,29 @@ export default function BrandSettingsPage() {
 
                 {config.type === 'image' ? (
                   <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={config.value}
-                      onChange={(e) => handleConfigChange(config.key, e.target.value)}
-                      placeholder="输入图片路径，如: /assets/icon.png"
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={config.value}
+                        onChange={(e) => handleConfigChange(config.key, e.target.value)}
+                        placeholder="输入图片路径或上传图片"
+                        className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all"
+                      />
+                      <label className={`px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-medium cursor-pointer transition-all flex items-center justify-center min-w-[100px] ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        {isUploading ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          '上传图片'
+                        )}
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          disabled={isUploading}
+                          onChange={(e) => handleFileUpload(config.key, e)}
+                        />
+                      </label>
+                    </div>
                     {config.value && (
                       <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
                         <img

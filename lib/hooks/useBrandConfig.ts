@@ -5,6 +5,9 @@ interface BrandConfig {
   app_slogan: string
   app_logo: string
   app_description: string
+  about_title?: string
+  about_content?: string
+  about_image?: string
 }
 
 interface BrandConfigResponse {
@@ -18,7 +21,10 @@ const defaultConfig: BrandConfig = {
   app_name: '象素工坊',
   app_slogan: '社交办公游戏',
   app_logo: '/assets/icon.png',
-  app_description: '一个有趣的社交办公游戏平台'
+  app_description: '象素工坊（PixelDesk）是一个将复古像素艺术与现代协作工具结合的创新社交办公平台。',
+  about_title: '关于象素工坊',
+  about_content: '象素工坊（PixelDesk）是一个将复古像素艺术与现代协作工具结合的创新社交办公平台。在这里，你不仅可以拥有属于自己的像素工位，还能在沉浸式的虚拟世界中与同事、朋友进行实时互动、协同工作。我们致力于打破远程工作的枯燥感，通过游戏化的方式提升团队凝聚力，让办公变得不再单调。无论是在这里专注工作，还是在休息室里聊闲天，每一个像素都承载着连接与创造的可能。',
+  about_image: ''
 }
 
 // 全局缓存
@@ -56,7 +62,10 @@ async function fetchBrandConfig(locale: string = 'zh-CN'): Promise<BrandConfig> 
           app_name: data.app_name?.value || defaultConfig.app_name,
           app_slogan: data.app_slogan?.value || defaultConfig.app_slogan,
           app_logo: data.app_logo?.value || defaultConfig.app_logo,
-          app_description: data.app_description?.value || defaultConfig.app_description
+          app_description: data.app_description?.value || defaultConfig.app_description,
+          about_title: data.about_title?.value || defaultConfig.about_title,
+          about_content: data.about_content?.value || defaultConfig.about_content,
+          about_image: data.about_image?.value || defaultConfig.about_image
         }
 
         // 更新缓存
