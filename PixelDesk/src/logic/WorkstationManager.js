@@ -1369,11 +1369,14 @@ export class WorkstationManager {
     updateWorkstationStatusIcon(workstation, statusData) {
         if (!workstation || !workstation.sprite || !this.isSceneValid()) return;
 
+        console.log(`🏷️ [WorkstationManager] 更新工位 ${workstation.id} 的状态图标:`, statusData?.type);
+
         // 如果已经有状态图标，先移除
         this.removeStatusIcon(workstation);
 
         // 🟢 修改：处理"下班" (off_work) 状态
         if (statusData && statusData.type === 'off_work') {
+            console.log(`🏠 [WorkstationManager] 工位 ${workstation.id} 设置为下班状态`);
             // 移除角色（如果存在）
             this.removeCharacterFromWorkstation(workstation);
             // 显示下班标识
@@ -1384,14 +1387,20 @@ export class WorkstationManager {
         } else {
             // 如果不是下班状态，移除下班标识
             this.removeClosedSign(workstation);
+            console.log(`💼 [WorkstationManager] 工位 ${workstation.id} 设置为活跃状态:`, statusData?.type || 'working');
 
             // 确保角色显示（如果应该显示但没显示）
-            if (workstation.userId && !workstation.characterSprite) {
+            if (workstation.userId) {
                 // 注意：这里需要userInfo，我们假设workstation上的userInfo是最新的或者statusData包含足够信息
                 const userInfo = workstation.userInfo || {};
                 // 合并此状态更新
                 userInfo.currentStatus = statusData;
-                this.addCharacterToWorkstation(workstation, workstation.userId, userInfo);
+                workstation.userInfo = userInfo; // 确保写回
+
+                if (!workstation.characterSprite) {
+                    console.log(`👤 [WorkstationManager] 工位 ${workstation.id} 尝试恢复角色显示`);
+                    this.addCharacterToWorkstation(workstation, workstation.userId, userInfo);
+                }
             }
         }
 

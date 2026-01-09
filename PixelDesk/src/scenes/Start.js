@@ -2242,7 +2242,13 @@ export class Start extends Phaser.Scene {
     // 监听状态更新事件
     if (typeof window !== "undefined") {
       window.updateMyStatus = async (statusData, skipApi = false) => {
+        console.log('📢 [Start] updateMyStatus called:', statusData, 'skipApi:', skipApi)
         this.myStatus = statusData
+
+        // 🔧 关键修复：同步更新 currentUser 内部的状态，避免逻辑判断使用旧状态
+        if (this.currentUser) {
+          this.currentUser.currentStatus = statusData
+        }
 
         // 如果明确要求跳过API（通常是初始化同步），则不记录历史，不触发时间追踪
         if (this.currentUser && !skipApi) {
@@ -2277,9 +2283,23 @@ export class Start extends Phaser.Scene {
             this.currentUser.id
           )
           if (userWorkstation) {
-            // 更新工位上的图标
             // 依赖 WorkstationManager.updateWorkstationStatusIcon 方法处理所有视图逻辑（包括下班牌、隐藏角色等）
             this.workstationManager.updateWorkstationStatusIcon(userWorkstation, statusData)
+          }
+        }
+
+        // 🔧 修复：处理主玩家自身的可见性
+        if (this.player) {
+          if (statusData.type === 'off_work') {
+            this.player.setVisible(false)
+            console.log('👻 [Start] 用户下班，隐藏主玩家角色')
+          } else {
+            this.player.setVisible(true)
+            this.player.setAlpha(1) // 确保透明度正常
+            console.log('🚶 [Start] 用户上班/在岗，显示主玩家角色')
+
+            // 如果用户刚刚切换到“工作中”，且不在任何工位附近，可以考虑给出提示或自动传送
+            // 这里为了稳妥，我们至少保证它是显示的
           }
         }
 
