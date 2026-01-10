@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { CreatePostData } from '@/types/social'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface CreatePostFormProps {
   onSubmit: (postData: CreatePostData) => Promise<boolean>
@@ -16,6 +17,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
   const [imageUrlInput, setImageUrlInput] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const { t } = useTranslation()
 
   // 简单的键盘输入控制
   const handleInputFocus = () => {
@@ -46,14 +48,14 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!content.trim()) {
-      setError('请输入内容')
+      setError(t.social.err_empty)
       return
     }
 
     if (content.length > 2000) {
-      setError('内容过长（最多2000字符）')
+      setError(t.social.err_too_long)
       return
     }
 
@@ -78,11 +80,11 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
         setImageUrls([])
         setImageUrlInput('')
       } else {
-        setError('发布失败,请检查您的登录状态')
+        setError(t.social.err_failed)
       }
     } catch (err) {
       console.error('❌ [CreatePostForm] 提交失败:', err)
-      setError(err instanceof Error ? err.message : '发布失败')
+      setError(err instanceof Error ? err.message : t.social.err_failed)
     } finally {
       setIsSubmitting(false)
     }
@@ -99,7 +101,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
           {/* 内容输入 - 紧凑文本区域 */}
           <div className="relative group">
             <textarea
-              placeholder="Share your thoughts..."
+              placeholder={t.social.share_placeholder}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onFocus={handleInputFocus}
@@ -125,7 +127,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
             <div className="flex gap-2">
               <input
                 type="url"
-                placeholder="添加图片URL..."
+                placeholder={t.social.img_url_placeholder}
                 value={imageUrlInput}
                 onChange={(e) => setImageUrlInput(e.target.value)}
                 onFocus={handleInputFocus}
@@ -144,9 +146,9 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
                 type="button"
                 onClick={handleAddImageUrl}
                 disabled={!imageUrlInput.trim() || isSubmitting}
-                className="bg-gradient-to-r from-retro-cyan/80 to-retro-blue/80 hover:from-retro-cyan hover:to-retro-blue text-white font-medium py-1.5 px-3 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm text-xs font-pixel"
+                className="bg-gradient-to-r from-retro-cyan/80 to-retro-blue/80 hover:from-retro-cyan hover:to-retro-blue text-white font-medium py-1.5 px-3 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm text-xs font-pixel uppercase"
               >
-                📷 添加
+                📷 {t.social.add}
               </button>
             </div>
 
@@ -198,11 +200,11 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
                 setError('')
               }}
               disabled={isSubmitting}
-              className="relative group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-1.5 px-3 rounded-lg border border-retro-border hover:border-retro-yellow/60  shadow-sm hover:shadow-md backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="relative group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-1.5 px-3 rounded-lg border border-retro-border hover:border-retro-yellow/60  shadow-sm hover:shadow-md backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 uppercase"
             >
               <div className="flex items-center gap-1">
                 <span className="text-xs">🧹</span>
-                <span className="font-pixel text-xs">CLEAR</span>
+                <span className="font-pixel text-xs">{t.social.clear}</span>
               </div>
             </button>
 
@@ -215,12 +217,12 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
                 {isSubmitting ? (
                   <>
                     <div className="w-3 h-3 border border-white border-t-transparent rounded-full "></div>
-                    <span className="font-pixel text-xs">POST...</span>
+                    <span className="font-pixel text-xs uppercase">{t.social.publish}...</span>
                   </>
                 ) : (
                   <>
                     <span className="text-xs">🚀</span>
-                    <span className="font-pixel text-xs">PUBLISH</span>
+                    <span className="font-pixel text-xs uppercase">{t.social.publish}</span>
                   </>
                 )}
               </div>

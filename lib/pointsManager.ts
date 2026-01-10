@@ -102,7 +102,8 @@ export async function rewardPoints(
       const user = await tx.users.update({
         where: { id: userId },
         data: {
-          points: { increment: points }
+          points: { increment: points },
+          updatedAt: new Date()
         }
       })
 
@@ -188,13 +189,15 @@ export async function deductPoints(
       const user = await tx.users.update({
         where: { id: userId },
         data: {
-          points: { decrement: points }
+          points: { decrement: points },
+          updatedAt: new Date()
         }
       })
 
       // 记录历史
       await tx.points_history.create({
         data: {
+          id: randomUUID(),
           userId,
           amount: -points, // 扣除显示负数
           reason: reason || configKey,

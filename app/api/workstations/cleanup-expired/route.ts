@@ -43,7 +43,7 @@ export async function POST() {
       expiredBindings.map(b => ({
         workstationId: b.workstationId,
         userId: b.userId,
-        userName: b.user.name,
+        userName: b.users.name,
         expiredAt: b.expiresAt
       }))
     )
@@ -55,7 +55,7 @@ export async function POST() {
       cleanedBindings: expiredBindings.map(b => ({
         workstationId: b.workstationId,
         userId: b.userId,
-        userName: b.user.name,
+        userName: b.users.name,
         expiredAt: b.expiresAt
       }))
     })

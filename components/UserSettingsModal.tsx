@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useUser } from '../contexts/UserContext'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import GameCompatibleInput from './GameCompatibleInput'
 
 interface UserSettingsModalProps {
@@ -11,22 +12,23 @@ interface UserSettingsModalProps {
 
 export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModalProps) {
   const { user, refreshUser, logout } = useUser()
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'avatar'>('profile')
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  
+
   // Profile form state
   const [profileForm, setProfileForm] = useState({
     name: ''
   })
-  
+
   // Password form state
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
-  
+
   // Avatar state
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -60,7 +62,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
+
     try {
       const response = await fetch('/api/auth/settings', {
         method: 'PUT',
@@ -76,14 +78,14 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
       const data = await response.json()
 
       if (response.ok && data.success) {
-        showMessage('success', '个人资料更新成功')
+        showMessage('success', t.settings.update_success)
         await refreshUser()
       } else {
-        showMessage('error', data.error || '更新失败')
+        showMessage('error', data.error || t.settings.update_failed)
       }
     } catch (error) {
       console.error('Profile update error:', error)
-      showMessage('error', '网络错误，请重试')
+      showMessage('error', t.auth.network_error)
     } finally {
       setIsLoading(false)
     }
@@ -91,19 +93,19 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      showMessage('error', '新密码两次输入不一致')
+      showMessage('error', t.auth.err_password_mismatch)
       return
     }
-    
+
     if (passwordForm.newPassword.length < 6) {
-      showMessage('error', '新密码至少需要6位字符')
+      showMessage('error', t.auth.err_password_short)
       return
     }
 
     setIsLoading(true)
-    
+
     try {
       const response = await fetch('/api/auth/settings', {
         method: 'PUT',
@@ -120,18 +122,18 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
       const data = await response.json()
 
       if (response.ok && data.success) {
-        showMessage('success', '密码修改成功')
+        showMessage('success', t.settings.password_success)
         setPasswordForm({
           currentPassword: '',
           newPassword: '',
           confirmPassword: ''
         })
       } else {
-        showMessage('error', data.error || '密码修改失败')
+        showMessage('error', data.error || t.settings.password_failed)
       }
     } catch (error) {
       console.error('Password update error:', error)
-      showMessage('error', '网络错误，请重试')
+      showMessage('error', t.auth.network_error)
     } finally {
       setIsLoading(false)
     }
@@ -139,12 +141,12 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
 
   const handleAvatarUpload = async () => {
     if (!selectedFile) {
-      showMessage('error', '请选择文件')
+      showMessage('error', t.settings.err_select_file)
       return
     }
 
     setIsLoading(true)
-    
+
     try {
       const formData = new FormData()
       formData.append('avatar', selectedFile)
@@ -158,15 +160,15 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
       const data = await response.json()
 
       if (response.ok && data.success) {
-        showMessage('success', '头像上传成功')
+        showMessage('success', t.settings.upload_success)
         setSelectedFile(null)
         await refreshUser()
       } else {
-        showMessage('error', data.error || '头像上传失败')
+        showMessage('error', data.error || t.settings.upload_failed)
       }
     } catch (error) {
       console.error('Avatar upload error:', error)
-      showMessage('error', '网络错误，请重试')
+      showMessage('error', t.auth.network_error)
     } finally {
       setIsLoading(false)
     }
@@ -174,7 +176,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
 
   const handleAvatarDelete = async () => {
     setIsLoading(true)
-    
+
     try {
       const response = await fetch('/api/auth/avatar', {
         method: 'DELETE',
@@ -184,14 +186,14 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
       const data = await response.json()
 
       if (response.ok && data.success) {
-        showMessage('success', '头像删除成功')
+        showMessage('success', t.settings.delete_success)
         await refreshUser()
       } else {
-        showMessage('error', data.error || '头像删除失败')
+        showMessage('error', data.error || t.settings.delete_failed)
       }
     } catch (error) {
       console.error('Avatar delete error:', error)
-      showMessage('error', '网络错误，请重试')
+      showMessage('error', t.auth.network_error)
     } finally {
       setIsLoading(false)
     }
@@ -202,16 +204,16 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        showMessage('error', '请选择图片文件')
+        showMessage('error', t.settings.err_select_image)
         return
       }
-      
+
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        showMessage('error', '文件大小不能超过5MB')
+        showMessage('error', t.settings.err_size_limit)
         return
       }
-      
+
       setSelectedFile(file)
     }
   }
@@ -222,7 +224,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
       onClose()
     } catch (error) {
       console.error('Logout error:', error)
-      showMessage('error', '登出失败')
+      showMessage('error', t.settings.logout_failed)
     }
   }
 
@@ -231,7 +233,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
       <div className="bg-retro-bg-darker border border-retro-border rounded-lg w-[500px] max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-retro-border">
-          <h2 className="text-white text-lg font-bold">用户设置</h2>
+          <h2 className="text-white text-lg font-bold">{t.settings.title}</h2>
           <button
             onClick={onClose}
             className="text-retro-textMuted hover:text-white "
@@ -242,9 +244,8 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
 
         {/* Message */}
         {message && (
-          <div className={`p-3 border-b border-retro-border ${
-            message.type === 'success' ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'
-          }`}>
+          <div className={`p-3 border-b border-retro-border ${message.type === 'success' ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'
+            }`}>
             {message.text}
           </div>
         )}
@@ -252,18 +253,17 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
         {/* Tabs */}
         <div className="flex border-b border-retro-border">
           {[
-            { key: 'profile', label: '个人资料' },
-            { key: 'password', label: '修改密码' },
-            { key: 'avatar', label: '头像管理' }
+            { key: 'profile', label: t.settings.profile },
+            { key: 'password', label: t.settings.password },
+            { key: 'avatar', label: t.settings.avatar }
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`px-4 py-2 text-sm  ${
-                activeTab === tab.key
-                  ? 'text-white border-b-2 border-retro-purple'
-                  : 'text-retro-textMuted hover:text-white'
-              }`}
+              className={`px-4 py-2 text-sm  ${activeTab === tab.key
+                ? 'text-white border-b-2 border-retro-purple'
+                : 'text-retro-textMuted hover:text-white'
+                }`}
             >
               {tab.label}
             </button>
@@ -276,20 +276,20 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
             <div className="space-y-4">
               <div className="space-y-2">
                 <p className="text-retro-textMuted text-sm">
-                  <span className="font-medium">邮箱:</span> {user.email}
+                  <span className="font-medium">{t.settings.email}:</span> {user.email}
                 </p>
                 <p className="text-retro-textMuted text-sm">
-                  <span className="font-medium">积分:</span> {user.points || 0}
+                  <span className="font-medium">{t.settings.points}:</span> {user.points || 0}
                 </p>
               </div>
-              
+
               <form onSubmit={handleProfileUpdate} className="space-y-4">
                 <GameCompatibleInput
                   type="text"
                   value={profileForm.name}
                   onChange={(e) => setProfileForm({ name: e.target.value })}
-                  label="用户名"
-                  placeholder="请输入用户名"
+                  label={t.settings.username}
+                  placeholder={t.settings.username_placeholder}
                   required
                 />
 
@@ -298,7 +298,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                   disabled={isLoading}
                   className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg  disabled:opacity-50"
                 >
-                  {isLoading ? '更新中...' : '更新资料'}
+                  {isLoading ? t.settings.updating : t.settings.update_profile}
                 </button>
               </form>
             </div>
@@ -310,8 +310,8 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                 type="password"
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                label="当前密码"
-                placeholder="请输入当前密码"
+                label={t.settings.current_password}
+                placeholder={t.settings.current_password_placeholder}
                 required
               />
 
@@ -319,9 +319,9 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                 type="password"
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                label="新密码"
-                placeholder="请输入新密码（至少6位）"
-                helperText="建议使用字母和数字组合"
+                label={t.settings.new_password}
+                placeholder={t.settings.new_password_placeholder}
+                helperText={t.auth.password_helper}
                 required
               />
 
@@ -329,8 +329,8 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                 type="password"
                 value={passwordForm.confirmPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                label="确认新密码"
-                placeholder="请再次输入新密码"
+                label={t.settings.confirm_new_password}
+                placeholder={t.settings.confirm_new_password_placeholder}
                 required
               />
 
@@ -339,7 +339,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg  disabled:opacity-50"
               >
-                {isLoading ? '修改中...' : '修改密码'}
+                {isLoading ? t.settings.modifying : t.settings.password}
               </button>
             </form>
           )}
@@ -352,14 +352,14 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                   {user.avatar ? (
                     <img
                       src={user.avatar}
-                      alt="Current Avatar"
+                      alt={t.settings.current_avatar}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-retro-textMuted text-2xl">👤</span>
                   )}
                 </div>
-                <p className="text-retro-textMuted text-sm">当前头像</p>
+                <p className="text-retro-textMuted text-sm">{t.settings.current_avatar}</p>
               </div>
 
               {/* File Upload */}
@@ -371,17 +371,17 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                
+
                 {previewUrl && (
                   <div className="text-center mb-4">
                     <div className="w-24 h-24 mx-auto mb-2 rounded-full overflow-hidden">
                       <img
                         src={previewUrl}
-                        alt="Preview"
+                        alt={t.settings.preview}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="text-retro-textMuted text-sm">预览</p>
+                    <p className="text-retro-textMuted text-sm">{t.settings.preview}</p>
                   </div>
                 )}
 
@@ -391,7 +391,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                     onClick={() => fileInputRef.current?.click()}
                     className="w-full bg-retro-border/30 hover:bg-retro-border/50 text-white py-2 px-4 rounded-lg border border-retro-border "
                   >
-                    选择图片
+                    {t.settings.select_image}
                   </button>
 
                   {selectedFile && (
@@ -401,7 +401,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                       disabled={isLoading}
                       className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-medium py-2 px-4 rounded-lg  disabled:opacity-50"
                     >
-                      {isLoading ? '上传中...' : '上传头像'}
+                      {isLoading ? t.settings.uploading : t.settings.upload_avatar}
                     </button>
                   )}
 
@@ -412,13 +412,13 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                       disabled={isLoading}
                       className="w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 py-2 px-4 rounded-lg border border-red-600/30  disabled:opacity-50"
                     >
-                      {isLoading ? '删除中...' : '删除头像'}
+                      {isLoading ? t.settings.deleting : t.settings.delete_avatar}
                     </button>
                   )}
                 </div>
 
                 <p className="text-retro-textMuted text-xs mt-2">
-                  支持 JPEG、PNG、GIF、WebP 格式，最大 5MB
+                  {t.settings.upload_hint}
                 </p>
               </div>
             </div>
@@ -431,14 +431,14 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
             onClick={handleLogout}
             className="text-red-400 hover:text-red-300 text-sm "
           >
-            登出账号
+            {t.settings.logout}
           </button>
-          
+
           <button
             onClick={onClose}
             className="bg-retro-border/30 hover:bg-retro-border/50 text-white py-2 px-4 rounded-lg "
           >
-            关闭
+            {t.common.close}
           </button>
         </div>
       </div>

@@ -12,13 +12,13 @@ export async function GET(
         const user = await prisma.users.findUnique({
             where: { id: params.id },
             include: {
-                player: true,
+                players: true,
                 _count: {
                     select: {
-                        ownedCharacters: true,
+                        characters: true,
                         posts: true,
-                        postReplies: true,
-                        workstations: true,
+                        post_replies: true,
+                        user_workstations: true,
                     }
                 }
             },

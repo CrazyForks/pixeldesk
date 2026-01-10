@@ -9,6 +9,7 @@ interface CreateReplyFormProps {
   isMobile?: boolean
   isSubmitting?: boolean
   variant?: 'dark' | 'light' | 'chat' // 新增：支持不同主题变体
+  theme?: 'light' | 'dark'
 }
 
 export default function CreateReplyForm({
@@ -16,7 +17,8 @@ export default function CreateReplyForm({
   onCancel,
   isMobile = false,
   isSubmitting = false,
-  variant = 'dark'
+  variant = 'dark',
+  theme = 'dark'
 }: CreateReplyFormProps) {
   const [content, setContent] = useState('')
   const [error, setError] = useState('')
@@ -73,10 +75,13 @@ export default function CreateReplyForm({
   const getVariantStyles = () => {
     if (variant === 'chat') {
       return {
-        container: "relative bg-[#24272a]/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 shadow-2xl flex items-end gap-2",
-        textarea: "flex-1 bg-transparent border-none focus:ring-0 text-white placeholder-gray-500 text-sm py-2 px-2 max-h-32 overflow-y-auto resize-none min-h-[40px]",
+        container: `relative backdrop-blur-2xl border rounded-2xl p-2 shadow-2xl flex items-end gap-2 transition-all ${theme === 'dark' ? 'bg-[#24272a]/60 border-white/10' : 'bg-white border-slate-200 shadow-slate-200/50'
+          }`,
+        textarea: `flex-1 bg-transparent border-none focus:ring-0 placeholder-gray-500 text-sm py-2 px-2 max-h-32 overflow-y-auto resize-none min-h-[40px] ${theme === 'dark' ? 'text-white' : 'text-slate-900'
+          }`,
         counter: "hidden",
-        error: "absolute -top-6 left-2 text-red-500 text-[10px] bg-black/80 px-2 py-0.5 rounded",
+        error: `absolute -top-6 left-2 text-[10px] px-2 py-0.5 rounded ${theme === 'dark' ? 'text-red-500 bg-black/80' : 'text-red-600 bg-white shadow-sm border border-red-100'
+          }`,
         clearButton: "hidden",
         submitButton: "bg-cyan-500 hover:bg-cyan-400 text-black p-2 rounded-xl transition-all disabled:opacity-30 disabled:grayscale shrink-0"
       }

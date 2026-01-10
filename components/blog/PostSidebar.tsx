@@ -7,9 +7,10 @@ import { Post } from '@/types/social'
 interface PostSidebarProps {
   currentPostId?: string
   currentUserId?: string
+  theme?: 'light' | 'dark'
 }
 
-export default function PostSidebar({ currentPostId, currentUserId }: PostSidebarProps) {
+export default function PostSidebar({ currentPostId, currentUserId, theme = 'dark' }: PostSidebarProps) {
   const [trendingPosts, setTrendingPosts] = useState<Post[]>([])
   const [latestPosts, setLatestPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -80,13 +81,15 @@ export default function PostSidebar({ currentPostId, currentUserId }: PostSideba
   return (
     <div className="space-y-8">
       {/* 热门文章 - 极简主义设计 */}
-      <div className="bg-[#1a1c1e]/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden transition-all hover:bg-[#1a1c1e]/60">
-        <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+      <div className={`backdrop-blur-md border rounded-2xl overflow-hidden transition-all ${theme === 'dark' ? 'bg-[#1a1c1e]/40 border-white/5 hover:bg-[#1a1c1e]/60' : 'bg-white border-slate-200 shadow-sm hover:shadow-md'
+        }`}>
+        <div className={`px-5 py-4 border-b flex items-center justify-between ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'
+          }`}>
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-orange-500/70" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Trending</h3>
+            <h3 className={`text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-slate-400'}`}>Trending</h3>
           </div>
         </div>
 
@@ -103,13 +106,16 @@ export default function PostSidebar({ currentPostId, currentUserId }: PostSideba
                 <Link
                   key={post.id}
                   href={`/posts/${post.id}`}
-                  className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-xl transition-all group"
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all group ${theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                    }`}
                 >
-                  <span className="text-lg font-black text-white/10 group-hover:text-orange-500/20 transition-colors w-4 italic">
+                  <span className={`text-lg font-black transition-colors w-4 italic ${theme === 'dark' ? 'text-white/10 group-hover:text-orange-500/20' : 'text-slate-100 group-hover:text-orange-500/10'
+                    }`}>
                     0{index + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors line-clamp-1 mb-1">
+                    <h4 className={`text-sm font-medium transition-colors line-clamp-1 mb-1 ${theme === 'dark' ? 'text-gray-300 group-hover:text-white' : 'text-slate-600 group-hover:text-black'
+                      }`}>
                       {post.title || post.content.slice(0, 40)}
                     </h4>
                     <div className="flex items-center gap-3 text-[10px] font-mono text-gray-600">
@@ -131,13 +137,14 @@ export default function PostSidebar({ currentPostId, currentUserId }: PostSideba
       </div>
 
       {/* 最新文章 */}
-      <div className="bg-[#1a1c1e]/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/5">
+      <div className={`backdrop-blur-md border rounded-2xl overflow-hidden transition-all duration-500 ${theme === 'dark' ? 'bg-[#1a1c1e]/40 border-white/5' : 'bg-white border-slate-200 shadow-sm'
+        }`}>
+        <div className={`px-5 py-4 border-b ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-cyan-500/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Latest</h3>
+            <h3 className={`text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-slate-400'}`}>Latest</h3>
           </div>
         </div>
 
@@ -154,9 +161,11 @@ export default function PostSidebar({ currentPostId, currentUserId }: PostSideba
                 <Link
                   key={post.id}
                   href={`/posts/${post.id}`}
-                  className="block p-3 hover:bg-white/5 rounded-xl transition-all group"
+                  className={`block p-3 rounded-xl transition-all group ${theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                    }`}
                 >
-                  <h4 className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors line-clamp-1 mb-1">
+                  <h4 className={`text-sm font-medium transition-colors line-clamp-1 mb-1 ${theme === 'dark' ? 'text-gray-300 group-hover:text-white' : 'text-slate-600 group-hover:text-black'
+                    }`}>
                     {post.title || post.content.slice(0, 40)}
                   </h4>
                   <div className="flex items-center gap-3 text-[10px] font-mono text-gray-600 uppercase">
@@ -172,22 +181,27 @@ export default function PostSidebar({ currentPostId, currentUserId }: PostSideba
       </div>
 
       {/* 返回工位地图 (极简形态) */}
-      <div className="bg-[#1a1c1e]/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 transition-all hover:border-white/20">
+      <div className={`backdrop-blur-xl border rounded-3xl p-6 transition-all duration-500 ${theme === 'dark' ? 'bg-[#1a1c1e]/60 border-white/10 hover:border-white/20' : 'bg-white border-slate-200 shadow-md hover:shadow-lg'
+        }`}>
         <div className="flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-4 transition-transform group hover:scale-110">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group hover:scale-110 ${theme === 'dark' ? 'bg-white/5' : 'bg-slate-50 border border-slate-100'
+            }`}>
             <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
 
-          <h3 className="text-sm font-bold text-white mb-2 underline decoration-gray-500 underline-offset-4">Pixel Workspace</h3>
-          <p className="text-[10px] text-gray-500 font-mono mb-6 uppercase tracking-wider leading-relaxed">
+          <h3 className={`text-sm font-bold mb-2 underline underline-offset-4 ${theme === 'dark' ? 'text-white decoration-gray-500' : 'text-slate-900 decoration-slate-300'
+            }`}>Pixel Workspace</h3>
+          <p className={`text-[10px] font-mono mb-6 uppercase tracking-wider leading-relaxed ${theme === 'dark' ? 'text-gray-500' : 'text-slate-400'
+            }`}>
             Realtime colleague status & interaction.
           </p>
 
           <Link
             href="/"
-            className="w-full flex items-center justify-center gap-2 py-3 bg-white text-black font-black text-xs uppercase rounded-xl hover:bg-gray-200 transition-all active:scale-95 shadow-lg shadow-white/5"
+            className={`w-full flex items-center justify-center gap-2 py-3 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-lg ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200 shadow-white/5' : 'bg-slate-900 text-white hover:bg-black shadow-slate-200'
+              }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

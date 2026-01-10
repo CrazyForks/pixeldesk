@@ -485,6 +485,13 @@ export class Start extends Phaser.Scene {
         console.warn("Bookcase layer optional/missing")
       }
 
+      // 创建大屏预览对象图层
+      try {
+        this.renderObjectLayer(map, "front_display")
+      } catch (e) {
+        console.warn("Front display layer optional/missing")
+      }
+
       // 所有对象层加载完毕后，统一初始化区块系统
       if (this.workstationObjects.length > 0) {
         this.initializeChunkSystem()
@@ -1084,6 +1091,10 @@ export class Start extends Phaser.Scene {
     this.load.image("rug", "/assets/tileset/rug.png")
     this.load.image("cabinet", "/assets/tileset/cabinet.png")
     this.load.image("stair-red", "/assets/tileset/stair-red.png")
+
+    // 新加大屏显示对象资源
+    this.load.image("announcement_board_wire", "/assets/announcement_board_wire.webp")
+    this.load.image("front_wide_display", "/assets/front_wide_display.webp")
   }
 
   /**
@@ -1287,6 +1298,15 @@ export class Start extends Phaser.Scene {
       }
     }
 
+    // 📺 如果是大屏推流对象 (Hot Billboard)
+    if (obj.gid === 5569 || obj.gid === 5570 || obj.type === "hot-billboard") {
+      console.log(`📺 [Start] 检测到大屏对象 at (${obj.x}, ${obj.y})`);
+      if (sprite) {
+        // 为大屏添加物理碰撞，使其不可穿透
+        this.addDeskCollision(sprite, obj);
+      }
+    }
+
     // 添加调试边界（已注释）
     // this.addDebugBounds(obj, adjustedY);
   }
@@ -1345,6 +1365,9 @@ export class Start extends Phaser.Scene {
     } else if (objName.includes("sofa") || objType.includes("sofa")) {
       // 沙发 - 特殊的碰撞边界
       return { scaleX: 0.5, scaleY: 0.3, offsetX: 0, offsetY: 0 }
+    } else if (objName.includes("display") || objType.includes("display") || objName.includes("board")) {
+      // 电子告示牌/大屏 - 较窄的横向碰撞边界
+      return { scaleX: 0.8, scaleY: 0.3, offsetX: 0, offsetY: 0 }
     } else {
       // 默认设置
       return { scaleX: 0.5, scaleY: 0.5, offsetX: 0, offsetY: 0 }
@@ -1361,6 +1384,10 @@ export class Start extends Phaser.Scene {
       if (obj.gid === 106) imageKey = "bookcase_tall"
       // GID 107 -> bookcase_middle
       else if (obj.gid === 107) imageKey = "bookcase_middle"
+      // GID 5569 -> announcement_board_wire
+      else if (obj.gid === 5569) imageKey = "announcement_board_wire"
+      // GID 5570 -> front_wide_display
+      else if (obj.gid === 5570) imageKey = "front_wide_display"
     }
 
     // 如果名字为空，尝试根据类型或其他属性推断

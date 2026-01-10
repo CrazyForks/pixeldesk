@@ -146,9 +146,9 @@ ${systemContext?.latestBuzz}
             );
 
             const messagesToSend = [
-                { role: 'system', content: systemPrompt },
+                { role: 'system' as const, content: systemPrompt },
                 ...historicalMessages,
-                { role: 'user', content: message }
+                { role: 'user' as const, content: message }
             ]
 
             console.log(`🤖 [${npc.name}] 发送给AI: 系统提示词(1条) + 历史消息(${historicalMessages.length}条) + 新消息(1条) = 共${messagesToSend.length}条`)

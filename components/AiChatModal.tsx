@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -32,6 +33,7 @@ export default function AiChatModal({
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const hasLoadedHistory = useRef(false)
+    const { t, locale } = useTranslation()
 
     // 加载聊天历史
     useEffect(() => {
@@ -171,9 +173,9 @@ export default function AiChatModal({
 
             if (!response.ok) {
                 if (response.status === 429) {
-                    setError('今日对话次数已用完，明天再来吧！')
+                    setError(t.ai.err_limit)
                 } else {
-                    setError(data.error || '发送失败，请重试')
+                    setError(data.error || t.ai.err_send)
                 }
                 // 还是显示 AI 的回复（如果有）
                 if (data.reply) {
@@ -196,7 +198,7 @@ export default function AiChatModal({
 
         } catch (err) {
             console.error('AI Chat Error:', err)
-            setError('网络错误，请检查连接')
+            setError(t.auth.network_error)
         } finally {
             setIsLoading(false)
         }
@@ -236,14 +238,14 @@ export default function AiChatModal({
                         </div>
                         <div>
                             <h3 className="text-white font-semibold">{npcName}</h3>
-                            <p className="text-gray-400 text-xs font-mono">AI NPC</p>
+                            <p className="text-gray-400 text-xs font-mono">{t.ai.npc_title}</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                         {usage && (
                             <span className="text-xs text-gray-500 font-mono">
-                                剩余: {usage.remaining}/{usage.limit}
+                                {t.ai.remaining.replace('{remaining}', usage.remaining.toString()).replace('{limit}', usage.limit.toString())}
                             </span>
                         )}
                         <button
@@ -261,28 +263,28 @@ export default function AiChatModal({
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px]">
                     {isLoadingHistory ? (
                         <div className="flex items-center justify-center h-full">
-                            <div className="text-gray-400 text-sm">加载聊天历史...</div>
+                            <div className="text-gray-400 text-sm">{t.ai.loading_history}</div>
                         </div>
                     ) : (
                         <>
                             {messages.map((msg, idx) => (
-                        <div
-                            key={idx}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div
-                                className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-br-md'
-                                    : 'bg-gray-800 text-gray-100 rounded-bl-md'
-                                    }`}
-                            >
-                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
-                                    {msg.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
+                                <div
+                                    key={idx}
+                                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    <div
+                                        className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'user'
+                                            ? 'bg-blue-600 text-white rounded-br-md'
+                                            : 'bg-gray-800 text-gray-100 rounded-bl-md'
+                                            }`}
+                                    >
+                                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                        <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
+                                            {msg.timestamp.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
 
                             {isLoading && (
                                 <div className="flex justify-start">
@@ -319,7 +321,7 @@ export default function AiChatModal({
                             onKeyDown={handleKeyDown}
                             onFocus={handleFocus}
                             onBlur={handleBlur}
-                            placeholder="输入消息..."
+                            placeholder={t.ai.placeholder}
                             disabled={isLoading}
                             className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
                         />

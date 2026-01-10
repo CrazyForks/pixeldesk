@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useRef, ReactNode } fro
 import { initializePlayerSync, clearPlayerFromLocalStorage } from '@/lib/playerSync'
 import { migrateTempPlayerToUser, clearTempPlayer } from '@/lib/tempPlayerManager'
 
-interface User {
+export interface User {
   id: string
   name: string
   email: string

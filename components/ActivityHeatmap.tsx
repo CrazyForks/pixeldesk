@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { useUserActivity, type DailyActivity } from '@/lib/hooks/useUserActivity'
 
 interface ActivityHeatmapProps {
@@ -9,6 +10,7 @@ interface ActivityHeatmapProps {
 }
 
 export default function ActivityHeatmap({ userId, days = 90 }: ActivityHeatmapProps) {
+  const { t, locale } = useTranslation()
   const { data: activityData, isLoading } = useUserActivity(userId, days)
   const [hoveredDay, setHoveredDay] = useState<DailyActivity | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -32,15 +34,15 @@ export default function ActivityHeatmap({ userId, days = 90 }: ActivityHeatmapPr
     const hours = Math.floor(minutes / 60)
     const mins = Math.round(minutes % 60)
     if (hours > 0) {
-      return `${hours}h ${mins}m`
+      return `${hours}${t.activity.hours_unit} ${mins}${t.activity.minutes_unit}`
     }
-    return `${mins}m`
+    return `${mins}${t.activity.minutes_unit}`
   }
 
   // 格式化日期
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   // 按周组织数据
@@ -95,7 +97,7 @@ export default function ActivityHeatmap({ userId, days = 90 }: ActivityHeatmapPr
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <div className="text-gray-400 text-sm">加载活动数据...</div>
+        <div className="text-gray-400 text-sm">{t.activity.loading_heatmap}</div>
       </div>
     )
   }
@@ -144,7 +146,7 @@ export default function ActivityHeatmap({ userId, days = 90 }: ActivityHeatmapPr
 
       {/* 图例 */}
       <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-500">
-        <span>Less</span>
+        <span>{t.activity.less}</span>
         <div className="flex gap-0.5">
           {[0, 1, 2, 3, 4].map((level) => (
             <div
@@ -153,7 +155,7 @@ export default function ActivityHeatmap({ userId, days = 90 }: ActivityHeatmapPr
             />
           ))}
         </div>
-        <span>More</span>
+        <span>{t.activity.more}</span>
       </div>
 
       {/* Tooltip */}
@@ -169,13 +171,13 @@ export default function ActivityHeatmap({ userId, days = 90 }: ActivityHeatmapPr
             {formatDate(hoveredDay.date)}
           </div>
           <div className="text-xs text-gray-400">
-            <div>总时长: {formatMinutes(hoveredDay.totalMinutes)}</div>
-            <div>活动数: {hoveredDay.activities}</div>
+            <div>{t.activity.total_duration}: {formatMinutes(hoveredDay.totalMinutes)}</div>
+            <div>{t.activity.activities}: {hoveredDay.activities}</div>
             {Object.keys(hoveredDay.statusCount).length > 0 && (
               <div className="mt-1 pt-1 border-t border-gray-700">
                 {Object.entries(hoveredDay.statusCount).map(([status, minutes]) => (
                   <div key={status} className="flex justify-between gap-2">
-                    <span className="text-gray-500">{status}:</span>
+                    <span className="text-gray-500">{t.activity.status[status.toLowerCase() as keyof typeof t.activity.status] || status}:</span>
                     <span className="text-emerald-400">{formatMinutes(minutes)}</span>
                   </div>
                 ))}

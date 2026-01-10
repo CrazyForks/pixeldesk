@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
     // 创建角色记录
     const character = await prisma.characters.create({
       data: {
+        id: crypto.randomUUID(),
         name: characterName,
         displayName: displayName.trim(),
         description: description?.trim() || null,
@@ -149,7 +150,8 @@ export async function POST(request: NextRequest) {
         isUserGenerated: true,
         creatorId: payload.userId,
         salesCount: 0,
-        sortOrder: 999 // 用户生成的角色排在后面
+        sortOrder: 999, // 用户生成的角色排在后面
+        updatedAt: new Date()
       }
     })
 

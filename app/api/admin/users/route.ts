@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
             prisma.users.findMany({
                 where,
                 include: {
-                    player: {
+                    players: {
                         select: {
                             id: true,
                             playerName: true,

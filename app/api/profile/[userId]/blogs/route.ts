@@ -41,7 +41,7 @@ export async function GET(
               avatar: true
             }
           },
-          likes: currentUserId ? {
+          post_likes: currentUserId ? {
             where: {
               userId: currentUserId
             },
@@ -62,13 +62,16 @@ export async function GET(
     ])
 
     // 处理点赞状态和字段映射
-    const blogsWithLikeStatus = blogs.map(blog => ({
-      ...blog,
-      author: blog.users, // 将 users 字段映射为 author 以保持 API 兼容性
-      users: undefined, // 移除 users 字段
-      isLiked: currentUserId ? (blog.likes && blog.likes.length > 0) : false,
-      likes: undefined
-    }))
+    const blogsWithLikeStatus = blogs.map(blog => {
+      const b = blog as any
+      return {
+        ...blog,
+        author: blog.users, // 将 users 字段映射为 author 以保持 API 兼容性
+        users: undefined, // 移除 users 字段
+        isLiked: currentUserId ? (b.post_likes && b.post_likes.length > 0) : false,
+        post_likes: undefined
+      }
+    })
 
     const totalPages = Math.ceil(totalCount / limit)
 

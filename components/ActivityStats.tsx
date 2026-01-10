@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { useUserActivity, type TotalStats } from '@/lib/hooks/useUserActivity'
 
 interface ActivityStatsProps {
@@ -8,6 +9,7 @@ interface ActivityStatsProps {
 }
 
 export default function ActivityStats({ userId, days = 90 }: ActivityStatsProps) {
+  const { t } = useTranslation()
   const { data: activityData, isLoading } = useUserActivity(userId, days)
   const stats = activityData?.totalStats || null
 
@@ -19,13 +21,13 @@ export default function ActivityStats({ userId, days = 90 }: ActivityStatsProps)
     if (hours > 24) {
       const days = Math.floor(hours / 24)
       const remainingHours = hours % 24
-      return `${days}天 ${remainingHours}时`
+      return `${days}${t.activity.days_unit} ${remainingHours}${t.activity.hours_unit}`
     }
 
     if (hours > 0) {
-      return `${hours}时 ${mins}分`
+      return `${hours}${t.activity.hours_unit} ${mins}${t.activity.minutes_unit}`
     }
-    return `${mins}分`
+    return `${mins}${t.activity.minutes_unit}`
   }
 
   // 获取状态图标
@@ -44,22 +46,14 @@ export default function ActivityStats({ userId, days = 90 }: ActivityStatsProps)
 
   // 获取状态显示名称
   const getStatusLabel = (status: string) => {
-    const labels: { [key: string]: string } = {
-      'work': '工作中',
-      'break': '休息中',
-      'meeting': '会议中',
-      'focus': '专注中',
-      'away': '离开',
-      'offline': '离线',
-      'online': '在线'
-    }
-    return labels[status.toLowerCase()] || status
+    const s = status.toLowerCase() as keyof typeof t.activity.status
+    return t.activity.status[s] || status
   }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <div className="text-gray-400 text-xs">加载统计中...</div>
+        <div className="text-gray-400 text-xs">{t.activity.loading}</div>
       </div>
     )
   }
@@ -67,7 +61,7 @@ export default function ActivityStats({ userId, days = 90 }: ActivityStatsProps)
   if (!stats) {
     return (
       <div className="text-center py-4 text-gray-500 text-xs">
-        暂无活动数据
+        {t.activity.no_data}
       </div>
     )
   }
@@ -82,21 +76,21 @@ export default function ActivityStats({ userId, days = 90 }: ActivityStatsProps)
       {/* 总体统计 */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-2">
-          <div className="text-[10px] text-gray-500 mb-1">总活跃</div>
+          <div className="text-[10px] text-gray-500 mb-1">{t.activity.total_active}</div>
           <div className="text-xs font-bold text-emerald-400 font-mono">
-            {stats.totalDays}天
+            {stats.totalDays}{t.activity.days_unit}
           </div>
         </div>
 
         <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-2">
-          <div className="text-[10px] text-gray-500 mb-1">总时长</div>
+          <div className="text-[10px] text-gray-500 mb-1">{t.activity.total_duration}</div>
           <div className="text-xs font-bold text-cyan-400 font-mono">
             {formatTime(stats.totalMinutes)}
           </div>
         </div>
 
         <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-2">
-          <div className="text-[10px] text-gray-500 mb-1">日均</div>
+          <div className="text-[10px] text-gray-500 mb-1">{t.activity.average}</div>
           <div className="text-xs font-bold text-purple-400 font-mono">
             {formatTime(stats.averageMinutesPerDay)}
           </div>
@@ -106,7 +100,7 @@ export default function ActivityStats({ userId, days = 90 }: ActivityStatsProps)
       {/* 状态分布 */}
       {sortedStatuses.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-gray-400 font-medium">状态分布</div>
+          <div className="text-xs text-gray-400 font-medium">{t.activity.distribution}</div>
           {sortedStatuses.map(([status, minutes]) => {
             const percentage = (minutes / stats.totalMinutes) * 100
             return (

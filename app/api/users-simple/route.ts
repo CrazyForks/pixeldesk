@@ -66,7 +66,8 @@ export async function POST(request: NextRequest) {
         name,
         email,
         avatar: avatar || null, // 存储角色key
-        points: points || 0
+        points: points || 0,
+        updatedAt: new Date()
       }
     })
 

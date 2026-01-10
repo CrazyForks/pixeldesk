@@ -478,6 +478,7 @@ model users {
   post_likes                                       post_likes[]
   post_replies                                     post_replies[]
   posts                                            posts[]
+  books                                            books[]
   status_history                                   status_history[]
   time_tracking                                    time_tracking[]
   user_online_status                               user_online_status?
@@ -561,4 +562,75 @@ enum PostType {
   IMAGE
   MIXED
   MARKDOWN
+}
+
+// 用户出版系统模型
+
+enum BookStatus {
+  DRAFT       // 草稿
+  PENDING     // 审核中
+  PUBLISHED   // 已发布
+  REJECTED    // 已驳回
+  ARCHIVED    // 已下架
+}
+
+enum ChapterType {
+  TEXT        // 纯文本/Markdown
+  LINK        // 外部链接
+  POST        // 站内帖子引用
+}
+
+model books {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String
+  description String?        
+  coverUrl    String?
+  status      BookStatus     @default(DRAFT)
+  category    String?        // 分类: Tech, Life, Art...
+  
+  // 统计与激励
+  viewCount   Int            @default(0)
+  likeCount   Int            @default(0)
+  
+  // 审核信息
+  reviewNote  String?        // 审核意见
+  reviewedAt  DateTime?
+  reviewedBy  String?        // 审核人ID
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  publishedAt DateTime?      // 发布时间(用于排序)
+  bookcaseId  String?        // 所在书架ID
+
+  // 关系
+  user        users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapters    book_chapters[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([viewCount])
+}
+
+model book_chapters {
+  id          String      @id @default(cuid())
+  bookId      String
+  title       String
+  
+  // 内容载体
+  content     String?     // Markdown内容或纯文本
+  linkUrl     String?     // 外部链接地址
+  postId      String?     // 关联的内部帖子ID
+  
+  type        ChapterType @default(TEXT)
+  order       Int         @default(0)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  book        books       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  @@index([bookId])
+  @@index([order])
 }

@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
           readTime: true,
           _count: {
             select: {
-              replies: true,
-              likes: true
+              post_replies: true,
+              post_likes: true
             }
           }
         }

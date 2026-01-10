@@ -46,6 +46,9 @@
                 "y": -1291.566265060241
             }
         },
+        "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#announcement_board_wire": {
+            "scaleInEditor": 1
+        },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#bathroom": {
             "dynamicWrapping": false,
             "scaleInDock": 1
@@ -183,7 +186,7 @@
             "scaleInDock": 0.33
         }
     },
-    "last.imagePath": "/Users/jiangyilong/project/PixelDesk/public/assets/desk",
+    "last.imagePath": "/Users/jiangyilong/project/PixelDesk/public/assets",
     "openFiles": [
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json"
     ],
@@ -198,7 +201,7 @@
     ],
     "tileset.embedInMap": true,
     "tileset.tileSize": {
-        "height": 48,
-        "width": 48
+        "height": 128,
+        "width": 128
     }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, memo, useCallback, useEffect } from 'react'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface WorkstationStatusPopupProps {
@@ -12,11 +13,11 @@ interface WorkstationStatusPopupProps {
     language?: 'zh-CN' | 'en'
 }
 
-const statusOptions = [
-    { id: 'working', label: { 'zh-CN': '工作中', 'en': 'Working' }, emoji: '💼', color: 'from-cyan-500 to-teal-500' },
-    { id: 'break', label: { 'zh-CN': '休息中', 'en': 'Break' }, emoji: '☕', color: 'from-emerald-500 to-teal-500' },
-    { id: 'meeting', label: { 'zh-CN': '会议中', 'en': 'Meeting' }, emoji: '👥', color: 'from-blue-500 to-cyan-500' },
-    { id: 'off_work', label: { 'zh-CN': '下班了', 'en': 'Off Work' }, emoji: '🏠', color: 'from-gray-500 to-gray-600' }
+const getStatusOptions = (t: any) => [
+    { id: 'working', label: t.workstation.status.working, emoji: '💼', color: 'from-cyan-500 to-teal-500', message: t.workstation.status.is_working },
+    { id: 'break', label: t.workstation.status.break, emoji: '☕', color: 'from-emerald-500 to-teal-500', message: t.workstation.status.is_break },
+    { id: 'meeting', label: t.workstation.status.meeting, emoji: '👥', color: 'from-blue-500 to-cyan-500', message: t.workstation.status.is_meeting },
+    { id: 'off_work', label: t.workstation.status.off_work, emoji: '🏠', color: 'from-gray-500 to-gray-600', message: t.workstation.status.is_off_work }
 ]
 
 const WorkstationStatusPopup = memo(({
@@ -25,8 +26,10 @@ const WorkstationStatusPopup = memo(({
     onClose,
     userId,
     workstationId,
-    language = 'zh-CN'
+    language: _language = 'zh-CN'
 }: WorkstationStatusPopupProps) => {
+    const { t } = useTranslation()
+    const statusOptions = getStatusOptions(t)
     const [selectedId, setSelectedId] = useState('working')
     const [isCustomMode, setIsCustomMode] = useState(false)
     const [customEmoji, setCustomEmoji] = useState('📝')
@@ -75,7 +78,7 @@ const WorkstationStatusPopup = memo(({
     // 保存广告
     const handleSaveAd = useCallback(async () => {
         if (!workstationId) {
-            setAdError(language === 'zh-CN' ? '工位ID无效' : 'Invalid workstation ID')
+            setAdError(t.workstation.invalid_id)
             return
         }
 
@@ -100,15 +103,15 @@ const WorkstationStatusPopup = memo(({
                 setAdSuccess(true)
                 setTimeout(() => setAdSuccess(false), 3000)
             } else {
-                setAdError(result.error || (language === 'zh-CN' ? '保存失败' : 'Save failed'))
+                setAdError(result.error || t.workstation.save_failed)
             }
         } catch (error) {
             console.error('Failed to save advertisement:', error)
-            setAdError(language === 'zh-CN' ? '保存失败' : 'Save failed')
+            setAdError(t.workstation.save_failed)
         } finally {
             setIsAdSaving(false)
         }
-    }, [workstationId, adText, adImage, adUrl, language])
+    }, [workstationId, adText, adImage, adUrl, t])
 
     const handleConfirm = useCallback(async () => {
         let fullStatus
@@ -141,9 +144,9 @@ const WorkstationStatusPopup = memo(({
 
             fullStatus = {
                 type: status.id,
-                status: status.label[language],
+                status: status.label,
                 emoji: status.emoji,
-                message: language === 'zh-CN' ? `正在${status.label[language]}` : `Is ${status.label[language]}`,
+                message: status.message,
                 timestamp: new Date().toISOString()
             }
         }
@@ -188,7 +191,7 @@ const WorkstationStatusPopup = memo(({
         setIsCustomMode(false)
         setCustomLabel('')
         setCustomEmoji('📝')
-    }, [selectedId, isCustomMode, customLabel, customEmoji, onStatusUpdate, onClose, language, userId])
+    }, [selectedId, isCustomMode, customLabel, customEmoji, onStatusUpdate, onClose, t, userId, customHistory, statusOptions])
 
     // 控制游戏输入锁定
     useEffect(() => {
@@ -267,7 +270,7 @@ const WorkstationStatusPopup = memo(({
                                         <div className="w-3 h-3 bg-cyan-400 rounded-full relative"></div>
                                     </div>
                                     <h3 className="text-white font-bold text-lg tracking-wider uppercase font-pixel bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                                        {language === 'zh-CN' ? '更新当前状态' : 'UPDATE STATUS'}
+                                        {t.workstation.update_status}
                                     </h3>
                                 </div>
                                 <button
@@ -292,7 +295,7 @@ const WorkstationStatusPopup = memo(({
                                         : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
                                         }`}
                                 >
-                                    {language === 'zh-CN' ? '更新状态' : 'Update Status'}
+                                    {t.workstation.status_tab}
                                 </button>
                                 {workstationId && (
                                     <button
@@ -302,7 +305,7 @@ const WorkstationStatusPopup = memo(({
                                             : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
                                             }`}
                                     >
-                                        📢 {language === 'zh-CN' ? '工位广告' : 'Ad'}
+                                        📢 {t.workstation.ad}
                                     </button>
                                 )}
                             </div>
@@ -318,7 +321,7 @@ const WorkstationStatusPopup = memo(({
                                                 : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
                                                 }`}
                                         >
-                                            {language === 'zh-CN' ? '快捷状态' : 'Quick Status'}
+                                            {t.workstation.quick_status}
                                         </button>
                                         <button
                                             onClick={() => setIsCustomMode(true)}
@@ -327,7 +330,7 @@ const WorkstationStatusPopup = memo(({
                                                 : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60'
                                                 }`}
                                         >
-                                            {language === 'zh-CN' ? '自定义' : 'Custom'}
+                                            {t.workstation.custom}
                                         </button>
                                     </div>
                                 </>
@@ -351,7 +354,7 @@ const WorkstationStatusPopup = memo(({
                                                         }`}
                                                 >
                                                     <span className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform">{status.emoji}</span>
-                                                    <span className="text-xs font-black tracking-widest uppercase">{status.label[language]}</span>
+                                                    <span className="text-xs font-black tracking-widest uppercase">{status.label}</span>
 
                                                     {selectedId === status.id && (
                                                         <motion.div
@@ -365,91 +368,91 @@ const WorkstationStatusPopup = memo(({
                                     ) : (
                                         /* 自定义状态输入 */
                                         <div className="space-y-4 mb-6">
-                                    {/* History Section */}
-                                    {customHistory.length > 0 && (
-                                        <div>
-                                            <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                                {language === 'zh-CN' ? '历史记录' : 'History'}
-                                            </label>
-                                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                                                {customHistory.map((item, index) => (
-                                                    <button
-                                                        key={index}
-                                                        onClick={() => {
-                                                            setCustomEmoji(item.emoji)
-                                                            setCustomLabel(item.label)
-                                                        }}
-                                                        className="flex items-center gap-2 bg-gray-800/60 hover:bg-purple-600/30 border border-gray-700 hover:border-purple-500 rounded-lg px-3 py-2 transition-all group"
-                                                    >
-                                                        <span className="text-lg">{item.emoji}</span>
-                                                        <span className="text-sm text-gray-300 group-hover:text-white">{item.label}</span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                            {/* History Section */}
+                                            {customHistory.length > 0 && (
+                                                <div>
+                                                    <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                        {t.workstation.history}
+                                                    </label>
+                                                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                                                        {customHistory.map((item, index) => (
+                                                            <button
+                                                                key={index}
+                                                                onClick={() => {
+                                                                    setCustomEmoji(item.emoji)
+                                                                    setCustomLabel(item.label)
+                                                                }}
+                                                                className="flex items-center gap-2 bg-gray-800/60 hover:bg-purple-600/30 border border-gray-700 hover:border-purple-500 rounded-lg px-3 py-2 transition-all group"
+                                                            >
+                                                                <span className="text-lg">{item.emoji}</span>
+                                                                <span className="text-sm text-gray-300 group-hover:text-white">{item.label}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                    {/* Emoji 选择 */}
-                                    <div>
-                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            {language === 'zh-CN' ? '选择图标' : 'Select Icon'}
-                                        </label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {commonEmojis.map((emoji) => (
-                                                <button
-                                                    key={emoji}
-                                                    onClick={() => setCustomEmoji(emoji)}
-                                                    className={`w-10 h-10 rounded-lg transition-all ${customEmoji === emoji
-                                                            ? 'bg-gradient-to-br from-purple-600 to-pink-600 scale-110'
-                                                            : 'bg-gray-800/40 hover:bg-gray-800/60'
-                                                        }`}
-                                                >
-                                                    <span className="text-xl">{emoji}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* 状态文本输入 */}
-                                    <div>
-                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            {language === 'zh-CN' ? '状态描述' : 'Status Description'}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={customLabel}
-                                            onChange={(e) => setCustomLabel(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                // 阻止事件冒泡到 Phaser
-                                                e.stopPropagation()
-                                                // 处理 Enter 键提交
-                                                if (e.key === 'Enter' && customLabel.trim()) {
-                                                    e.preventDefault()
-                                                    handleConfirm()
-                                                }
-                                            }}
-                                            placeholder={language === 'zh-CN' ? '输入你的状态...' : 'Enter your status...'}
-                                            maxLength={30}
-                                            className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                                        />
-                                        <div className="text-right text-xs text-gray-500 mt-1">
-                                            {customLabel.length}/30
-                                        </div>
-                                    </div>
-
-                                    {/* 预览 */}
-                                    {customLabel && (
-                                        <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl p-4">
-                                            <div className="text-gray-400 text-xs mb-2">
-                                                {language === 'zh-CN' ? '预览' : 'Preview'}
+                                            {/* Emoji 选择 */}
+                                            <div>
+                                                <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                    {t.workstation.select_icon}
+                                                </label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {commonEmojis.map((emoji) => (
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={() => setCustomEmoji(emoji)}
+                                                            className={`w-10 h-10 rounded-lg transition-all ${customEmoji === emoji
+                                                                ? 'bg-gradient-to-br from-purple-600 to-pink-600 scale-110'
+                                                                : 'bg-gray-800/40 hover:bg-gray-800/60'
+                                                                }`}
+                                                        >
+                                                            <span className="text-xl">{emoji}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-3xl">{customEmoji}</span>
-                                                <span className="text-white font-bold">{customLabel}</span>
+
+                                            {/* 状态文本输入 */}
+                                            <div>
+                                                <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                    {t.workstation.status_desc}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={customLabel}
+                                                    onChange={(e) => setCustomLabel(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        // 阻止事件冒泡到 Phaser
+                                                        e.stopPropagation()
+                                                        // 处理 Enter 键提交
+                                                        if (e.key === 'Enter' && customLabel.trim()) {
+                                                            e.preventDefault()
+                                                            handleConfirm()
+                                                        }
+                                                    }}
+                                                    placeholder={t.workstation.status_placeholder}
+                                                    maxLength={30}
+                                                    className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                                />
+                                                <div className="text-right text-xs text-gray-500 mt-1">
+                                                    {customLabel.length}/30
+                                                </div>
                                             </div>
+
+                                            {/* 预览 */}
+                                            {customLabel && (
+                                                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl p-4">
+                                                    <div className="text-gray-400 text-xs mb-2">
+                                                        {t.workstation.preview}
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-3xl">{customEmoji}</span>
+                                                        <span className="text-white font-bold">{customLabel}</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
                                     )}
 
                                     {/* 确认按钮 - 仅状态页显示 */}
@@ -464,7 +467,7 @@ const WorkstationStatusPopup = memo(({
                                             : 'bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-500 hover:via-teal-500 hover:to-emerald-500 text-white shadow-[0_10px_30px_rgba(6,182,212,0.3)] hover:shadow-[0_15px_40px_rgba(6,182,212,0.4)]'
                                             }`}
                                     >
-                                        {language === 'zh-CN' ? '确认并同步' : 'CONFIRM & SYNC'}
+                                        {t.workstation.confirm_sync}
                                     </button>
                                 </>
                             ) : (
@@ -475,7 +478,7 @@ const WorkstationStatusPopup = memo(({
                                         <div className="bg-gradient-to-r from-green-600/20 to-teal-600/20 border border-green-500/30 rounded-xl p-3 flex items-center gap-3">
                                             <span className="text-2xl">✅</span>
                                             <span className="text-green-400 text-sm font-bold">
-                                                {language === 'zh-CN' ? '保存成功!' : 'Saved successfully!'}
+                                                {t.workstation.save_success}
                                             </span>
                                         </div>
                                     )}
@@ -491,13 +494,13 @@ const WorkstationStatusPopup = memo(({
                                     {/* 广告文案输入 */}
                                     <div>
                                         <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            📝 {language === 'zh-CN' ? '广告文案' : 'Ad Text'} ({adText.length}/200)
+                                            📝 {t.workstation.ad_text} ({adText.length}/200)
                                         </label>
                                         <textarea
                                             value={adText}
                                             onChange={(e) => setAdText(e.target.value)}
                                             onKeyDown={(e) => e.stopPropagation()}
-                                            placeholder={language === 'zh-CN' ? '输入广告文案，向访客展示你的信息...' : 'Enter your ad text...'}
+                                            placeholder={t.workstation.ad_text_placeholder}
                                             maxLength={200}
                                             rows={4}
                                             className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all resize-none"
@@ -507,14 +510,14 @@ const WorkstationStatusPopup = memo(({
                                     {/* 广告图片 URL 输入 */}
                                     <div>
                                         <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            🖼️ {language === 'zh-CN' ? '广告图片 URL' : 'Ad Image URL'} ({adImage.length}/500)
+                                            🖼️ {t.workstation.ad_img_url} ({adImage.length}/500)
                                         </label>
                                         <input
                                             type="url"
                                             value={adImage}
                                             onChange={(e) => setAdImage(e.target.value)}
                                             onKeyDown={(e) => e.stopPropagation()}
-                                            placeholder={language === 'zh-CN' ? '输入图片 URL...' : 'Enter image URL...'}
+                                            placeholder={t.workstation.ad_img_placeholder}
                                             maxLength={500}
                                             className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
                                         />
@@ -523,14 +526,14 @@ const WorkstationStatusPopup = memo(({
                                     {/* 广告链接 URL 输入 */}
                                     <div>
                                         <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            🔗 {language === 'zh-CN' ? '广告链接 URL' : 'Ad Link URL'} ({adUrl.length}/500)
+                                            🔗 {t.workstation.ad_link_url} ({adUrl.length}/500)
                                         </label>
                                         <input
                                             type="url"
                                             value={adUrl}
                                             onChange={(e) => setAdUrl(e.target.value)}
                                             onKeyDown={(e) => e.stopPropagation()}
-                                            placeholder={language === 'zh-CN' ? '输入广告跳转链接（可选）...' : 'Enter ad link URL (optional)...'}
+                                            placeholder={t.workstation.ad_link_placeholder}
                                             maxLength={500}
                                             className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
                                         />
@@ -540,7 +543,7 @@ const WorkstationStatusPopup = memo(({
                                     {adImage && (
                                         <div>
                                             <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                                👁️ {language === 'zh-CN' ? '图片预览' : 'Image Preview'}
+                                                👁️ {t.workstation.img_preview}
                                             </label>
                                             <div className="relative rounded-xl overflow-hidden border-2 border-gray-700 bg-gray-800/40">
                                                 <img
@@ -554,7 +557,7 @@ const WorkstationStatusPopup = memo(({
                                                         if (parent) {
                                                             const errorDiv = document.createElement('div')
                                                             errorDiv.className = 'flex items-center justify-center h-32 text-gray-500 text-sm'
-                                                            errorDiv.textContent = language === 'zh-CN' ? '图片加载失败' : 'Failed to load image'
+                                                            errorDiv.textContent = t.workstation.img_load_failed
                                                             parent.appendChild(errorDiv)
                                                         }
                                                     }}
@@ -576,17 +579,15 @@ const WorkstationStatusPopup = memo(({
                                             }`}
                                     >
                                         {isAdSaving
-                                            ? (language === 'zh-CN' ? '保存中...' : 'SAVING...')
-                                            : (language === 'zh-CN' ? '💾 保存广告' : '💾 SAVE AD')
+                                            ? t.workstation.saving
+                                            : t.workstation.save_ad
                                         }
                                     </button>
 
                                     {/* 说明 */}
                                     <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3">
                                         <p className="text-gray-400 text-xs leading-relaxed">
-                                            {language === 'zh-CN'
-                                                ? '💡 提示：您的广告将展示在工位信息卡片中，其他用户点击您的工位时可以看到。'
-                                                : '💡 Tip: Your ad will be displayed on your workstation card when other users click on it.'}
+                                            {t.workstation.ad_tip}
                                         </p>
                                     </div>
                                 </div>
@@ -596,7 +597,7 @@ const WorkstationStatusPopup = memo(({
                             <div className="flex flex-col items-center gap-1 mt-5">
                                 <div className="w-8 h-1 bg-gray-800 rounded-full"></div>
                                 <p className="text-[10px] text-gray-500 font-mono uppercase tracking-[0.1em] opacity-60">
-                                    {language === 'zh-CN' ? '已连接至元宇宙办公室' : 'CONNECTED TO METAVERSE'}
+                                    {t.workstation.connected}
                                 </p>
                             </div>
                         </div>

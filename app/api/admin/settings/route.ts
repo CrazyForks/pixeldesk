@@ -59,13 +59,16 @@ export async function POST(request: NextRequest) {
                     update: {
                         value: setting.value,
                         description: setting.description,
-                        category: setting.category || 'general'
+                        category: setting.category || 'general',
+                        updatedAt: new Date()
                     },
                     create: {
+                        id: crypto.randomUUID(),
                         key: setting.key,
                         value: setting.value,
                         description: setting.description,
-                        category: setting.category || 'general'
+                        category: setting.category || 'general',
+                        updatedAt: new Date()
                     }
                 })
             )

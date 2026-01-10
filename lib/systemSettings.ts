@@ -5,7 +5,7 @@ import prisma from './prisma'
  */
 export async function getSystemSetting(key: string, defaultValue?: string): Promise<string> {
     try {
-        const setting = await prisma.systemConfig.findUnique({
+        const setting = await prisma.system_config.findUnique({
             where: { key }
         })
 
@@ -30,10 +30,22 @@ export async function getSystemSetting(key: string, defaultValue?: string): Prom
  * 设置系统配置
  */
 export async function setSystemSetting(key: string, value: string, description?: string, category: string = 'general') {
-    return await prisma.systemConfig.upsert({
+    return await prisma.system_config.upsert({
         where: { key },
-        update: { value, description, category },
-        create: { key, value, description, category }
+        update: {
+            value,
+            description,
+            category,
+            updatedAt: new Date()
+        },
+        create: {
+            id: crypto.randomUUID(),
+            key,
+            value,
+            description,
+            category,
+            updatedAt: new Date()
+        }
     })
 }
 
@@ -41,7 +53,7 @@ export async function setSystemSetting(key: string, value: string, description?:
  * 批量获取分类设置
  */
 export async function getSettingsByCategory(category: string) {
-    const settings = await prisma.systemConfig.findMany({
+    const settings = await prisma.system_config.findMany({
         where: { category }
     })
 

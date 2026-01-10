@@ -90,7 +90,7 @@ class ConfigStore {
         // 通知所有监听器
         this.notifyPointsConfigListeners()
 
-        return this.pointsConfig
+        return this.pointsConfig!
       } else {
         throw new Error(data.error || 'Failed to load points config')
       }
@@ -157,7 +157,7 @@ class ConfigStore {
         // 通知所有监听器
         this.notifyStatsListeners()
 
-        return this.stats
+        return this.stats!
       } else {
         throw new Error(data.error || 'Failed to load stats')
       }

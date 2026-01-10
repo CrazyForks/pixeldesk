@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const user = await prisma.users.findUnique({
       where: { id: userId },
       include: {
-        workstations: true
+        user_workstations: true
       }
     })
 
@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
         name,
         email,
         avatar: avatar || null, // 存储角色key
-        points: points || 0
+        points: points || 0,
+        updatedAt: new Date()
       }
     })
 

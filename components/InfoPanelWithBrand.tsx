@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import UserAvatar from './UserAvatar'
-import UserPresenceStatus from './UserPresenceStatus'
-import NotificationsPanel from './NotificationsPanel'
+import UserStatusIndicator from './UserStatusIndicator'
+import NotificationsTab from './tabs/NotificationsTab'
 import BrandHeader from './BrandHeader'
 
 interface InfoPanelProps {
@@ -89,10 +89,10 @@ export default function InfoPanelWithBrand({
       <div className="mb-6 pb-4 border-b border-gray-800">
         <h3 className="text-sm font-semibold text-gray-400 mb-3">当前状态</h3>
         {currentUser && (
-          <UserPresenceStatus
-            userId={currentUser.id}
-            showHistory={true}
-            compact={isMobile}
+          <UserStatusIndicator
+            isOnline={true}
+            showText={true}
+            size={isMobile ? 'sm' : 'md'}
           />
         )}
       </div>
@@ -100,9 +100,10 @@ export default function InfoPanelWithBrand({
       {/* 通知面板 */}
       {showNotifications && currentUser && (
         <div className="flex-1 overflow-hidden">
-          <NotificationsPanel
-            userId={currentUser.id}
-            onClose={() => setShowNotifications(false)}
+          <NotificationsTab
+            isActive={true}
+            isMobile={isMobile}
+            isTablet={isTablet}
           />
         </div>
       )}

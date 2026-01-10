@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -35,6 +36,7 @@ function ArticleRecommendation({ url, postId, articlesData }: {
   postId: string;
   articlesData: Article[];
 }) {
+  const { t } = useTranslation()
   const [article, setArticle] = useState<Article | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -64,7 +66,7 @@ function ArticleRecommendation({ url, postId, articlesData }: {
           if (data.success) {
             const article = {
               id: postId,
-              title: data.post.title || '未命名文章',
+              title: data.post.title || t.common.none,
               summary: data.post.summary || data.post.content?.substring(0, 150) + '...' || '',
               tags: data.post.tags || [],
               url
@@ -72,14 +74,14 @@ function ArticleRecommendation({ url, postId, articlesData }: {
             articleCache.set(postId, article)
             setArticle(article)
           } else {
-            setArticle({ id: postId, title: '相关文章', summary: '', tags: [], url })
+            setArticle({ id: postId, title: t.front_desk.read_more, summary: '', tags: [], url })
           }
         } else {
-          setArticle({ id: postId, title: '相关文章', summary: '', tags: [], url })
+          setArticle({ id: postId, title: t.front_desk.read_more, summary: '', tags: [], url })
         }
       } catch (error) {
         console.error('Failed to fetch article:', error)
-        setArticle({ id: postId, title: '相关文章', summary: '', tags: [], url })
+        setArticle({ id: postId, title: t.front_desk.read_more, summary: '', tags: [], url })
       } finally {
         setLoading(false)
       }
@@ -134,7 +136,7 @@ function ArticleRecommendation({ url, postId, articlesData }: {
             </div>
           )}
           <div className="flex items-center text-xs text-cyan-600 mt-2 group-hover:text-cyan-700">
-            <span>阅读全文</span>
+            <span>{t.front_desk.read_more}</span>
             <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
@@ -152,6 +154,7 @@ interface FrontDeskChatModalProps {
 }
 
 export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontDeskChatModalProps) {
+  const { t, locale } = useTranslation()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -261,16 +264,16 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
         // 显示错误消息
         const errorMessage: Message = {
           role: 'assistant',
-          content: data.reply || '抱歉，服务暂时不可用',
+          content: data.reply || t.front_desk.err_service_unavailable,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, errorMessage])
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error)
       const errorMessage: Message = {
         role: 'assistant',
-        content: `网络连接失败: ${error.message}`,
+        content: `${t.front_desk.err_network}: ${error.message}`,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])
@@ -470,7 +473,7 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
             <h2 className="text-xl font-bold">{deskInfo.name}</h2>
             <p className="text-sm text-cyan-100">{deskInfo.serviceScope}</p>
             {deskInfo.workingHours && (
-              <p className="text-xs text-cyan-200 mt-1">工作时间: {deskInfo.workingHours}</p>
+              <p className="text-xs text-cyan-200 mt-1">{t.front_desk.working_hours}: {deskInfo.workingHours}</p>
             )}
           </div>
           <button
@@ -485,7 +488,10 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
 
         {/* 使用统计 */}
         <div className="px-4 py-2 bg-gray-50 border-b text-xs text-gray-600">
-          今日咨询次数: {usage.current}/{usage.limit} (剩余 {usage.remaining} 次)
+          {t.front_desk.usage_stats
+            .replace('{current}', usage.current.toString())
+            .replace('{limit}', usage.limit.toString())
+            .replace('{remaining}', usage.remaining.toString())}
         </div>
 
         {/* 消息区域 */}
@@ -496,17 +502,15 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
+                className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-800'
+                  }`}
               >
                 {renderMessageContent(msg.content)}
-                <p className={`text-xs mt-2 ${
-                  msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                }`}>
-                  {new Date(msg.timestamp).toLocaleTimeString('zh-CN', {
+                <p className={`text-xs mt-2 ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                  }`}>
+                  {new Date(msg.timestamp).toLocaleTimeString(locale, {
                     hour: '2-digit',
                     minute: '2-digit'
                   })}
@@ -540,7 +544,7 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               onKeyDown={handleInputKeyDown}
-              placeholder="输入您的问题..."
+              placeholder={t.front_desk.placeholder}
               disabled={isLoading}
               className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:bg-gray-100 bg-white text-gray-800"
             />
@@ -549,11 +553,11 @@ export default function FrontDeskChatModal({ isOpen, onClose, deskInfo }: FrontD
               disabled={isLoading || !inputValue.trim()}
               className="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
-              发送
+              {t.front_desk.send}
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            按 Enter 发送，Shift + Enter 换行
+            {t.front_desk.hint}
           </p>
         </div>
       </div>

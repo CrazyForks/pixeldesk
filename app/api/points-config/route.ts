@@ -87,8 +87,20 @@ export async function POST(request: NextRequest) {
     // 使用 upsert 创建或更新
     const config = await prisma.points_config.upsert({
       where: { key },
-      update: { value, description, category },
-      create: { key, value, description, category }
+      update: {
+        value,
+        description,
+        category,
+        updatedAt: new Date()
+      },
+      create: {
+        id: crypto.randomUUID(),
+        key,
+        value,
+        description,
+        category,
+        updatedAt: new Date()
+      }
     })
 
     return NextResponse.json({

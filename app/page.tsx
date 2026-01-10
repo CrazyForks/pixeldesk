@@ -6,6 +6,7 @@ import { EventBus, CollisionEvent } from '@/lib/eventBus'
 import { useUser } from '@/contexts/UserContext'
 import CharacterCreationModal from '@/components/CharacterCreationModal'
 import { statusHistoryManager } from '@/lib/statusHistory'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import {
   isFirstTimeVisitor,
   createTempPlayer,
@@ -51,7 +52,7 @@ import '@/lib/workstationBindingManager'
 // 动态导入PhaserGame组件以避免SSR问题
 const PhaserGame = dynamic(() => import('@/components/PhaserGame'), {
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full bg-gray-900">加载游戏中...</div>
+  loading: () => <div className="flex items-center justify-center h-full bg-gray-900 font-pixel text-white">Loading Game...</div>
 })
 
 // 静态导入信息组件
@@ -128,6 +129,7 @@ export default function Home() {
   const [authPromptMessage, setAuthPromptMessage] = useState('')
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login')
+  const { t, locale } = useTranslation()
 
   // 设置全局登录状态标志
   useEffect(() => {
@@ -653,7 +655,7 @@ export default function Home() {
 
       // 在 Phaser 中显示提示（如果 gameScene 存在）
       if (typeof window !== 'undefined' && (window as any).gameScene) {
-        (window as any).gameScene.showCollisionNotification('按 F 键与 ' + name + ' 对话', 'info')
+        (window as any).gameScene.showCollisionNotification(t.common.press_f_to_talk.replace('{name}', name), 'info')
       }
     }
 

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       prisma.notifications.findMany({
         where,
         include: {
-          relatedPost: {
+          posts: {
             select: {
               id: true,
               title: true,
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
               }
             }
           },
-          relatedUser: {
+          users_notifications_relatedUserIdTousers: {
             select: {
               id: true,
               name: true,
@@ -64,15 +64,19 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit)
     const hasNextPage = page < totalPages
 
-    // 将 relatedPost.users 映射为 relatedPost.author 以保持 API 兼容性
-    const notificationsWithAuthor = notifications.map(notification => ({
-      ...notification,
-      relatedPost: notification.relatedPost ? {
-        ...notification.relatedPost,
-        author: notification.relatedPost.users,
-        users: undefined
-      } : null
-    }))
+    // 将 posts 映射为 relatedPost, users_notifications_relatedUserIdTousers 映射为 relatedUser 以保持 API 兼容性
+    const notificationsWithAuthor = notifications.map(notification => {
+      const n = notification as any
+      return {
+        ...notification,
+        relatedPost: n.posts ? {
+          ...n.posts,
+          author: n.posts.users,
+          users: undefined
+        } : null,
+        relatedUser: n.users_notifications_relatedUserIdTousers
+      }
+    })
 
     return NextResponse.json({
       success: true,
@@ -120,16 +124,18 @@ export async function POST(request: NextRequest) {
 
     const notification = await prisma.notifications.create({
       data: {
+        id: crypto.randomUUID(),
         userId,
         type,
         title,
         message,
         relatedPostId,
         relatedReplyId,
-        relatedUserId
+        relatedUserId,
+        updatedAt: new Date()
       },
       include: {
-        relatedPost: {
+        posts: {
           select: {
             id: true,
             title: true,
@@ -143,7 +149,7 @@ export async function POST(request: NextRequest) {
             }
           }
         },
-        relatedUser: {
+        users_notifications_relatedUserIdTousers: {
           select: {
             id: true,
             name: true,
@@ -153,14 +159,16 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 将 relatedPost.users 映射为 relatedPost.author 以保持 API 兼容性
+    // 将 posts 映射为 relatedPost, users_notifications_relatedUserIdTousers 映射为 relatedUser 以保持 API 兼容性
+    const notificationAny = notification as any
     const notificationWithAuthor = {
       ...notification,
-      relatedPost: notification.relatedPost ? {
-        ...notification.relatedPost,
-        author: notification.relatedPost.users,
+      relatedPost: notificationAny.posts ? {
+        ...notificationAny.posts,
+        author: notificationAny.posts.users,
         users: undefined
-      } : null
+      } : null,
+      relatedUser: notificationAny.users_notifications_relatedUserIdTousers
     }
 
     return NextResponse.json({

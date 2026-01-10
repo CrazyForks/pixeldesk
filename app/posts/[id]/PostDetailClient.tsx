@@ -196,13 +196,13 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
   }, [lightboxOpen, post.imageUrls])
 
   return (
-    <div className="min-h-screen bg-gray-950 relative">
+    <div className={`min-h-screen transition-colors duration-500 ${theme === 'dark' ? 'bg-gray-950' : 'bg-slate-50'} relative`}>
       {/* 动态背景装饰 */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 -left-20 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
-        <div className="absolute top-40 right-20 w-80 h-80 bg-cyan-600/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-40 left-1/3 w-96 h-96 bg-pink-600/8 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className={`absolute top-20 -left-20 w-96 h-96 ${theme === 'dark' ? 'bg-purple-600/10' : 'bg-purple-600/5'} rounded-full blur-3xl`} />
+        <div className={`absolute top-40 right-20 w-80 h-80 ${theme === 'dark' ? 'bg-cyan-600/10' : 'bg-cyan-600/5'} rounded-full blur-3xl`} />
+        <div className={`absolute bottom-40 left-1/3 w-96 h-96 ${theme === 'dark' ? 'bg-pink-600/8' : 'bg-pink-600/5'} rounded-full blur-3xl`} />
+        <div className={`absolute inset-0 ${theme === 'dark' ? 'bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)]' : 'bg-[linear-gradient(to_right,#e2e8f080_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f080_1px,transparent_1px)]'} bg-[size:32px_32px]`} />
       </div>
 
       {/* 登录提示模态框 */}
@@ -229,18 +229,38 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
       )}
 
       {/* 导航栏 */}
-      <nav className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
+      <nav className={`sticky top-0 z-50 backdrop-blur-md border-b transition-colors duration-500 ${theme === 'dark' ? 'bg-gray-900/80 border-gray-800' : 'bg-white/80 border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <button onClick={() => router.push('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
               {isBrandLoading ? <div className="w-8 h-8 bg-gray-700 rounded-lg animate-pulse"></div> : <img src={brandConfig.app_logo} alt={brandConfig.app_name} className="w-8 h-8 rounded-lg object-cover" />}
-              <span className="text-white font-bold text-base">{isBrandLoading ? '加载中...' : brandConfig.app_name}</span>
+              <span className={`font-bold text-base transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{isBrandLoading ? '加载中...' : brandConfig.app_name}</span>
             </button>
             <div className="flex items-center space-x-2">
-              <button onClick={toggleTheme} className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg border border-gray-700 transition-all">
-                {theme === 'dark' ? <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" /></svg> : <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>}
+              <button
+                onClick={toggleTheme}
+                className={`p-1.5 rounded-lg border transition-all ${theme === 'dark'
+                  ? 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white border-gray-700'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 border-slate-200'
+                  }`}
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" /></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
+                )}
               </button>
-              {isAuthor && <button onClick={() => router.push(`/posts/${post.id}/edit`)} className="cursor-pointer px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-lg border border-gray-700 hover:border-cyan-500/50 text-sm font-medium transition-all">编辑</button>}
+              {isAuthor && (
+                <button
+                  onClick={() => router.push(`/posts/${post.id}/edit`)}
+                  className={`cursor-pointer px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${theme === 'dark'
+                    ? 'bg-gray-800 hover:bg-gray-700 text-cyan-400 border-gray-700 hover:border-cyan-500/50'
+                    : 'bg-white hover:bg-slate-50 text-cyan-600 border-slate-200 hover:border-cyan-300'
+                    }`}
+                >
+                  编辑
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -251,28 +271,35 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
         <div className="flex gap-8 items-start">
           <div className="flex-1 min-w-0 flex flex-col gap-1">
             {/* 帖子主体 - 气泡首句 */}
-            <article className="bg-[#1a1c1e]/80 backdrop-blur-xl border border-white/5 rounded-t-3xl overflow-hidden shadow-2xl">
+            <article className={`backdrop-blur-xl border rounded-t-3xl overflow-hidden shadow-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-[#1a1c1e]/80 border-white/5' : 'bg-white border-slate-200'
+              }`}>
               <div className="p-8 pb-4">
                 <header className="flex items-center space-x-4 mb-6">
                   <div className="relative">
                     <UserAvatar userId={post.author.id} userName={post.author.name} userAvatar={post.author.avatar} size="xl" showStatus={true} />
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-4 border-[#1a1c1e] rounded-full"></div>
+                    <div className={`absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-4 rounded-full ${theme === 'dark' ? 'border-[#1a1c1e]' : 'border-white'
+                      }`}></div>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <Link href={`/profile/${post.author.id}`} className="font-black text-white hover:text-cyan-400 text-xl tracking-tight transition-colors">{post.author.name}</Link>
+                      <Link href={`/profile/${post.author.id}`} className={`font-black hover:text-cyan-400 text-xl tracking-tight transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'
+                        }`}>{post.author.name}</Link>
                       <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                      <time className="text-gray-500 text-sm font-medium">{formatTimeAgo(post.createdAt)}</time>
+                      <time className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-500' : 'text-slate-400'}`}>{formatTimeAgo(post.createdAt)}</time>
                     </div>
-                    {post.title && <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mt-1">{post.title}</h1>}
+                    {post.title && <h1 className={`text-2xl font-bold mt-1 ${theme === 'dark' ? 'bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent' : 'text-slate-900'
+                      }`}>{post.title}</h1>}
                   </div>
                 </header>
 
                 <div className="mb-6">
                   {post.type === 'MARKDOWN' ? (
-                    <div className="prose prose-invert max-w-none"><MarkdownRenderer content={post.content} /></div>
+                    <div className={`${theme === 'dark' ? 'prose-invert' : 'prose-slate'} prose max-w-none`}>
+                      <MarkdownRenderer content={post.content} />
+                    </div>
                   ) : (
-                    <p className="text-gray-100 whitespace-pre-wrap leading-relaxed text-lg font-medium">{post.content}</p>
+                    <p className={`whitespace-pre-wrap leading-relaxed text-lg font-medium ${theme === 'dark' ? 'text-gray-100' : 'text-slate-800'
+                      }`}>{post.content}</p>
                   )}
                   {post.type === 'MARKDOWN' && post.coverImage && (
                     <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 shadow-lg">
@@ -291,14 +318,21 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
                   )}
                 </div>
 
-                <footer className="flex items-center justify-between pt-6 border-t border-white/5 mt-8 mb-4">
+                <footer className={`flex items-center justify-between pt-6 border-t mt-8 mb-4 ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'
+                  }`}>
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-white/5 rounded-full px-4 py-1.5 gap-4 border border-white/5 text-gray-400 text-xs font-mono">
+                    <div className={`flex items-center rounded-full px-4 py-1.5 gap-4 border text-xs font-mono ${theme === 'dark' ? 'bg-white/5 border-white/5 text-gray-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+                      }`}>
                       <div className="flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg><span>{post.viewCount}</span></div>
-                      <div className="w-px h-3 bg-white/10"></div>
+                      <div className={`w-px h-3 ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}></div>
                       <div className="flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span>{post.replyCount}</span></div>
                     </div>
-                    <button onClick={handleLike} disabled={isLiking} className={`flex items-center gap-2 px-5 py-2 rounded-full font-bold transition-all border ${post.isLiked ? 'text-pink-500 bg-pink-500/10 border-pink-500/20 shadow-lg' : 'text-gray-400 bg-white/5 border-white/5 hover:border-pink-500/30'}`}>
+                    <button onClick={handleLike} disabled={isLiking} className={`flex items-center gap-2 px-5 py-2 rounded-full font-bold transition-all border ${post.isLiked
+                      ? 'text-pink-500 bg-pink-500/10 border-pink-500/20 shadow-lg'
+                      : theme === 'dark'
+                        ? 'text-gray-400 bg-white/5 border-white/5 hover:border-pink-500/30'
+                        : 'text-slate-500 bg-white border-slate-200 hover:border-pink-300'
+                      }`}>
                       <svg className={`w-5 h-5 ${post.isLiked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
                       <span>{post.likeCount}</span>
                     </button>
@@ -308,12 +342,13 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
             </article>
 
             {/* 回复列表 - 气泡连流 */}
-            <section className="bg-[#1a1c1e]/40 backdrop-blur-md border-x border-b border-white/5 rounded-b-3xl min-h-[500px] flex flex-col">
+            <section className={`backdrop-blur-md border-x border-b rounded-b-3xl min-h-[500px] flex flex-col transition-all duration-500 ${theme === 'dark' ? 'bg-[#1a1c1e]/40 border-white/5' : 'bg-slate-50/80 border-slate-200'
+              }`}>
               <div className="p-8 pt-4 flex-1">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="h-px bg-white/5 flex-1"></div>
-                  <div className="text-gray-600 font-mono text-[10px] uppercase tracking-[0.3em]">Replies Stream</div>
-                  <div className="h-px bg-white/5 flex-1"></div>
+                  <div className={`h-px flex-1 ${theme === 'dark' ? 'bg-white/5' : 'bg-slate-200'}`}></div>
+                  <div className={`font-mono text-[10px] uppercase tracking-[0.3em] ${theme === 'dark' ? 'text-gray-600' : 'text-slate-400'}`}>Replies Stream</div>
+                  <div className={`h-px flex-1 ${theme === 'dark' ? 'bg-white/5' : 'bg-slate-200'}`}></div>
                 </div>
 
                 <div className="space-y-6">
@@ -326,12 +361,13 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
                           <UserAvatar userId={reply.author.id} userName={reply.author.name} userAvatar={reply.author.avatar} size="md" />
                           <div className="flex-1">
                             <div className="inline-block max-w-full">
-                              <div className="bg-[#24272a] border border-white/5 rounded-2xl rounded-tl-none px-4 py-3 shadow-md">
+                              <div className={`border rounded-2xl rounded-tl-none px-4 py-3 shadow-md ${theme === 'dark' ? 'bg-[#24272a] border-white/5' : 'bg-white border-slate-100'
+                                }`}>
                                 <div className="flex items-center gap-3 mb-1">
-                                  <span className="font-bold text-cyan-400 text-sm">{reply.author.name}</span>
-                                  <time className="text-[10px] text-gray-600 font-mono">{formatTimeAgo(reply.createdAt)}</time>
+                                  <span className={`font-bold text-sm ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>{reply.author.name}</span>
+                                  <time className={`text-[10px] font-mono ${theme === 'dark' ? 'text-gray-600' : 'text-slate-400'}`}>{formatTimeAgo(reply.createdAt)}</time>
                                 </div>
-                                <p className="text-gray-200 text-sm leading-relaxed">{reply.content}</p>
+                                <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-gray-200' : 'text-slate-700'}`}>{reply.content}</p>
                               </div>
                             </div>
                           </div>
@@ -354,10 +390,14 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
                 {/* 输入区 - 悬浮聊天框形态 */}
                 <div className="mt-12 sticky bottom-4">
                   {currentUserId ? (
-                    <CreateReplyForm onSubmit={handleReplySubmit} onCancel={() => { }} isSubmitting={isCreatingReply} variant="chat" />
+                    <CreateReplyForm onSubmit={handleReplySubmit} onCancel={() => { }} isSubmitting={isCreatingReply} variant="chat" theme={theme} />
                   ) : (
-                    <div onClick={() => setShowLoginPrompt(true)} className="bg-[#24272a]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-4 text-center cursor-pointer hover:bg-[#2a2d32] transition-all">
-                      <span className="text-gray-500 text-sm">Please <span className="text-cyan-500 font-bold underline">Login</span> to join the flow</span>
+                    <div
+                      onClick={() => setShowLoginPrompt(true)}
+                      className={`backdrop-blur-xl border rounded-2xl p-4 text-center cursor-pointer transition-all ${theme === 'dark' ? 'bg-[#24272a]/80 border-white/5 hover:bg-[#2a2d32]' : 'bg-white/80 border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                      <span className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-slate-400'}`}>Please <span className="text-cyan-500 font-bold underline">Login</span> to join the flow</span>
                     </div>
                   )}
                 </div>
@@ -366,7 +406,7 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
           </div>
 
           <aside className="hidden lg:block w-80 flex-shrink-0 sticky top-20">
-            <PostSidebar currentPostId={post.id} currentUserId={currentUserId || undefined} />
+            <PostSidebar currentPostId={post.id} currentUserId={currentUserId || undefined} theme={theme} />
           </aside>
         </div>
       </main>

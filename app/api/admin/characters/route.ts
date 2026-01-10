@@ -169,6 +169,7 @@ export async function POST(request: NextRequest) {
     // 创建数据库记录
     const character = await prisma.characters.create({
       data: {
+        id: crypto.randomUUID(),
         name,
         displayName,
         description: description || null,
@@ -181,6 +182,7 @@ export async function POST(request: NextRequest) {
         isDefault,
         isActive,
         sortOrder,
+        updatedAt: new Date(),
       },
     })
 
