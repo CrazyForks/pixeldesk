@@ -195,6 +195,8 @@ export const translations = {
             switch_character: '切换角色',
             update_status: '更新状态',
             none_station: '暂无工位',
+            terminate_lease: '解约',
+            go: 'GO',
         },
         activity: {
             loading: '加载统计中...',
@@ -640,6 +642,8 @@ export const translations = {
             switch_character: 'Switch character',
             update_status: 'Update Status',
             none_station: 'No Station',
+            terminate_lease: 'Terminate',
+            go: 'GO',
         },
         activity: {
             loading: 'Loading stats...',

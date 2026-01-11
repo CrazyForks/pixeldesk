@@ -21,6 +21,7 @@ declare global {
   interface Window {
     isUserAuthenticated: boolean // 用户是否已真正登录（非临时用户）
     setWorkstationBindingModal: (modalState: any) => void
+    showUnbindingDialog: (workstationId: number) => void
     showWorkstationInfo: (workstationId: number, userId: string) => void
     showPlayerInfo: (userId: string, userInfo: any) => void
     showCharacterInfo: (userId: string, userInfo: any, position: { x: number; y: number }) => void
@@ -176,10 +177,14 @@ export default function Home() {
   const [workstationStats, setWorkstationStats] = useState<any>(null)
 
   // 工位绑定弹窗状态
-  const [bindingModal, setBindingModal] = useState({
+  const [workstationModal, setWorkstationModal] = useState<{
+    isVisible: boolean,
+    workstation: any,
+    mode: 'bind' | 'unbind'
+  }>({
     isVisible: false,
     workstation: null,
-    user: null
+    mode: 'bind'
   })
 
   // 工位信息弹窗状态
@@ -340,8 +345,16 @@ export default function Home() {
 
     // 设置全局函数供Phaser调用
     if (typeof window !== 'undefined') {
-      window.setWorkstationBindingModal = (modalState: any) => {
-        setBindingModal(modalState)
+      window.setWorkstationBindingModal = ({ isVisible, workstation, mode = 'bind' }) => {
+        setWorkstationModal({ isVisible, workstation, mode })
+      }
+
+      window.showUnbindingDialog = (workstationId) => {
+        if (typeof window !== 'undefined' && window.workstationBindingManager) {
+          // 在解约场景下，我们只需要 ID，位置可以设为 0
+          const workstation = { id: workstationId, position: { x: 0, y: 0 } }
+          window.workstationBindingManager.showUnbindingDialog(workstation, user)
+        }
       }
 
       // 设置工位信息弹窗的全局函数
@@ -500,11 +513,22 @@ export default function Home() {
         loadWorkstationStats()
       })
 
-      // 监听工位统计数据更新事件（已禁用 - 改用后台API）
-      // 注意：工位统计现在完全从后台配置获取，不再使用Phaser游戏的统计
-      // window.addEventListener('workstation-stats-updated', (event: any) => {
-      //   setWorkstationStats(event.detail)
-      // })
+      // 监听工位解约事件
+      window.addEventListener('workstation-unbound', (event: any) => {
+        const { userId, workstationId } = event.detail
+        console.log(`🗑️ 工位解约成功: 玩家 ${userId}, 工位 ${workstationId}`)
+
+        // 1. 更新本地状态
+        setCurrentUser((prev: any) => {
+          if (prev && prev.id === userId) {
+            return { ...prev, workstationId: null }
+          }
+          return prev
+        })
+
+        // 2. 清理缓存
+        localStorage.removeItem(`workstation_binding_${userId}`)
+      })
     }
 
     checkDeviceType()
@@ -514,7 +538,7 @@ export default function Home() {
       window.removeEventListener('resize', debouncedCheckDeviceType)
       clearTimeout(resizeTimeout)
     }
-  }, [])
+  }, [user])
 
   // 监听认证用户变化，同步currentUser状态
   useEffect(() => {
@@ -777,32 +801,18 @@ export default function Home() {
     console.log('[HomePage] Player click handler (legacy, actual handling in Phaser):', playerData)
   }, [])
 
-  // 处理工位绑定确认
-  const handleBindingConfirm = useCallback(async () => {
-    console.log('=== React handleBindingConfirm 被调用 ===')
-    try {
-      // 直接使用全局实例
-      if (typeof window !== 'undefined' && window.workstationBindingManager) {
-        const workstationBindingManager = window.workstationBindingManager
-        console.log('使用全局 workstationBindingManager:', workstationBindingManager)
-        console.log('workstationBindingManager 状态:', {
-          currentWorkstation: workstationBindingManager.getCurrentWorkstation(),
-          currentUser: workstationBindingManager.getCurrentUser(),
-          isProcessing: workstationBindingManager.isBindingProcessing()
-        })
+  /**
+   * 处理工位绑定或解约确认
+   */
+  const handleWorkstationBindingConfirm = useCallback(async () => {
+    if (!window.workstationBindingManager) return { success: false, error: 'Manager not loaded' }
 
-        const result = await workstationBindingManager.handleBindingConfirm()
-        console.log('绑定结果:', result)
-        return result
-      } else {
-        console.error('全局 workstationBindingManager 不存在')
-        return { success: false, error: '绑定管理器不可用' }
-      }
-    } catch (error) {
-      console.error('工位绑定失败:', error)
-      return { success: false, error: '绑定失败，请重试' }
+    if (workstationModal.mode === 'unbind') {
+      return await window.workstationBindingManager.handleUnbindingConfirm()
+    } else {
+      return await window.workstationBindingManager.handleBindingConfirm()
     }
-  }, [])
+  }, [workstationModal.mode])
 
   // 处理工位绑定取消
   const handleBindingCancel = useCallback(() => {
@@ -820,10 +830,10 @@ export default function Home() {
 
   // 关闭工位绑定弹窗
   const handleBindingModalClose = useCallback(() => {
-    setBindingModal({
+    setWorkstationModal({
       isVisible: false,
       workstation: null,
-      user: null
+      mode: 'bind'
     })
   }, [])
 
@@ -1027,12 +1037,13 @@ export default function Home() {
       {/* All modals */}
       {/* 工位绑定弹窗 */}
       <WorkstationBindingModal
-        isVisible={bindingModal.isVisible}
-        workstation={bindingModal.workstation}
-        user={currentUser || bindingModal.user}
-        onConfirm={handleBindingConfirm}
-        onCancel={handleBindingCancel}
-        onClose={handleBindingModalClose}
+        isVisible={workstationModal.isVisible}
+        workstation={workstationModal.workstation}
+        user={user}
+        mode={workstationModal.mode}
+        onConfirm={handleWorkstationBindingConfirm}
+        onCancel={() => setWorkstationModal(prev => ({ ...prev, isVisible: false }))}
+        onClose={() => setWorkstationModal(prev => ({ ...prev, isVisible: false }))}
       />
 
       {/* 工位信息弹窗 */}

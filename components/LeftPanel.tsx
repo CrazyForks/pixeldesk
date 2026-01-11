@@ -211,7 +211,29 @@ export default function LeftPanel({
                   </div>
                   <div className="flex items-center gap-2">
                     {currentUser.workstationId ? (
-                      <span className="text-emerald-400 text-xs font-mono font-bold">{currentUser.workstationId}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-emerald-400 text-xs font-mono font-bold mr-1">{currentUser.workstationId}</span>
+                        <button
+                          onClick={() => {
+                            if (typeof window !== 'undefined' && (window as any).teleportToWorkstation) {
+                              (window as any).teleportToWorkstation()
+                            }
+                          }}
+                          className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 hover:bg-emerald-900/60 hover:text-white transition-all uppercase tracking-tighter"
+                        >
+                          {t.leftPanel.go}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (typeof window !== 'undefined' && window.showUnbindingDialog) {
+                              window.showUnbindingDialog(parseInt(currentUser.workstationId))
+                            }
+                          }}
+                          className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-950/40 text-red-400 border border-red-900/50 hover:bg-red-900/60 hover:text-white transition-all uppercase tracking-tighter"
+                        >
+                          {t.leftPanel.terminate_lease}
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-gray-600 text-[10px] font-mono">{t.leftPanel.none_station}</span>
                     )}

@@ -45,6 +45,10 @@ export class WorkstationManager {
             minMoveDistance: 50,       // 最小移动距离才触发更新
             debounceDelay: 500         // 防抖延迟(毫秒)
         };
+
+        // 轮询配置
+        this.pollingTimer = null;
+        this.pollingInterval = 30000; // 默认30秒轮询一次，平衡实时性与性能
     }
 
     // 通用的场景有效性检查方法
@@ -704,7 +708,56 @@ export class WorkstationManager {
         // 触发刷新完成事件
         this.scene.events.emit('workstation-status-refreshed');
 
+        // 如果轮询未启动，则在手动刷新后启动它
+        if (!this.pollingTimer) {
+            this.startStatusPolling();
+        }
+
         return { success: true, message: '工位状态已刷新' };
+    }
+
+    // ===== 轮询同步逻辑 (定时检查 B 用户动作) =====
+
+    /**
+     * 启动状态轮询
+     * @param {number} interval 轮询间隔(ms)
+     */
+    startStatusPolling(interval = 30000) {
+        if (this.pollingTimer) this.stopStatusPolling();
+
+        this.pollingInterval = interval;
+
+        // 首次尝试同步
+        this.syncWorkstationBindings().catch(err => debugWarn('初始同步失败:', err));
+
+        this.pollingTimer = setInterval(() => {
+            // 性能规划：
+            // 1. 检查页面可见性 (Page Visibility API) - 最小化后台请求
+            // 2. 检查场景有效性 - 避免在场景销毁后继续请求
+            if (document.visibilityState === 'visible' && this.isSceneValid()) {
+                debugLog('🕒 定时轮询：同步远程工位数据...');
+                this.syncWorkstationBindings().catch(err => {
+                    debugWarn('轮询同步失败:', err);
+                    // 如果连续失败多次，可以考虑增加间隔（退避策略）
+                });
+            } else if (document.visibilityState !== 'visible') {
+                // 如果用户切到其他标签页，可以暂时跳过，或者在这里降低频率
+                // debugLog('💤 页面不可见，跳过此轮同步以节省资源');
+            }
+        }, this.pollingInterval);
+
+        debugLog(`🚀 工位状态轮询已启动，频率: ${this.pollingInterval / 1000}s/次`);
+    }
+
+    /**
+     * 停止状态轮询
+     */
+    stopStatusPolling() {
+        if (this.pollingTimer) {
+            clearInterval(this.pollingTimer);
+            this.pollingTimer = null;
+            debugLog('🛑 工位状态轮询已停止');
+        }
     }
 
     // 完全删除localStorage缓存功能，避免缓存导致的数据不一致问题
@@ -1972,6 +2025,8 @@ export class WorkstationManager {
     invalidateWorkstationBinding() { /* 已禁用 */ }
 
     destroy() {
+        // 停止轮询
+        this.stopStatusPolling();
         // 清理视口优化相关资源
         this.disableViewportOptimization();
         // 清理所有事件监听器和交互图标

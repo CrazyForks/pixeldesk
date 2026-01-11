@@ -2185,22 +2185,12 @@ export class Start extends Phaser.Scene {
 
   // 设置工位状态定时同步
   setupWorkstationSync() {
-    // 每30秒同步一次工位状态
-    // 暂时禁用定时同步以排查CPU占用问题
-    // this.time.addEvent({
-    //   delay: 60000, // 改为60秒
-    //   callback: async () => {
-    //     try {
-    //       await this.workstationManager.syncWorkstationBindings()
-    //     } catch (error) {
-    //       debugError('定时同步工位状态失败，跳过此次同步:', error)
-    //     }
-    //   },
-    //   callbackScope: this,
-    //   loop: true,
-    // })
-
-    debugLog("工位状态定时同步已设置（每30秒）")
+    if (this.workstationManager) {
+      // 使用 WorkstationManager 自带的带 Page Visibility 优化的轮询机制
+      // 默认 30 秒轮询一次，兼顾实时性与性能
+      this.workstationManager.startStatusPolling(30000);
+      debugLog("✅ 工位状态定时同步已启动（基于 Page Visibility 优化，30s/次）");
+    }
   }
 
   sendUserDataToUI() {

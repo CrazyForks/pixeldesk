@@ -9,6 +9,7 @@ interface WorkstationBindingModalProps {
   onConfirm: () => Promise<any>
   onCancel: () => void
   onClose: () => void
+  mode?: 'bind' | 'unbind'
 }
 
 // i18n 翻译
@@ -38,6 +39,14 @@ const translations = {
     term1: '1. 活跃续期：每次登录将自动延长租期至 7 天后；',
     term2: '2. 预警机制：连续 5 天未登录将触发邮件预警；',
     term3: '3. 自动解约：连续 7 天未登录，协议将自动收回资源并按比例退费。',
+    unbindTitle: '工位解约协议',
+    unbindSubtitle: 'WORKSTATION TERMINATION AGREEMENT',
+    unbindTerms: '解约条款 (Termination Terms)',
+    unbindTerm1: '1. 主动解约：承租方可随时发起主动解约申请；',
+    unbindTerm2: '2. 租金结算：主动解约视为违约，剩余租期内的保证金将不予退还；',
+    unbindTerm3: '3. 资源释放：解约成功后，工位将立即进入公示期供他人抢占；',
+    unbindConfirm: '确认解约',
+    unbindSuccess: '工位已成功释放，欢迎下次再次入驻。',
   },
   'en': {
     title: 'Lease Agreement',
@@ -64,6 +73,14 @@ const translations = {
     term1: '1. Activity: Each login extends lease to 7 days from now;',
     term2: '2. Warning: Email alarm after 5 days of inactivity;',
     term3: '3. Termination: Auto-reclaim after 7 days inactive with refund.',
+    unbindTitle: 'Termination Agreement',
+    unbindSubtitle: 'WORKSTATION TERMINATION AGREEMENT',
+    unbindTerms: 'Termination Terms',
+    unbindTerm1: '1. Voluntary: Tenant can initiate termination at any time;',
+    unbindTerm2: '2. No Refund: Voluntary termination results in forfeit of all remaining fees;',
+    unbindTerm3: '3. Release: Workstation will be immediately available for others after release;',
+    unbindConfirm: 'Terminate Contract',
+    unbindSuccess: 'Station released successfully. Hope to see you back.',
   }
 }
 
@@ -73,7 +90,8 @@ const WorkstationBindingModal = memo(({
   user,
   onConfirm,
   onCancel,
-  onClose
+  onClose,
+  mode = 'bind'
 }: WorkstationBindingModalProps) => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -133,7 +151,7 @@ const WorkstationBindingModal = memo(({
 
       if (result.success) {
         setMessageType('success')
-        setMessage(t('success'))
+        setMessage(mode === 'bind' ? t('success') : t('unbindSuccess'))
 
         setTimeout(() => {
           onClose()
@@ -246,10 +264,10 @@ const WorkstationBindingModal = memo(({
           {/* 合同抬头 */}
           <div className="text-center mb-8 border-b-2 border-[#d4c5a9] pb-6">
             <h1 className="text-3xl font-black tracking-widest font-serif text-[#2d241e] uppercase">
-              {t('title')}
+              {mode === 'bind' ? t('title') : t('unbindTitle')}
             </h1>
-            <p className="text-[#8b7355] text-[10px] font-mono tracking-[0.2em] mt-2 opacity-80">
-              {t('subtitle')}
+            <p className={`text-[10px] font-mono tracking-[0.2em] mt-2 opacity-80 ${mode === 'bind' ? 'text-[#8b7355]' : 'text-red-700/60'}`}>
+              {mode === 'bind' ? t('subtitle') : t('unbindSubtitle')}
             </p>
           </div>
 
@@ -258,7 +276,7 @@ const WorkstationBindingModal = memo(({
             {/* 双方信息 */}
             <div className="grid grid-cols-1 gap-4 text-sm">
               <div className="flex gap-2">
-                <span className="font-bold shrink-0">承租方 (Tenant):</span>
+                <span className="font-bold shrink-0">{mode === 'bind' ? '承租方 (Tenant):' : '解约方 (Petitioner):'}</span>
                 <span className="border-b border-[#d4c5a9] flex-1 px-2 font-mono text-[#2d241e] font-bold">
                   {user.name}
                 </span>
@@ -278,35 +296,54 @@ const WorkstationBindingModal = memo(({
                 {t('terms')}
               </h4>
               <div className="space-y-2.5 text-[13px] text-[#5e5449]">
-                <p className="flex gap-2">
-                  <span className="opacity-50 font-mono">01.</span>
-                  {t('term1')}
-                </p>
-                <p className="flex gap-2">
-                  <span className="opacity-50 font-mono">02.</span>
-                  {t('term2')}
-                </p>
-                <p className="flex gap-2">
-                  <span className="opacity-50 font-mono">03.</span>
-                  {t('term3')}
-                </p>
+                {mode === 'bind' ? (
+                  <>
+                    <p className="flex gap-2">
+                      <span className="opacity-50 font-mono">01.</span>
+                      {t('term1')}
+                    </p>
+                    <p className="flex gap-2">
+                      <span className="opacity-50 font-mono">02.</span>
+                      {t('term2')}
+                    </p>
+                    <p className="flex gap-2">
+                      <span className="opacity-50 font-mono">03.</span>
+                      {t('term3')}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="flex gap-2 text-red-900/80">
+                      <span className="opacity-50 font-mono">01.</span>
+                      {t('unbindTerm1')}
+                    </p>
+                    <p className="flex gap-2 text-red-900/80">
+                      <span className="opacity-50 font-mono">02.</span>
+                      {t('unbindTerm2')}
+                    </p>
+                    <p className="flex gap-2 text-red-900/80">
+                      <span className="opacity-50 font-mono">03.</span>
+                      {t('unbindTerm3')}
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* 背景中的红印章效果 */}
               <div className="absolute -bottom-4 -right-2 transform -rotate-12 opacity-80 select-none pointer-events-none group-hover:scale-110 transition-transform duration-500">
-                <div className="w-24 h-24 border-4 border-red-600/60 rounded-full flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center text-red-600/60 font-black text-center leading-none tracking-tighter uppercase whitespace-normal px-2" style={{ fontSize: '10px' }}>
+                <div className={`w-24 h-24 border-4 rounded-full flex items-center justify-center relative overflow-hidden ${mode === 'bind' ? 'border-red-600/60' : 'border-gray-500/40'}`}>
+                  <div className={`absolute inset-0 flex items-center justify-center font-black text-center leading-none tracking-tighter uppercase whitespace-normal px-2 ${mode === 'bind' ? 'text-red-600/60' : 'text-gray-500/40'}`} style={{ fontSize: '10px' }}>
                     {language === 'zh-CN' ? (
                       <div className="flex flex-col items-center">
-                        <span style={{ transform: 'scale(1.5)' }}>象素工坊</span>
-                        <span className="text-[6px] mt-1">PIXEL WORKSHOP</span>
-                        <span className="mt-1" style={{ transform: 'scale(1.2)' }}>★ 专用章 ★</span>
+                        <span style={{ transform: 'scale(1.5)' }}>{mode === 'bind' ? '象素工坊' : '协议作废'}</span>
+                        <span className="text-[6px] mt-1">{mode === 'bind' ? 'PIXEL WORKSHOP' : 'TERMINATED'}</span>
+                        <span className="mt-1" style={{ transform: 'scale(1.2)' }}>{mode === 'bind' ? '★ 专用章 ★' : '★ CONSENT ★'}</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center">
-                        <span className="text-[12px]">OFFICIAL</span>
+                        <span className="text-[12px]">{mode === 'bind' ? 'OFFICIAL' : 'VOID'}</span>
                         <span className="text-[14px]">PIXEL</span>
-                        <span className="text-[10px]">STAMP</span>
+                        <span className="text-[10px]">{mode === 'bind' ? 'STAMP' : 'CONTRACT'}</span>
                       </div>
                     )}
                   </div>
@@ -319,19 +356,19 @@ const WorkstationBindingModal = memo(({
             {/* 资费详情 */}
             <div className="flex flex-wrap gap-x-8 gap-y-4 py-4 border-y border-dashed border-[#d4c5a9] text-sm">
               <div className="flex flex-col">
-                <span className="text-[10px] text-[#8b7355] uppercase tracking-tighter mb-1">{t('rentalCost')}</span>
+                <span className="text-[10px] text-[#8b7355] uppercase tracking-tighter mb-1">{mode === 'bind' ? t('rentalCost') : '结算费用 (Fee)'}</span>
                 <span className="text-xl font-black font-mono text-[#2d241e]">
-                  {bindCost} <span className="text-xs font-normal opacity-60">{t('points')}</span>
+                  {mode === 'bind' ? bindCost : 0} <span className="text-xs font-normal opacity-60">{t('points')}</span>
                 </span>
               </div>
               <div className="flex flex-col border-l-2 border-[#d4c5a9] pl-6">
-                <span className="text-[10px] text-[#8b7355] uppercase tracking-tighter mb-1">{t('duration')}</span>
-                <span className="text-lg font-black font-mono text-[#2d241e]">30 DAYS</span>
+                <span className="text-[10px] text-[#8b7355] uppercase tracking-tighter mb-1">{mode === 'bind' ? t('duration') : '剩余工期 (Left)'}</span>
+                <span className="text-lg font-black font-mono text-[#2d241e]">{mode === 'bind' ? '30 DAYS' : '< 30 DAYS'}</span>
               </div>
               <div className="flex flex-col ml-auto">
                 <span className="text-[10px] text-[#8b7355] uppercase tracking-tighter mb-1">{t('yourBalance')}</span>
-                <span className={`text-lg font-bold font-mono ${canAfford ? 'text-[#2d241e]' : 'text-red-600'}`}>
-                  {userPoints} <span className="text-xs font-normal opacity-40">/ -{bindCost}</span>
+                <span className={`text-lg font-bold font-mono ${canAfford || mode === 'unbind' ? 'text-[#2d241e]' : 'text-red-600'}`}>
+                  {userPoints} <span className="text-xs font-normal opacity-40">/ {mode === 'bind' ? `-${bindCost}` : '-0'}</span>
                 </span>
               </div>
             </div>
@@ -383,8 +420,8 @@ const WorkstationBindingModal = memo(({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center">
-                    <span className="text-xs opacity-60 mb-1 font-mono uppercase tracking-widest">— SIGN HERE —</span>
-                    <span className="text-xl font-black tracking-[0.2em]">{t('confirm')}</span>
+                    <span className="text-xs opacity-60 mb-1 font-mono uppercase tracking-widest">— {mode === 'bind' ? 'SIGN HERE' : 'REVOKE HERE'} —</span>
+                    <span className="text-xl font-black tracking-[0.2em]">{mode === 'bind' ? t('confirm') : t('unbindConfirm')}</span>
                   </div>
                 )}
 
