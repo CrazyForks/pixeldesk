@@ -54,6 +54,48 @@ export class Start extends Phaser.Scene {
     this.playerDeskCollider = null // 玩家与工位group的碰撞器
     this.otherPlayersGroup = null  // 其他玩家的物理group
     this.playerCharacterCollider = null // 玩家与角色group的碰撞器
+
+    // 动态资源注册表 (按需加载)
+    this.dynamicAssetRegistry = {
+      // 书架
+      "bookcase_middle": "/assets/desk/library_bookcase_normal.png",
+      "library_bookcase_normal": "/assets/desk/library_bookcase_normal.png",
+      "bookcase_tall": "/assets/desk/library_bookcase_tall.webp",
+      "library_bookcase_tall": "/assets/desk/library_bookcase_tall.webp",
+      "library_bookcase_tall_webp": "/assets/desk/library_bookcase_tall.webp",
+      "Classroom_and_Library_Singles_48x48_58": "/assets/desk/Classroom_and_Library_Singles_48x48_58.png",
+
+      // 洗手间
+      "Shadowless_washhand": "/assets/bathroom/Shadowless_washhand.png",
+      "Bathroom_matong": "/assets/bathroom/Bathroom_matong.png",
+      "Shadowless_glass_2": "/assets/bathroom/Shadowless_glass_2.webp",
+      "Shadowless_glass": "/assets/bathroom/Shadowless_glass.png",
+
+      // 沙发
+      "sofa-left-1": "/assets/sofa/sofa-left-1.png",
+      "sofa-left-2": "/assets/sofa/sofa-left-2.png",
+      "sofa-left-3": "/assets/sofa/sofa-left-3.png",
+      "sofa-right-1": "/assets/sofa/sofa-right-1.png",
+      "sofa-right-2": "/assets/sofa/sofa-right-2.png",
+      "sofa-right-3": "/assets/sofa/sofa-right-3.png",
+
+      // 大桌/管理桌
+      "desk-big-manager-left-1": "/assets/desk/desk-big-manager-left-1.png",
+      "desk-big-manager-center-1": "/assets/desk/desk-big-manager-center-1.png",
+      "desk-big-manager-right-1": "/assets/desk/desk-big-manager-right-1.png",
+      "desk-big-manager-center-2": "/assets/desk/desk-big-manager-center-2.png",
+
+      // 装饰/其他
+      "flower": "/assets/tileset/flower.png",
+      "rug": "/assets/tileset/rug.png",
+      "cabinet": "/assets/tileset/cabinet.png",
+      "stair-red": "/assets/tileset/stair-red.png",
+      "announcement_board_wire": "/assets/announcement_board_wire.webp",
+      "front_wide_display": "/assets/front_wide_display.webp"
+    };
+
+    // 正在进行的动态加载任务
+    this.pendingLoads = new Set();
   }
 
   preload() {
@@ -546,7 +588,7 @@ export class Start extends Phaser.Scene {
       }
 
       // 创建玩家 - 传入保存的位置和朝向（如果有）
-      this.createPlayer(map, playerStartX, playerStartY, playerDirection)
+      await this.createPlayer(map, playerStartX, playerStartY, playerDirection)
 
       // 设置输入
       this.setupInput()
@@ -781,7 +823,7 @@ export class Start extends Phaser.Scene {
   // 已删除无用的优化碰撞检测函数
 
   // ===== 玩家相关方法 =====
-  createPlayer(map, savedX = null, savedY = null, savedDirection = null) {
+  async createPlayer(map, savedX = null, savedY = null, savedDirection = null) {
     // 从对象层获取玩家位置（作为默认fallback）
     const userLayer = map.getObjectLayer("player_objs")
     if (!userLayer) {
@@ -803,6 +845,9 @@ export class Start extends Phaser.Scene {
     // 创建玩家实例，启用移动和状态保存
     const playerSpriteKey =
       this.currentUser?.character || "characters_list_image"
+
+    // 🔧 关键修复：确保角色纹理已加载（按需加载）
+    await this.ensureCharacterTexture(playerSpriteKey)
 
     // 创建主玩家的playerData
     const mainPlayerData = {
@@ -1027,93 +1072,21 @@ export class Start extends Phaser.Scene {
   }
 
   loadLibraryImages() {
-    // 默认桌子图像
+    // 核心必需图像 (最小化预加载 - 确保基本场景可见)
     this.load.image("desk_image", "/assets/desk/desk_long_right.png")
     this.load.image("desk_long_right", "/assets/desk/desk_long_right.png")
     this.load.image("desk_long_left", "/assets/desk/desk_long_left.png")
-    this.load.image("desk_short_right", "/assets/desk/single_desk.png")
-    this.load.image(
-      "desk_short_left",
-      "/assets/desk/single_desk_short_left.png"
-    )
-    this.load.image(
-      "desk_park_short_down",
-      "/assets/desk/desk_park_short_down.png"
-    )
-    this.load.image(
-      "desk_park_short_top",
-      "/assets/desk/desk_park_short_top.png"
-    )
-    this.load.image("desk_park_long_top", "/assets/desk/desk_park_long_top.png")
     this.load.image("single_desk", "/assets/desk/single_desk.png")
-    this.load.image(
-      "library_bookcase_normal",
-      "/assets/desk/library_bookcase_normal.png"
-    )
-    this.load.image(
-      "library_bookcase_tall",
-      "library_bookcase_tall",
-      "/assets/desk/library_bookcase_tall.png"
-    )
-    // 注册正确的书架 key
-    this.load.image("bookcase_middle", "/assets/desk/library_bookcase_normal.png")
-    this.load.image("bookcase_tall", "/assets/desk/library_bookcase_tall.webp")
-    this.load.image(
-      "library_bookcase_tall_webp",
-      "/assets/desk/library_bookcase_tall.webp"
-    )
-    this.load.image(
-      "Classroom_and_Library_Singles_48x48_58",
-      "/assets/desk/Classroom_and_Library_Singles_48x48_58.png"
-    )
+    this.load.image("desk_short_right", "/assets/desk/single_desk.png")
 
-    this.load.image(
-      "Shadowless_washhand",
-      "/assets/bathroom/Shadowless_washhand.png"
-    )
-    this.load.image("Bathroom_matong", "/assets/bathroom/Bathroom_matong.png")
-    this.load.image(
-      "Shadowless_glass_2",
-      "/assets/bathroom/Shadowless_glass_2.webp"
-    )
-    this.load.image("Shadowless_glass", "/assets/bathroom/Shadowless_glass.png")
-
-    this.load.image("sofa-left-1", "/assets/sofa/sofa-left-1.png")
-    this.load.image("sofa-left-2", "/assets/sofa/sofa-left-2.png")
-    this.load.image("sofa-left-3", "/assets/sofa/sofa-left-3.png")
-    this.load.image("sofa-right-1", "/assets/sofa/sofa-right-1.png")
-    this.load.image("sofa-right-2", "/assets/sofa/sofa-right-2.png")
-    this.load.image("sofa-right-3", "/assets/sofa/sofa-right-3.png")
-
-    this.load.image(
-      "desk-big-manager-left-1",
-      "/assets/desk/desk-big-manager-left-1.png"
-    )
-    this.load.image(
-      "desk-big-manager-center-1",
-      "/assets/desk/desk-big-manager-center-1.png"
-    )
-    this.load.image(
-      "desk-big-manager-right-1",
-      "/assets/desk/desk-big-manager-right-1.png"
-    )
-    this.load.image(
-      "desk-big-manager-center-2",
-      "/assets/desk/desk-big-manager-center-2.png"
-    )
-
-    this.load.image("flower", "/assets/tileset/flower.png")
-    this.load.image("rug", "/assets/tileset/rug.png")
-    this.load.image("cabinet", "/assets/tileset/cabinet.png")
-    this.load.image("stair-red", "/assets/tileset/stair-red.png")
-
-    // 新加大屏显示对象资源
-    this.load.image("announcement_board_wire", "/assets/announcement_board_wire.webp")
-    this.load.image("front_wide_display", "/assets/front_wide_display.webp")
+    // 其余资源已移至 this.dynamicAssetRegistry 进行按需加载
   }
 
   /**
    * 从API数据加载角色精灵
+   */
+  /**
+   * 优化后的角色加载逻辑：仅存储配置，不立即预加载所有图片
    */
   loadCharacterSprites(apiResponse) {
     try {
@@ -1126,32 +1099,65 @@ export class Start extends Phaser.Scene {
       // 存储角色配置信息供后续使用
       this.characterConfigs = new Map()
 
-      // 加载所有角色的spritesheet
+      // 收集所有角色配置
       apiResponse.data.forEach((character) => {
-        // 存储角色配置
         this.characterConfigs.set(character.name, {
           isCompactFormat: character.isCompactFormat,
           totalFrames: character.totalFrames,
           frameWidth: character.frameWidth,
-          frameHeight: character.frameHeight
-        })
-
-        // 加载spritesheet
-        this.load.spritesheet(character.name, character.imageUrl, {
-          frameWidth: character.frameWidth,
           frameHeight: character.frameHeight,
+          imageUrl: character.imageUrl // 保存URL，用于后续按需加载
         })
       })
 
-      debugLog(`✅ Loaded ${apiResponse.data.length} characters from API`)
-
-      // 启动加载队列
-      this.load.start()
+      debugLog(`✅ Registered ${apiResponse.data.length} character configs (lazy loading enabled)`)
 
     } catch (error) {
       debugError('Error loading character sprites:', error)
       this.loadDefaultCharacter()
     }
+  }
+
+  /**
+   * 按需加载角色纹理
+   */
+  async ensureCharacterTexture(characterName) {
+    if (this.textures.exists(characterName)) return true;
+
+    const config = this.characterConfigs?.get(characterName);
+    if (!config || !config.imageUrl) return false;
+
+    // 避免并发重复加载同一个角色
+    const loadKey = `char_${characterName}`;
+    if (this.pendingLoads.has(loadKey)) {
+      return new Promise((resolve) => {
+        this.load.once(`filecomplete-spritesheet-${characterName}`, () => resolve(true));
+        this.load.once(`loaderror-spritesheet-${characterName}`, () => resolve(false));
+      });
+    }
+
+    this.pendingLoads.add(loadKey);
+
+    return new Promise((resolve) => {
+      this.load.spritesheet(characterName, config.imageUrl, {
+        frameWidth: config.frameWidth,
+        frameHeight: config.frameHeight
+      });
+
+      this.load.once(`filecomplete-spritesheet-${characterName}`, () => {
+        this.pendingLoads.delete(loadKey);
+        debugLog(`🎉 [LazyLoad] Character ${characterName} loaded on-demand`);
+        resolve(true);
+      });
+
+      this.load.once(`loaderror-spritesheet-${characterName}`, () => {
+        this.pendingLoads.delete(loadKey);
+        debugError(`❌ [LazyLoad] Failed to load character ${characterName}`);
+        resolve(false);
+      });
+
+      this.load.start();
+    });
   }
 
   /**
@@ -1415,15 +1421,7 @@ export class Start extends Phaser.Scene {
 
     // 如果名字为空，尝试根据 GID 推断
     if (!imageKey && obj.gid) {
-      // 这里的 GID 硬编码基于 officemap.json 的分析
-      // GID 106 -> bookcase_tall
-      if (obj.gid === 106) imageKey = "bookcase_tall"
-      // GID 107 -> bookcase_middle
-      else if (obj.gid === 107) imageKey = "bookcase_middle"
-      // GID 5569 -> announcement_board_wire
-      else if (obj.gid === 5569) imageKey = "announcement_board_wire"
-      // GID 5570 -> front_wide_display
-      else if (obj.gid === 5570) imageKey = "front_wide_display"
+      imageKey = this.resolveKeyByGid(obj.gid)
     }
 
     // 如果名字为空，尝试根据类型或其他属性推断
@@ -1437,9 +1435,59 @@ export class Start extends Phaser.Scene {
 
     if (!imageKey) return null
 
+    // 如果找不到纹理，尝试从注册表动态加载
+    if (!this.textures.exists(imageKey)) {
+      this.dynamicLoadTexture(imageKey)
+      // 渲染时使用占位符，等加载完后再自动更新
+      const sprite = this.add.image(obj.x, adjustedY, "desk_image")
+      sprite._targetTexture = imageKey
+      this.configureSprite(sprite, obj)
+      return sprite
+    }
+
     const sprite = this.add.image(obj.x, adjustedY, imageKey)
     this.configureSprite(sprite, obj)
     return sprite
+  }
+
+  /**
+   * 辅助：根据 GID 获取注册表中的 Key
+   */
+  resolveKeyByGid(gid) {
+    // 这里的 GID 硬编码基于 officemap.json 的分析
+    if (gid === 106) return "bookcase_tall"
+    if (gid === 107) return "bookcase_middle"
+    if (gid === 5569) return "announcement_board_wire"
+    if (gid === 5570) return "front_wide_display"
+    return null
+  }
+
+  /**
+   * 动态加载纹理并更新现有精灵
+   */
+  dynamicLoadTexture(key) {
+    if (this.textures.exists(key) || this.pendingLoads.has(key)) return
+
+    const path = this.dynamicAssetRegistry[key]
+    if (!path) return
+
+    this.pendingLoads.add(key)
+    debugLog(`🚚 [LazyLoad] 正在按需加载资源: ${key} -> ${path}`)
+
+    this.load.image(key, path)
+    this.load.once(`filecomplete-image-${key}`, () => {
+      this.pendingLoads.delete(key)
+      debugLog(`✅ [LazyLoad] 资源加载完成: ${key}`)
+
+      // 查找由于纹理未加载而使用占位符的精灵
+      this.children.list.forEach(child => {
+        if (child._targetTexture === key) {
+          child.setTexture(key)
+          delete child._targetTexture
+        }
+      })
+    })
+    this.load.start()
   }
 
   renderGeometricObject(obj, adjustedY) {

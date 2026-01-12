@@ -1122,17 +1122,30 @@ export class WorkstationManager {
                 return;
             }
 
-            // 如果图片还没加载，先加载
+            // 如果图片还没加载，使用按需加载逻辑
             if (!this.scene.textures.exists(characterKey)) {
-                debugLog(`📥 [addCharacterToWorkstation] 加载角色纹理: ${characterKey}`);
-                this.scene.load.spritesheet(characterKey, `/assets/characters/${characterKey}.png`, {
-                    frameWidth: 48, frameHeight: 48
-                });
-                this.scene.load.once(`complete`, () => {
-                    debugLog(`✅ [addCharacterToWorkstation] 纹理加载完成: ${characterKey}`);
-                    this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
-                });
-                this.scene.load.start();
+                debugLog(`📥 [addCharacterToWorkstation] 开始按需加载角色纹理: ${characterKey}`);
+
+                // 优先使用 Start.js 提供的按需加载方法
+                if (typeof this.scene.ensureCharacterTexture === 'function') {
+                    this.scene.ensureCharacterTexture(characterKey).then(success => {
+                        if (success && this.isSceneValid()) {
+                            this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
+                        } else if (this.isSceneValid()) {
+                            debugWarn(`⚠️ [addCharacterToWorkstation] 按需加载失败，使用默认角色: ${characterKey}`);
+                            this.createCharacterSprite(workstation, charX, charY, 'Premade_Character_48x48_01', userId, characterDirection);
+                        }
+                    });
+                } else {
+                    // 回退方案：传统加载
+                    this.scene.load.spritesheet(characterKey, `/assets/characters/${characterKey}.png`, {
+                        frameWidth: 48, frameHeight: 48
+                    });
+                    this.scene.load.once(`filecomplete-spritesheet-${characterKey}`, () => {
+                        if (this.isSceneValid()) this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
+                    });
+                    this.scene.load.start();
+                }
             } else {
                 debugLog(`✅ [addCharacterToWorkstation] 纹理已存在: ${characterKey}`);
                 this.createCharacterSprite(workstation, charX, charY, characterKey, userId, characterDirection);
