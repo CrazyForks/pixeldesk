@@ -1,4 +1,4 @@
-import prisma from './prisma'
+import prisma from './db'
 
 /**
  * 获取系统配置，优先从数据库获取，否则从环境变量获取

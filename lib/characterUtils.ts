@@ -7,7 +7,7 @@
  * - 前端使用转换后的URL进行展示
  */
 
-import prisma from '@/lib/prisma'
+import prisma from '@/lib/db'
 
 /**
  * 角色信息接口（包含URL）

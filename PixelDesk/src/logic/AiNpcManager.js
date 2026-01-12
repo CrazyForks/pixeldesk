@@ -8,7 +8,11 @@ export class AiNpcManager {
     constructor(scene) {
         this.scene = scene;
         this.npcGroup = null;
-        this.npcs = new Map(); // id -> npcCharacter
+        this.npcs = new Map(); // id -> npcCharacter (持久化 NPC)
+        this.dynamicNpcs = new Map(); // id -> npcCharacter (临时生成的 NPC)
+        this.maxDynamicNpcs = 5; // 周边最大动态 NPC 数量
+        this.spawnDistance = 800; // 生成距离 (像素)
+        this.despawnDistance = 1500; // 回收距离 (像素)
 
         // NPC 角色模板库 - 使用项目中实际存在的资源
         this.templates = [
@@ -262,6 +266,73 @@ export class AiNpcManager {
             targets: aiIcon, y: '-=5', duration: 1000,
             ease: 'Sine.easeInOut', yoyo: true, repeat: -1
         });
+    }
+
+    /**
+     * 更新动态 NPC (根据玩家位置生成/回收)
+     */
+    updateDynamicNpcs(playerX, playerY) {
+        // 1. 回收过远的动态 NPC
+        for (const [id, npc] of this.dynamicNpcs) {
+            const distance = Phaser.Math.Distance.Between(playerX, playerY, npc.x, npc.y);
+            if (distance > this.despawnDistance) {
+                this.despawnNpc(id);
+            }
+        }
+
+        // 2. 如果数量不足，尝试生成新 NPC
+        if (this.dynamicNpcs.size < this.maxDynamicNpcs) {
+            // 20% 的触发概率，避免刷新太密集
+            if (Phaser.Math.Between(0, 100) < 20) {
+                this.spawnRandomEncounter(playerX, playerY);
+            }
+        }
+    }
+
+    /**
+     * 在玩家周边随机位置生成一个 NPC
+     */
+    async spawnRandomEncounter(playerX, playerY) {
+        const template = Phaser.Utils.Array.GetRandom(this.templates);
+        const id = `dynamic_${Date.now()}_${Phaser.Math.Between(1000, 9999)}`;
+
+        // 随机在视野外的边缘生成 (800-1000像素距离)
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Phaser.Math.Between(this.spawnDistance, this.spawnDistance + 200);
+        const x = playerX + Math.cos(angle) * dist;
+        const y = playerY + Math.sin(angle) * dist;
+
+        const npcData = {
+            id,
+            name: `${template.role}`,
+            sprite: template.sprite,
+            x,
+            y,
+            greeting: Phaser.Utils.Array.GetRandom(template.greetings),
+            isFixed: false,
+            role: template.role
+        };
+
+        const npc = await this.createAiNpc(npcData);
+        if (npc) {
+            this.dynamicNpcs.set(id, npc);
+            this.startWandering(npc);
+            debugLog(`🤖 [AiNpcManager] 动态生成 NPC: ${id} (${template.role})`);
+        }
+    }
+
+    /**
+     * 回收/销毁 NPC
+     */
+    despawnNpc(id) {
+        const npc = this.dynamicNpcs.get(id);
+        if (npc) {
+            if (npc.aiIcon) npc.aiIcon.destroy();
+            this.npcs.delete(id);
+            this.dynamicNpcs.delete(id);
+            npc.destroy();
+            debugLog(`🚮 [AiNpcManager] 回收动态 NPC: ${id}`);
+        }
     }
 
     setupInteractions(npcCharacter) {

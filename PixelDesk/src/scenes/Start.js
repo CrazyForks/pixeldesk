@@ -797,6 +797,11 @@ export class Start extends Phaser.Scene {
     if (this.updateCounter % 30 === 0 && this.frontDeskManager && this.player) {
       this.checkFrontDeskCollisionEnd()
     }
+
+    // 🤖 每 2 秒 (120 帧) 更新一次动态 NPC 遭遇
+    if (this.updateCounter % 120 === 0 && this.aiNpcManager && this.player) {
+      this.aiNpcManager.updateDynamicNpcs(this.player.x, this.player.y)
+    }
   }
 
 

@@ -334,7 +334,6 @@ model posts {
   likeCount            Int                    @default(0)
   replyCount           Int                    @default(0)
   viewCount            Int                    @default(0)
-  promotionCount       Int                    @default(0)
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
   coverImage           String?
@@ -352,6 +351,7 @@ model posts {
   reviewNotes          String?
   reviewedAt           DateTime?
   reviewedBy           String?
+  promotionCount       Int                    @default(0)
   billboard_promotions billboard_promotions[]
   notifications        notifications[]
   post_likes           post_likes[]
@@ -450,18 +450,18 @@ model user_sessions {
 }
 
 model user_workstations {
-  id            Int       @id @default(autoincrement())
-  userId        String
-  workstationId Int
-  boundAt       DateTime  @default(now())
-  cost          Int       @default(0)
-  expiresAt     DateTime?
-  adImage       String?
-  adText        String?
-  adUpdatedAt   DateTime?
-  adUrl         String?
+  id                      Int       @id @default(autoincrement())
+  userId                  String
+  workstationId           Int
+  boundAt                 DateTime  @default(now())
+  cost                    Int       @default(0)
+  expiresAt               DateTime?
+  adImage                 String?
+  adText                  String?
+  adUpdatedAt             DateTime?
+  adUrl                   String?
   lastInactivityWarningAt DateTime?
-  users         users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  users                   users     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workstationId])
   @@index([boundAt])
@@ -477,13 +477,13 @@ model users {
   updatedAt                                        DateTime
   avatar                                           String?
   email                                            String?                     @unique
-  inviteCode                                       String?                     @unique
   name                                             String
   emailVerified                                    Boolean                     @default(false)
   isActive                                         Boolean                     @default(true)
   lastLogin                                        DateTime?
   password                                         String?
   customAvatar                                     String?
+  inviteCode                                       String?                     @unique
   ai_usage                                         ai_usage[]
   billboard_promotions                             billboard_promotions[]
   books                                            books[]
@@ -523,18 +523,18 @@ model work_sessions {
 }
 
 model workstation_config {
-  id                 String   @id
-  totalWorkstations  Int      @default(1000)
-  bindingCost        Int      @default(10)
-  renewalCost        Int      @default(5)
-  unbindingRefund    Int      @default(5)
-  teleportCost       Int      @default(2)
-  defaultDuration    Int      @default(24)
-  maxBindingsPerUser Int      @default(1)
+  id                     String   @id
+  totalWorkstations      Int      @default(1000)
+  bindingCost            Int      @default(10)
+  renewalCost            Int      @default(5)
+  unbindingRefund        Int      @default(5)
+  teleportCost           Int      @default(2)
+  defaultDuration        Int      @default(24)
+  maxBindingsPerUser     Int      @default(1)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime
+  updatedBy              String?
   billboardPromotionCost Int      @default(50)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime
-  updatedBy          String?
 }
 
 model workstations {

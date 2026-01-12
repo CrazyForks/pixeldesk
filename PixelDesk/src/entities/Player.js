@@ -41,6 +41,8 @@ export class Player extends Phaser.GameObjects.Container {
         this.dbSaveTimer = null; // 停止移动后的延时保存定时器
         this.periodicSaveTimer = null; // 周期性保存定时器
         this.dbSaveEnabled = true; // 启用数据库保存（跨设备同步）
+        this.lastDbSavedX = Math.round(x); // 记录上次保存到数据库的坐标，避免重复保存
+        this.lastDbSavedY = Math.round(y);
 
         // 初始化碰撞检测状态
         this.isColliding = false;
@@ -227,9 +229,20 @@ export class Player extends Phaser.GameObjects.Container {
     planDatabaseSave() {
         if (!this.dbSaveEnabled || this.isOtherPlayer || this.dbSaveTimer) return;
 
+        // 🔧 性能优化：只有坐标真正发生变化时才计划保存
+        const currX = Math.round(this.x);
+        const currY = Math.round(this.y);
+
+        if (currX === this.lastDbSavedX && currY === this.lastDbSavedY) {
+            return;
+        }
+
         this.dbSaveTimer = setTimeout(() => {
-            debugLog('🛑 停止移动，执行数据库位置同步...');
-            this.saveToDatabase();
+            // 再次检查坐标，防止在等待期间玩家又动了
+            if (Math.round(this.x) !== this.lastDbSavedX || Math.round(this.y) !== this.lastDbSavedY) {
+                debugLog('🛑 停止移动且位置已变化，执行数据库同步...');
+                this.saveToDatabase();
+            }
             this.dbSaveTimer = null;
         }, 1000); // 停止 1 秒后保存
     }
@@ -258,6 +271,9 @@ export class Player extends Phaser.GameObjects.Container {
     async saveToDatabase() {
         if (!this.dbSaveEnabled || this.isOtherPlayer) return;
 
+        const currentX = Math.round(this.x);
+        const currentY = Math.round(this.y);
+
         try {
             const response = await fetch('/api/player', {
                 method: 'PUT',
@@ -265,8 +281,8 @@ export class Player extends Phaser.GameObjects.Container {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    currentX: Math.round(this.x),
-                    currentY: Math.round(this.y),
+                    currentX: currentX,
+                    currentY: currentY,
                     playerState: {
                         direction: this.currentDirection,
                         lastSaved: new Date().toISOString()
@@ -276,8 +292,9 @@ export class Player extends Phaser.GameObjects.Container {
             });
 
             if (response.ok) {
-                this.lastDbSave = Date.now();
-                debugLog('✅ 玩家位置同步到数据库:', Math.round(this.x), Math.round(this.y));
+                this.lastDbSavedX = currentX;
+                this.lastDbSavedY = currentY;
+                debugLog('✅ 玩家位置同步到数据库:', currentX, currentY);
             } else if (response.status === 401) {
                 this.dbSaveEnabled = false;
             }

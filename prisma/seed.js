@@ -36,6 +36,117 @@ async function main() {
   }
 
   console.log('已创建', workstations.length, '个工位')
+
+  // === AI NPC 数据 ===
+  console.log('正在初始化 AI NPCs...')
+  const npcs = [
+    {
+      id: 'npc_adam',
+      name: 'Adam',
+      sprite: 'Male_Adam_idle_48x48',
+      x: 1200,
+      y: 800,
+      role: 'IT Support',
+      personality: 'Tech-savvy and helpful, but slightly overwhelmed by ticket requests.',
+      greeting: 'Have you tried turning it off and on again?',
+      knowledge: 'Knows about the office network and hardware setup.',
+      isFixed: false
+    },
+    {
+      id: 'npc_designer',
+      name: 'Sarah',
+      sprite: 'Female_Conference_woman_idle_48x48',
+      x: 2500,
+      y: 1200,
+      role: 'Senior Designer',
+      personality: 'Artistic and meticulous about pixel perfection.',
+      greeting: 'Watch the spacing, we need it aligned perfectly.',
+      knowledge: 'Expert in design systems and HSL color palettes.',
+      isFixed: false
+    },
+    {
+      id: 'npc_arthur',
+      name: 'Arthur',
+      sprite: 'Male_Ash_idle_48x48',
+      x: 1500,
+      y: 3500,
+      role: 'Financial Analyst',
+      personality: 'A polite but firm British financial analyst. He only speaks English and polite prompts users to speak English.',
+      greeting: 'Good morning! I am Arthur. Please, let us keep our conversation in English for clarity, shall we?',
+      knowledge: 'Expert in market trends and company budgets.',
+      isFixed: false
+    },
+    {
+      id: 'npc_sophia',
+      name: 'Sophia',
+      sprite: 'Amelia_idle_48x48',
+      x: 4000,
+      y: 2500,
+      role: 'Creative Director',
+      personality: 'Inspirational and always looking for new design trends.',
+      greeting: 'The lighting here is just perfect for inspiration!',
+      knowledge: 'Deep understanding of branding and visual identity.',
+      isFixed: false
+    },
+    {
+      id: 'npc_lucas',
+      name: 'Lucas',
+      sprite: 'Male_Dan_idle_48x48',
+      x: 7000,
+      y: 1500,
+      role: 'Backend Architect',
+      personality: 'Focused on scalability and efficient algorithms.',
+      greeting: 'Ready to optimize some database queries today?',
+      knowledge: 'Specialist in distributed systems and performance tuning.',
+      isFixed: false
+    },
+    {
+      id: 'npc_elena',
+      name: 'Elena',
+      sprite: 'Lucy_idle_48x48',
+      x: 3000,
+      y: 5000,
+      role: 'Product Manager',
+      personality: 'Data-driven and user-focused, always iterating.',
+      greeting: 'Glad to meet you! Do you have any feedback on our latest roadmap?',
+      knowledge: 'Bridge between users and the core engineering team.',
+      isFixed: false
+    },
+    {
+      id: 'npc_josh',
+      name: 'Josh',
+      sprite: 'Old_man_Josh_idle_48x48',
+      x: 8500,
+      y: 3000,
+      role: 'Senior Consultant',
+      personality: 'Wise and experienced, loves sharing industry stories.',
+      greeting: 'Ah, I remember when we used to code on punch cards...',
+      knowledge: 'Vast knowledge of industry history and best practices.',
+      isFixed: true
+    },
+    {
+      id: 'npc_molly',
+      name: 'Molly',
+      sprite: 'Molly_idle_48x48',
+      x: 9311,
+      y: -632,
+      role: 'Head Barista',
+      personality: 'Energetic and passionate about the perfect roast.',
+      greeting: 'One double espresso, coming right up!',
+      knowledge: 'Knows everything about coffee beans and tea blends.',
+      isFixed: true
+    }
+  ]
+
+  for (const npc of npcs) {
+    await prisma.ai_npcs.upsert({
+      where: { id: npc.id },
+      update: { ...npc, updatedAt: new Date() },
+      create: { ...npc, updatedAt: new Date() }
+    })
+  }
+
+  console.log('已处理', npcs.length, '个 AI NPCs')
   console.log('数据库初始化完成！')
 }
 

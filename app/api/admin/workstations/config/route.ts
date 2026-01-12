@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/admin/permissions'
 import { logAdminAction } from '@/lib/admin/logger'
-import prisma from '@/lib/prisma'
+import prisma from '@/lib/db'
 import { z } from 'zod'
 
 const configSchema = z.object({

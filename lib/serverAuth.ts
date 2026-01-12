@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { verifyToken } from './auth'
-import prisma from './prisma'
+import prisma from './db'
 
 export interface AuthenticatedUser {
   id: string
