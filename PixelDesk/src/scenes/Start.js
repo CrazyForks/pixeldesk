@@ -59,13 +59,16 @@ export class Start extends Phaser.Scene {
 
     // 动态资源注册表 (按需加载)
     this.dynamicAssetRegistry = {
-      // 书架
+      // 书架 (优先使用 webp)
       "bookcase_middle": "/assets/desk/library_bookcase_normal.png",
       "library_bookcase_normal": "/assets/desk/library_bookcase_normal.png",
       "bookcase_tall": "/assets/desk/library_bookcase_tall.webp",
       "library_bookcase_tall": "/assets/desk/library_bookcase_tall.webp",
       "library_bookcase_tall_webp": "/assets/desk/library_bookcase_tall.webp",
       "Classroom_and_Library_Singles_48x48_58": "/assets/desk/Classroom_and_Library_Singles_48x48_58.png",
+
+      // 地垫 / 门垫 (GID 58)
+      "door_mat": "/assets/desk/Classroom_and_Library_Singles_48x48_58.png",
 
       // 洗手间
       "Shadowless_washhand": "/assets/bathroom/Shadowless_washhand.png",
@@ -98,6 +101,8 @@ export class Start extends Phaser.Scene {
 
     // 正在进行的动态加载任务
     this.pendingLoads = new Set();
+    this.failedLoads = new Set(); // 🔧 记录加载失败的资源，避免循环重试
+    this.loadTimer = null;
   }
 
   preload() {
@@ -1452,6 +1457,9 @@ export class Start extends Phaser.Scene {
       // 渲染时使用占位符，等加载完后再自动更新
       const sprite = this.add.image(obj.x, adjustedY, "desk_image")
       sprite._targetTexture = imageKey
+      // 保存原始预期大小，以便加载后重置
+      sprite._originalWidth = obj.width
+      sprite._originalHeight = obj.height
       this.configureSprite(sprite, obj)
       return sprite
     }
@@ -1466,39 +1474,94 @@ export class Start extends Phaser.Scene {
    */
   resolveKeyByGid(gid) {
     // 这里的 GID 硬编码基于 officemap.json 的分析
+    if (gid === 87) return "sofa-left-1"
+    if (gid === 88) return "sofa-left-2"
+    if (gid === 89) return "sofa-left-3"
+    if (gid === 90) return "sofa-right-1"
+    if (gid === 91) return "sofa-right-2"
+    if (gid === 92) return "sofa-right-3"
     if (gid === 106) return "bookcase_tall"
     if (gid === 107) return "bookcase_middle"
+    if (gid === 58) return "door_mat"
     if (gid === 5569) return "announcement_board_wire"
     if (gid === 5570) return "front_wide_display"
     return null
   }
 
   /**
-   * 动态加载纹理并更新现有精灵
+   * 动态加载纹理并更新现有精灵 (优化版：分步处理+防抖加载)
    */
   dynamicLoadTexture(key) {
-    if (this.textures.exists(key) || this.pendingLoads.has(key)) return
+    if (this.textures.exists(key) || this.pendingLoads.has(key) || this.failedLoads.has(key)) return
 
     const path = this.dynamicAssetRegistry[key]
     if (!path) return
 
     this.pendingLoads.add(key)
-    debugLog(`🚚 [LazyLoad] 正在按需加载资源: ${key} -> ${path}`)
+    debugLog(`🚚 [LazyLoad] 准备加载: ${key}`)
 
     this.load.image(key, path)
-    this.load.once(`filecomplete-image-${key}`, () => {
-      this.pendingLoads.delete(key)
-      debugLog(`✅ [LazyLoad] 资源加载完成: ${key}`)
 
-      // 查找由于纹理未加载而使用占位符的精灵
-      this.children.list.forEach(child => {
-        if (child._targetTexture === key) {
-          child.setTexture(key)
-          delete child._targetTexture
-        }
-      })
+    // 监听单个文件完成
+    this.load.once(`filecomplete-image-${key}`, (fileKey, type, texture) => {
+      debugLog(`✅ [LazyLoad] 单个资源加载完成: ${fileKey}`)
+      this.pendingLoads.delete(fileKey)
+      this.updatePendingSprites(fileKey)
     })
-    this.load.start()
+
+    // 监听加载错误
+    this.load.once(`loaderror-image-${key}`, (fileKey) => {
+      debugWarn(`❌ [LazyLoad] 资源加载失败: ${fileKey}`)
+      this.pendingLoads.delete(fileKey)
+      this.failedLoads.add(fileKey)
+    })
+
+    // 使用 debounce 机制，确保一帧内多个资源的加载只触发一次 start()
+    if (this.loadTimer) clearTimeout(this.loadTimer)
+    this.loadTimer = setTimeout(() => {
+      if (this.load.isLoading()) {
+        // 如果加载器正在忙，确保当前加载完成后再次检查队列
+        this.load.once('complete', () => {
+          if (this.pendingLoads.size > 0) {
+            debugLog(`🔄 [LazyLoad] 忙碌结束，启动后续队列`)
+            this.load.start()
+          }
+        })
+        return
+      }
+      debugLog(`🚀 [LazyLoad] 启动加载器循环`)
+      this.load.start()
+      this.loadTimer = null
+    }, 50)
+  }
+
+
+  /**
+   * 刷新那些等待特定纹理的精灵
+   */
+  updatePendingSprites(specificKey = null) {
+    this.children.list.forEach(child => {
+      // 如果指定了 specificKey，则只更新匹配该 key 的精灵
+      const targetKey = child._targetTexture
+      if (!targetKey) return
+      if (specificKey && targetKey !== specificKey) return
+
+      if (this.textures.exists(targetKey)) {
+        // 关键：检查是否是无效的 missing 纹理
+        const texture = this.textures.get(targetKey)
+        if (texture.key === '__MISSING') return
+
+        if (typeof child.setTexture === 'function') {
+          child.setTexture(targetKey)
+          // 重新应用大小，防止纹理切换后显示异常
+          if (child._originalWidth && child._originalHeight) {
+            child.setDisplaySize(child._originalWidth, child._originalHeight)
+          }
+          delete child._targetTexture
+          debugLog(`✨ [LazyLoad] 精灵贴图已更新: ${targetKey}`)
+        }
+      }
+    })
   }
 
   renderGeometricObject(obj, adjustedY) {
@@ -1758,8 +1821,7 @@ export class Start extends Phaser.Scene {
 
     // 如果名字为空，尝试根据 GID 推断
     if (!imageKey && obj.gid) {
-      if (obj.gid === 106) imageKey = "bookcase_tall"
-      else if (obj.gid === 107) imageKey = "bookcase_middle"
+      imageKey = this.resolveKeyByGid(obj.gid)
     }
 
     // 如果名字为空，尝试根据类型或其他属性推断
@@ -1772,6 +1834,19 @@ export class Start extends Phaser.Scene {
     }
 
     if (!imageKey) return null
+
+    // 如果找不到纹理，尝试从注册表动态加载 (同步 renderTilesetObject 逻辑)
+    if (!this.textures.exists(imageKey)) {
+      this.dynamicLoadTexture(imageKey)
+      // 渲染时使用占位符，等加载完后再自动更新
+      const sprite = this.add.image(obj.x, adjustedY, "desk_image")
+      sprite._targetTexture = imageKey
+      // 保存原始预期大小，以便加载后重置
+      sprite._originalWidth = obj.width
+      sprite._originalHeight = obj.height
+      this.configureSprite(sprite, obj)
+      return sprite
+    }
 
     const sprite = this.add.image(obj.x, adjustedY, imageKey)
     this.configureSprite(sprite, obj)
