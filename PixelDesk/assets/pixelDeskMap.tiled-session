@@ -190,7 +190,7 @@
             "scaleInDock": 0.33
         }
     },
-    "last.imagePath": "/Users/jiangyilong/project/PixelDesk/public/assets",
+    "last.imagePath": "/Users/jiangyilong/project/PixelDesk/public/assets/building",
     "openFiles": [
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json"
     ],
@@ -205,7 +205,7 @@
     ],
     "tileset.embedInMap": true,
     "tileset.tileSize": {
-        "height": 128,
-        "width": 128
+        "height": 322,
+        "width": 322
     }
 }

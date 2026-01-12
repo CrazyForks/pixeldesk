@@ -96,7 +96,12 @@ export class Start extends Phaser.Scene {
       "cabinet": "/assets/tileset/cabinet.png",
       "stair-red": "/assets/tileset/stair-red.png",
       "announcement_board_wire": "/assets/announcement_board_wire.webp",
-      "front_wide_display": "/assets/front_wide_display.webp"
+      "front_wide_display": "/assets/front_wide_display.webp",
+      "wall_decoration_1": "/assets/desk/Classroom_and_Library_Singles_48x48_31.png",
+      "wall_decoration_2": "/assets/desk/Classroom_and_Library_Singles_48x48_32.png",
+      "wall_decoration_3": "/assets/desk/Classroom_and_Library_Singles_48x48_33.png",
+      "wall_decoration_4": "/assets/desk/Classroom_and_Library_Singles_48x48_39.png",
+      "wall_decoration_5": "/assets/desk/Classroom_and_Library_Singles_48x48_36.png"
     };
 
     // 正在进行的动态加载任务
@@ -545,6 +550,13 @@ export class Start extends Phaser.Scene {
         this.renderObjectLayer(map, "front_display")
       } catch (e) {
         console.warn("Front display layer optional/missing")
+      }
+
+      // 🖼️ 渲染装饰图层 (由用户新增)
+      try {
+        this.renderObjectLayer(map, "wall_obj")
+      } catch (e) {
+        console.warn("Wall decoration layer missing")
       }
 
       // 所有对象层加载完毕后，统一初始化区块系统
@@ -1482,6 +1494,11 @@ export class Start extends Phaser.Scene {
     if (gid === 92) return "sofa-right-3"
     if (gid === 106) return "bookcase_tall"
     if (gid === 107) return "bookcase_middle"
+    if (gid === 108) return "wall_decoration_1"
+    if (gid === 109) return "wall_decoration_2"
+    if (gid === 110) return "wall_decoration_3"
+    if (gid === 111) return "wall_decoration_5"
+    if (gid === 112) return "wall_decoration_4"
     if (gid === 58) return "door_mat"
     if (gid === 5569) return "announcement_board_wire"
     if (gid === 5570) return "front_wide_display"
