@@ -33,8 +33,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [playerExists, setPlayerExists] = useState<boolean | null>(null)
   const authCheckedRef = useRef(false)
+  const isCheckingRef = useRef(false)
 
   const checkAuth = async (silent = false) => {
+    if (isCheckingRef.current) return
+    isCheckingRef.current = true
+
     if (!silent) setIsLoading(true)
     try {
       console.log('🌐 [UserContext] 正在验证身份...')
@@ -47,21 +51,28 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const data = await response.json()
         if (data.success && data.data) {
           console.log('✅ [UserContext] 身份验证成功:', data.data.name)
+
+          // 批量更新状态以减少重新渲染
           setUser(data.data)
+          if (!silent) setIsLoading(false)
+
           // 登录成功后初始化玩家同步
           const playerSyncResult = await initializePlayerSync()
           setPlayerExists(playerSyncResult.hasPlayer)
         } else {
           setUser(null)
+          if (!silent) setIsLoading(false)
         }
       } else {
         setUser(null)
+        if (!silent) setIsLoading(false)
       }
     } catch (error) {
       console.error('❌ [UserContext] 身份验证请求失败:', error)
       setUser(null)
-    } finally {
       if (!silent) setIsLoading(false)
+    } finally {
+      isCheckingRef.current = false
     }
   }
 

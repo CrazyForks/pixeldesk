@@ -29,14 +29,16 @@ export default function SocialFeedTab({
   const [promotionCost, setPromotionCost] = useState(50)
 
   useEffect(() => {
-    fetch('/api/billboard/cost')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setPromotionCost(data.cost)
-        }
-      })
-      .catch(console.error)
+    const loadCost = async () => {
+      try {
+        const { configStore } = await import('@/lib/stores/ConfigStore')
+        const cost = await configStore.getBillboardCost()
+        setPromotionCost(cost)
+      } catch (error) {
+        console.error('Failed to load billboard cost:', error)
+      }
+    }
+    loadCost()
   }, [])
 
   const { t } = useTranslation()

@@ -16,20 +16,27 @@ interface Stats {
   totalCost: number
 }
 
+interface BillboardConfig {
+  cost: number
+}
+
 class ConfigStore {
   private static instance: ConfigStore
 
   // 配置数据
   private pointsConfig: PointsConfigMap | null = null
   private stats: Stats | null = null
+  private billboardConfig: BillboardConfig | null = null
 
   // 加载状态
   private pointsConfigLoading = false
   private statsLoading = false
+  private billboardLoading = false
 
   // Promise 缓存（用于防止并发重复请求）
   private pointsConfigPromise: Promise<PointsConfigMap> | null = null
   private statsPromise: Promise<Stats> | null = null
+  private billboardPromise: Promise<BillboardConfig> | null = null
 
   // 监听器
   private pointsConfigListeners = new Set<(config: PointsConfigMap) => void>()
@@ -178,6 +185,56 @@ class ConfigStore {
       this.notifyStatsListeners()
 
       return defaultStats
+    }
+  }
+
+  /**
+   * 获取公告栏推广成本
+   */
+  public async getBillboardCost(): Promise<number> {
+    if (this.billboardConfig) {
+      return this.billboardConfig.cost
+    }
+
+    if (this.billboardPromise) {
+      const res = await this.billboardPromise
+      return res.cost
+    }
+
+    this.billboardPromise = this.loadBillboardCost()
+
+    try {
+      const config = await this.billboardPromise
+      return config.cost
+    } finally {
+      this.billboardPromise = null
+    }
+  }
+
+  private async loadBillboardCost(): Promise<BillboardConfig> {
+    console.log('🔄 [ConfigStore] 开始加载公告栏成本...')
+
+    try {
+      const response = await fetch('/api/billboard/cost')
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        this.billboardConfig = { cost: data.cost }
+        console.log('✅ [ConfigStore] 公告栏成本已加载:', data.cost)
+        return this.billboardConfig
+      } else {
+        throw new Error(data.error || 'Failed to load billboard cost')
+      }
+    } catch (error) {
+      console.error('❌ [ConfigStore] 加载公告栏成本失败:', error)
+      const defaultConfig = { cost: 50 }
+      this.billboardConfig = defaultConfig
+      return defaultConfig
     }
   }
 

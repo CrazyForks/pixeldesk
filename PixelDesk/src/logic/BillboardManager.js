@@ -6,6 +6,7 @@ export class BillboardManager {
         this.updateInterval = 5 * 60 * 1000; // 5 minutes
         this.lastUpdateTime = 0;
         this.isNear = false;
+        this.isLoading = false;
     }
 
     createBillboard(tiledObject, sprite) {
@@ -45,6 +46,10 @@ export class BillboardManager {
     }
 
     async updateContent() {
+        if (this.isLoading) return;
+        this.isLoading = true;
+        this.lastUpdateTime = Date.now(); // 立即更新以防止重入
+
         try {
             console.log('Fetching billboard content...');
             const response = await fetch('/api/billboard/active');
@@ -52,10 +57,11 @@ export class BillboardManager {
             if (result.success) {
                 this.activeContent = result.data;
                 console.log('Billboard content updated:', this.activeContent);
-                this.lastUpdateTime = Date.now();
             }
         } catch (error) {
             console.error('Failed to fetch billboard content:', error);
+        } finally {
+            this.isLoading = false;
         }
     }
 
@@ -80,7 +86,7 @@ export class BillboardManager {
         if (!this.scene.scene.isActive()) return;
 
         // 定时更新内容
-        if (Date.now() - this.lastUpdateTime > this.updateInterval) {
+        if (!this.isLoading && Date.now() - this.lastUpdateTime > this.updateInterval) {
             this.updateContent();
         }
     }

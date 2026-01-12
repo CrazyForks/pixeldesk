@@ -49,6 +49,9 @@ export class WorkstationManager {
         // 轮询配置
         this.pollingTimer = null;
         this.pollingInterval = 30000; // 默认30秒轮询一次，平衡实时性与性能
+
+        // 并发控制
+        this.syncPromise = null;
     }
 
     // 通用的场景有效性检查方法
@@ -596,27 +599,40 @@ export class WorkstationManager {
     }
 
     async syncWorkstationBindings() {
-        // 完全禁用缓存系统，每次都重新获取最新数据
-        debugLog('🔄 使用无缓存的工位同步方法');
-
-        try {
-            // 每次都重新获取所有绑定数据，不使用任何缓存
-            const allBindings = await this.loadAllWorkstationBindings();
-            debugLog(`📦 收到 ${allBindings.length} 个工位绑定:`, allBindings.map(b => ({
-                workstationId: b.workstationId,
-                userId: b.userId,
-                userName: b.user?.name
-            })));
-
-            // 直接应用绑定，完全不使用缓存
-            this.applyBindingsDirectly(allBindings);
-
-            debugLog('✅ 工位同步完成（无缓存）');
-            return;
-        } catch (error) {
-            console.error('❌ 工位同步失败:', error);
-            throw error;
+        // 如果正在同步，返回现有的 Promise，避免并发重复请求
+        if (this.syncPromise) {
+            // debugLog('⏳ [WorkstationManager] 正在同步中，复用现有的请求');
+            return this.syncPromise;
         }
+
+        // 创建新的同步 Promise
+        this.syncPromise = (async () => {
+            // 完全禁用缓存系统，每次都重新获取最新数据
+            debugLog('🔄 使用无缓存的工位同步方法');
+
+            try {
+                // 每次都重新获取所有绑定数据，不使用任何缓存
+                const allBindings = await this.loadAllWorkstationBindings();
+                debugLog(`📦 收到 ${allBindings.length} 个工位绑定:`, allBindings.map(b => ({
+                    workstationId: b.workstationId,
+                    userId: b.userId,
+                    userName: b.user?.name
+                })));
+
+                // 直接应用绑定，完全不使用缓存
+                this.applyBindingsDirectly(allBindings);
+
+                debugLog('✅ 工位同步完成（无缓存）');
+                return true;
+            } catch (error) {
+                console.error('❌ 工位同步失败:', error);
+                throw error;
+            } finally {
+                this.syncPromise = null;
+            }
+        })();
+
+        return this.syncPromise;
     }
 
     // 直接应用绑定数据，不使用缓存

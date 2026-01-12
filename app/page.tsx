@@ -206,6 +206,10 @@ export default function Home() {
   // 错误消息状态
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  // 记录上次成功加载工位绑定的用户ID，防止重复请求
+  const lastLoadedBindingUserId = useRef<string | null>(null)
+  const isBindingLoading = useRef(false)
+
   // Enhanced device detection
   const [deviceType, setDeviceType] = useState<'mobile' | 'tablet' | 'desktop'>('desktop')
   const [isTablet, setIsTablet] = useState(false)
@@ -545,10 +549,17 @@ export default function Home() {
     syncAuthenticatedUser()
 
     // 如果用户已认证，立即加载工位绑定信息
-    if (user?.id) {
+    if (user?.id && !isLoading) {
+      // 如果已经加载过该用户的绑定，或者正在进行加载，则跳过
+      if (lastLoadedBindingUserId.current === user.id || isBindingLoading.current) {
+        // console.log('⏭️ [Home] 跳过重复的工位绑定加载:', user.id)
+        return
+      }
+
       // 直接调用改进的工位绑定加载函数
       const loadBinding = async () => {
         // console.log('🔍 [inline-loadBinding] 开始加载用户工位绑定:', user.id)
+        isBindingLoading.current = true
 
         // 首先尝试从localStorage获取缓存的绑定信息
         const cachedBinding = localStorage.getItem(`workstation_binding_${user.id}`)
@@ -556,17 +567,22 @@ export default function Home() {
           try {
             const binding = JSON.parse(cachedBinding)
             // console.log('💾 [inline-loadBinding] 使用缓存的绑定信息:', binding)
-            setCurrentUser((prev: any) => ({
-              ...prev,
-              workstationId: String(binding.workstationId)
-            }))
+            setCurrentUser((prev: any) => {
+              // 只有在还没有workstationId或者不同的时候才更新，减少渲染次数
+              if (prev && prev.workstationId === String(binding.workstationId)) return prev
+              return {
+                ...prev,
+                workstationId: String(binding.workstationId)
+              }
+            })
           } catch (error) {
             // 缓存解析失败
           }
         }
 
         try {
-          const response = await fetch(`/api/workstations/user-bindings?userId=${user.id}&cleanup=true`)
+          // 优化：移除 cleanup=true，由服务端自动处理。减少 redundant 请求。
+          const response = await fetch(`/api/workstations/user-bindings?userId=${user.id}`)
 
           if (response.ok) {
             const data = await response.json()
@@ -590,23 +606,25 @@ export default function Home() {
                 timestamp: Date.now()
               }))
 
+              lastLoadedBindingUserId.current = user.id
               // console.log('✅ [inline-loadBinding] 工位绑定已加载:', workstationId)
 
             } else if (data.success && data.data.length === 0) {
-              setCurrentUser((prev: any) => ({
-                ...prev,
-                workstationId: null
-              }))
+              setCurrentUser((prev: any) => {
+                if (prev && prev.workstationId === null) return prev
+                return { ...prev, workstationId: null }
+              })
               localStorage.removeItem(`workstation_binding_${user.id}`)
+              lastLoadedBindingUserId.current = user.id
               // console.log('⚠️ [inline-loadBinding] 用户未绑定工位')
 
             } else if (!data.success && data.code?.startsWith('DB_')) {
               console.warn('⚠️ [inline-loadBinding] 数据库连接问题，使用缓存数据:', data.error)
               if (!cachedBinding) {
-                setCurrentUser((prev: any) => ({
-                  ...prev,
-                  workstationId: null
-                }))
+                setCurrentUser((prev: any) => {
+                  if (prev && prev.workstationId === null) return prev
+                  return { ...prev, workstationId: null }
+                })
               }
             }
           }
@@ -620,9 +638,14 @@ export default function Home() {
               workstationId: null
             }))
           }
+        } finally {
+          isBindingLoading.current = false
         }
       }
       loadBinding()
+    } else if (!user && !isLoading) {
+      // 退出登录时，清理状态
+      lastLoadedBindingUserId.current = null
     }
   }, [user, isLoading, syncAuthenticatedUser])
 
