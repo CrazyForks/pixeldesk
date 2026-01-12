@@ -27,6 +27,18 @@ const debugWarn = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.warn.bind(co
 const debugError = PERFORMANCE_CONFIG.ENABLE_ERROR_LOGGING ? console.error.bind(console) : () => { }
 const perfLog = PERFORMANCE_CONFIG.ENABLE_PERFORMANCE_LOGGING ? console.log.bind(console) : () => { }
 
+// ===== 渲染层级 (Depth) 配置 =====
+const MAP_DEPTHS = {
+  FLOOR: 0,
+  CARPET: 1,
+  BUILDING: 5,
+  FURNITURE: 10,
+  BILLBOARD: 15,
+  PLAYER: 100,
+  NPC: 100,
+  UI: 1000
+}
+
 export class Start extends Phaser.Scene {
   constructor() {
     super("Start")
@@ -466,7 +478,10 @@ export class Start extends Phaser.Scene {
 
       // 初始化其他玩家物理组（用于碰撞检测）
       // 🔧 关键修复：必须在WorkstationManager创建之前初始化，因为loadWorkstation可能会立即尝试添加角色到这个组
-      this.otherPlayersGroup = this.physics.add.group({ immovable: true })
+      if (!this.otherPlayersGroup) {
+        this.otherPlayersGroup = this.physics.add.group({ immovable: true })
+        this.otherPlayersGroup.setDepth(MAP_DEPTHS.PLAYER)
+      }
       this.npcGroup = this.physics.add.group({ immovable: true })
       debugLog('✅ [Start] player groups 物理组已初始化')
 
@@ -910,6 +925,7 @@ export class Start extends Phaser.Scene {
       mainPlayerData
     )
     this.add.existing(this.player)
+    this.player.setDepth(MAP_DEPTHS.PLAYER)
 
     // 如果当前下班了，初始化时就隐藏角色（针对主玩家自己）
     if (mainPlayerData.currentStatus.type === 'off_work') {
@@ -1356,9 +1372,12 @@ export class Start extends Phaser.Scene {
       }
     }
 
-    // 📺 如果是大屏推流对象 (Hot Billboard)
-    if (obj.gid === 5569 || obj.gid === 5570 || obj.gid === 5576 || obj.gid === 5577 || obj.gid === 5580 || obj.gid === 5581 || obj.type === "hot-billboard") {
-      console.log(`📺 [Start] 检测到大屏对象 at (${obj.x}, ${obj.y})`);
+    // 📺 如果是大屏推流对象 (Hot Billboard) - 优先判断 Type (Class)
+    const isBillboard = obj.type === "billboard" || obj.type === "hot-billboard" ||
+      [5569, 5570, 5576, 5577, 5580, 5581].includes(obj.gid);
+
+    if (isBillboard) {
+      console.log(`📺 [Start] 检测到大屏对象 at (${obj.x}, ${obj.y}), Type: ${obj.type}`);
       if (sprite) {
         // 为大屏添加物理碰撞，使其不可穿透
         this.addDeskCollision(sprite, obj);
@@ -1370,8 +1389,6 @@ export class Start extends Phaser.Scene {
 
         // 创建感应区 (比大屏本身大的感应对象，确保容易触发)
         if (this.billboardSensors) {
-          // GID 对象在 Phaser 中 origin 为 (0, 0)，adjustedY 使其 top 为 adjustedY
-          // 所以中心点计算如下：
           const centerX = obj.x + (obj.width / 2);
           const centerY = adjustedY + (obj.height / 2);
 
@@ -1385,11 +1402,29 @@ export class Start extends Phaser.Scene {
       }
     }
 
-    // 🏰 如果是建筑对象 (例如咖啡厅)
-    if (obj.gid === 5578 || obj.gid === 5582 || obj.name?.includes("building") || obj.type === "building") {
+    // 🏰 如果是建筑对象 (例如咖啡厅) - 优先判断 Type (Class)
+    const isBuilding = obj.type === "building" || obj.name?.includes("building") ||
+      [5578, 5582].includes(obj.gid);
+
+    if (isBuilding) {
       if (sprite) {
-        console.log(`🏰 [Start] 为建筑添加物理碰撞 at (${obj.x}, ${obj.y})`);
+        console.log(`🏰 [Start] 为建筑添加物理碰撞 at (${obj.x}, ${obj.y}), Type: ${obj.type}`);
         this.addDeskCollision(sprite, obj);
+      }
+    }
+
+    // 为不同类型的对象设置层级
+    if (sprite) {
+      if (isBillboard) {
+        sprite.setDepth(MAP_DEPTHS.BILLBOARD);
+      } else if (isBuilding) {
+        sprite.setDepth(MAP_DEPTHS.BUILDING);
+      } else if (obj.name === "door_mat" || obj.gid === 58) {
+        sprite.setDepth(MAP_DEPTHS.CARPET);
+      } else if (this.isDeskObject(obj)) {
+        sprite.setDepth(MAP_DEPTHS.FURNITURE);
+      } else {
+        sprite.setDepth(MAP_DEPTHS.FURNITURE); // 默认大多数对象在家具层
       }
     }
 
@@ -1403,7 +1438,7 @@ export class Start extends Phaser.Scene {
     this.deskColliders.add(sprite)
 
     // 根据桌子类型调整碰撞边界
-    const collisionSettings = this.getCollisionSettings(obj)
+    const collisionSettings = this.getCollisionSettings(obj, sprite.texture.key)
 
     // 🔧 添加到group后，物理体才被创建，现在可以调整碰撞边界
     if (sprite.body) {
@@ -1430,29 +1465,40 @@ export class Start extends Phaser.Scene {
     }
   }
 
-  getCollisionSettings(obj) {
+  getCollisionSettings(obj, textureKey = "") {
     const objName = obj.name || ""
     const objType = obj.type || ""
 
-    // 根据不同的桌子类型返回不同的碰撞设置
-    if (objName.includes("long") || objType.includes("long")) {
-      // 长桌子 - 更小的碰撞边界
-      return { scaleX: 0.4, scaleY: 0.4, offsetX: 0, offsetY: 0 }
-    } else if (objName.includes("single") || objType.includes("single")) {
-      // 单人桌 - 中等碰撞边界
-      return { scaleX: 0.6, scaleY: 0.6, offsetX: 0, offsetY: 0 }
-    } else if (objName.includes("bookcase") || objType.includes("bookcase")) {
-      // 书架 - 更大的碰撞边界
-      return { scaleX: 0.7, scaleY: 0.7, offsetX: 0, offsetY: 0 }
-    } else if (objName.includes("sofa") || objType.includes("sofa")) {
-      // 沙发 - 特殊的碰撞边界
-      return { scaleX: 0.5, scaleY: 0.3, offsetX: 0, offsetY: 0 }
-    } else if (objName.includes("display") || objType.includes("display") || objName.includes("board")) {
+    // 针对“向上”朝向的桌子（桌子在后，椅子在前）优化：只需碰撞上半部分的桌体
+    if (textureKey.includes("_up") || objName.includes("_up") || objType.includes("_up")) {
+      // 缩小高度并向上偏移，使下半部分的椅子区域可通行
+      return {
+        scaleX: 0.8,
+        scaleY: 0.4,
+        offsetX: 0,
+        offsetY: -20  // 向上偏移，确保碰撞在桌子上
+      }
+    }
+
+    // 根据不同的类名/类型返回不同的碰撞设置
+    if (objType === "billboard" || objName.includes("display") || objType.includes("display") || objName.includes("board")) {
       // 电子告示牌/大屏 - 完全碰撞边界
       return { scaleX: 1.0, scaleY: 1.0, offsetX: 0, offsetY: 0 }
-    } else if (objName.includes("building") || obj.gid === 5578) {
-      // 建筑 - 完全碰撞边界 (按需调整)
+    } else if (objType === "building" || objName.includes("building")) {
+      // 建筑 - 完全碰撞边界
       return { scaleX: 1.0, scaleY: 0.8, offsetX: 0, offsetY: 0 }
+    } else if (objName.includes("long") || objType.includes("long") || objType === "desk-long") {
+      // 长桌子
+      return { scaleX: 0.4, scaleY: 0.4, offsetX: 0, offsetY: 0 }
+    } else if (objName.includes("single") || objType.includes("single") || objType === "desk-single" || objType === "desk") {
+      // 单人桌
+      return { scaleX: 0.6, scaleY: 0.6, offsetX: 0, offsetY: 0 }
+    } else if (objName.includes("bookcase") || objType.includes("bookcase")) {
+      // 书架
+      return { scaleX: 0.7, scaleY: 0.7, offsetX: 0, offsetY: 0 }
+    } else if (objName.includes("sofa") || objType.includes("sofa")) {
+      // 沙发
+      return { scaleX: 0.5, scaleY: 0.3, offsetX: 0, offsetY: 0 }
     } else {
       // 默认设置
       return { scaleX: 0.5, scaleY: 0.5, offsetX: 0, offsetY: 0 }
@@ -1500,7 +1546,25 @@ export class Start extends Phaser.Scene {
    * 辅助：根据 GID 获取注册表中的 Key
    */
   resolveKeyByGid(gid) {
-    // 这里的 GID 硬编码基于 officemap.json 的分析
+    if (!gid) return null;
+
+    // 1. 动态查找 Tileset (核心：防止 GID 位移)
+    if (this.map) {
+      const tileset = this.map.getTilesetByGID(gid);
+      if (tileset) {
+        const tsName = tileset.name.toLowerCase();
+
+        // 根据 Tileset 名称映射资源
+        if (tsName.includes("announcement")) return "announcement_board_wire";
+        if (tsName.includes("display")) return "front_wide_display";
+        if (tsName.includes("cafe_building")) return "pixel_cafe_building";
+        if (tsName.includes("cofe_desk")) return "cofe_desk_up";
+        if (tsName.includes("tall_bookcase")) return "bookcase_tall";
+        // 可以根据需要添加更多 Tileset 映射
+      }
+    }
+
+    // 2. 静态 GID 映射 (回退方案)
     if (gid === 87) return "sofa-left-1"
     if (gid === 88) return "sofa-left-2"
     if (gid === 89) return "sofa-left-3"
@@ -1889,8 +1953,10 @@ export class Start extends Phaser.Scene {
 
   // ===== 辅助方法 =====
   isDeskObject(obj) {
-    // 修改为同时识别desk
+    // 识别工位对象的逻辑：支持 Type 识别和传统的 Name/GID 识别
     return (
+      obj.type === "desk" ||
+      obj.type === "workstation" ||
       obj.name === "desk" ||
       obj.type === "desk" ||
       obj.name.includes("desk_") ||
