@@ -339,10 +339,20 @@ export class AiNpcManager {
         npcCharacter.on('pointerover', () => {
             npcCharacter.setScale(0.85);
             this.scene.input.setDefaultCursor('pointer');
+
+            // Mobile Controls: Show Action Button
+            if (this.scene.mobileControls) {
+                this.scene.mobileControls.showActionButton();
+            }
         });
         npcCharacter.on('pointerout', () => {
             npcCharacter.setScale(0.8);
             this.scene.input.setDefaultCursor('default');
+
+            // Mobile Controls: Hide Action Button
+            if (this.scene.mobileControls) {
+                this.scene.mobileControls.hideActionButton();
+            }
         });
     }
 }

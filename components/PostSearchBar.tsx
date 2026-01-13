@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { useNodes } from '@/lib/hooks/useNodes'
 
 interface PostNode {
     id: string
@@ -18,26 +19,12 @@ interface PostSearchBarProps {
 export default function PostSearchBar({ onSearch, onNodeChange, isMobile = false }: PostSearchBarProps) {
     const { t } = useTranslation()
     const [searchQuery, setSearchQuery] = useState('')
-    const [nodes, setNodes] = useState<PostNode[]>([])
+    const { nodes } = useNodes() // Use cached hook
     const [selectedNodeId, setSelectedNodeId] = useState('all')
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
-    // Fetch nodes from API
-    useEffect(() => {
-        const fetchNodes = async () => {
-            try {
-                const response = await fetch('/api/nodes')
-                const data = await response.json()
-                if (data.success) {
-                    setNodes(data.data)
-                }
-            } catch (error) {
-                console.error('Failed to fetch nodes:', error)
-            }
-        }
-        fetchNodes()
-    }, [])
+    // Removed local fetchNodes useEffect
 
     // Handle search input with debounce
     useEffect(() => {

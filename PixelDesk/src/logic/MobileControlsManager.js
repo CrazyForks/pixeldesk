@@ -29,6 +29,9 @@ export class MobileControlsManager {
     init() {
         if (!this.isMobile) return;
 
+        // Initialize multi-touch for pinch zoom
+        this.scene.input.addPointer(1);
+
         this.createJoystick();
         this.createActionButton();
         this.setupPinchToZoom();
@@ -38,7 +41,8 @@ export class MobileControlsManager {
 
     createJoystick() {
         const { joystickSize, thumbSize, margin, opacity } = this.config;
-        const x = margin + joystickSize;
+        // Move Joystick to Right Side
+        const x = this.scene.cameras.main.width - margin - joystickSize;
         const y = this.scene.cameras.main.height - margin - joystickSize;
 
         this.joystickContainer = this.scene.add.container(x, y).setScrollFactor(0).setDepth(1000);
@@ -108,7 +112,8 @@ export class MobileControlsManager {
     createActionButton() {
         const margin = 80;
         const size = 40;
-        const x = this.scene.cameras.main.width - margin - size;
+        // Move Action Button to Left Side
+        const x = margin + size;
         const y = this.scene.cameras.main.height - margin - size;
 
         this.actionButton = this.scene.add.container(x, y).setScrollFactor(0).setDepth(1000);
@@ -139,9 +144,21 @@ export class MobileControlsManager {
             }
         });
 
-        this.actionButton.on('pointerup', () => {
-            this.actionButton.setScale(1.0);
-        });
+        this.actionButton.setAlpha(0); // Hide by default
+    }
+
+    showActionButton() {
+        if (this.actionButton) {
+            this.actionButton.setAlpha(1);
+            this.actionButton.setVisible(true);
+        }
+    }
+
+    hideActionButton() {
+        if (this.actionButton) {
+            this.actionButton.setAlpha(0);
+            this.actionButton.setVisible(false);
+        }
     }
 
     setupPinchToZoom() {
@@ -149,10 +166,10 @@ export class MobileControlsManager {
         let initialZoom = 1;
 
         this.scene.input.on('pointermove', (pointer) => {
-            if (this.scene.input.pointer1.isDown && this.scene.input.pointer2.isDown) {
-                const p1 = this.scene.input.pointer1;
-                const p2 = this.scene.input.pointer2;
+            const p1 = this.scene.input.pointer1;
+            const p2 = this.scene.input.pointer2;
 
+            if (p1 && p1.isDown && p2 && p2.isDown) {
                 const dist = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
 
                 if (initialDistance === 0) {

@@ -199,10 +199,20 @@ export class WorkstationManager {
 
     onWorkstationHover(workstationId) {
         this.scene.events.emit('workstation-hover', { workstationId });
+
+        // Mobile Controls: Show Action Button
+        if (this.scene.mobileControls) {
+            this.scene.mobileControls.showActionButton();
+        }
     }
 
     onWorkstationOut(workstationId) {
         this.scene.events.emit('workstation-out', { workstationId });
+
+        // Mobile Controls: Hide Action Button
+        if (this.scene.mobileControls) {
+            this.scene.mobileControls.hideActionButton();
+        }
     }
 
     highlightWorkstation(workstationId, duration = null) {

@@ -224,21 +224,39 @@ export function useSocialNotifications(options: UseSocialNotificationsOptions): 
 
   // 自动获取通知
   useEffect(() => {
-    if (autoFetch && userId) {
+    // 如果已经在加载，则不自动获取
+    if (autoFetch && userId && !isLoading && notifications.length === 0) {
       fetchNotifications()
     }
-  }, [autoFetch, userId, fetchNotifications])
+  }, [autoFetch, userId, fetchNotifications]) // Remove isLoading/notifications to avoid loops, handled inside
 
-  // 自动刷新
+  // 自动刷新 - 增加页面可见性检查
   useEffect(() => {
     if (refreshInterval > 0 && userId) {
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          // 页面不可见时，不需要做任何事，interval会自动暂停逻辑
+        } else {
+          // 页面变回可见时，立即刷新一次
+          refreshNotifications()
+        }
+      }
+
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+
       const interval = setInterval(() => {
-        refreshNotifications()
+        // 只有页面可见且未在加载时才刷新
+        if (!document.hidden && !isLoading && !isRefreshing) {
+          refreshNotifications()
+        }
       }, refreshInterval)
 
-      return () => clearInterval(interval)
+      return () => {
+        clearInterval(interval)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
     }
-  }, [refreshInterval, userId, refreshNotifications])
+  }, [refreshInterval, userId, refreshNotifications, isLoading, isRefreshing])
 
   return {
     notifications,

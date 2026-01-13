@@ -41,7 +41,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     if (!silent) setIsLoading(true)
     try {
-      console.log('🌐 [UserContext] 正在验证身份...')
+      if (!silent) console.log('🌐 [UserContext] 正在验证身份...')
       const response = await fetch('/api/auth/settings', {
         method: 'GET',
         credentials: 'include',
@@ -50,7 +50,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.data) {
-          console.log('✅ [UserContext] 身份验证成功:', data.data.name)
+          if (!silent) console.log('✅ [UserContext] 身份验证成功:', data.data.name)
 
           // 批量更新状态以减少重新渲染
           setUser(data.data)

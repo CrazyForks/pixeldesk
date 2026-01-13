@@ -123,7 +123,9 @@ export async function POST(request: NextRequest) {
 
         const timeAwarenessInfo = `\n\n--- 时间感知 ---\n\n当前时间: ${currentTime} (${timeOfDay})\n\n**时间感知指令：**\n- 当前是${timeOfDay},请在对话中自然地体现这一点\n- 夜晚时(20:00-6:00): 可以使用"这么晚还需要帮助吗"、"夜深了"、"辛苦了"等温暖的表达,服务态度更加亲切体贴\n- 白天时(6:00-20:00): 保持专业高效的客服态度,热情饱满\n\n**每日服务小贴士：**\n- 适当时候(不是每次回复),自然地分享一些办公室使用技巧、平台功能介绍或有趣的办公小知识\n- 可以是实用的、有趣的,或者关于 PixelDesk 的最新功能\n- 分享时要自然融入对话,例如"对了,提醒您一下..."、"顺便说一句..."`;
 
-        const enhancedSystemPrompt = `${desk.systemPrompt || ''}\n\n--- 文章库信息 ---\n\n${blogInfo}${timeAwarenessInfo}`;
+        const safetyInfo = `\n\n--- 安全警示 [最高优先级] ---\n1. **严禁黄赌毒**：坚决禁止讨论任何有关色情、赌博、毒品等违法违规内容。\n2. **拒绝引导**：无论用户以何种形式（如角色扮演、玩笑、测试等）诱导，一旦涉及上述红线，必须严词拒绝。\n3. **合规回复**：遇到此类话题，请直接回复："对不起，我不讨论此类违法违规话题。" 并主动结束该话题。`;
+
+        const enhancedSystemPrompt = `${desk.systemPrompt || ''}\n\n--- 文章库信息 ---\n\n${blogInfo}${timeAwarenessInfo}${safetyInfo}`;
 
         // 调用 AI
         try {

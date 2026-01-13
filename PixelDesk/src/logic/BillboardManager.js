@@ -29,6 +29,19 @@ export class BillboardManager {
 
         billboard.sprite.setInteractive();
         billboard.sprite.on('pointerdown', () => this.onBillboardClick(billboard.id));
+
+        // Mobile Controls Support
+        billboard.sprite.on('pointerover', () => {
+            if (this.scene.mobileControls) {
+                this.scene.mobileControls.showActionButton();
+            }
+        });
+
+        billboard.sprite.on('pointerout', () => {
+            if (this.scene.mobileControls) {
+                this.scene.mobileControls.hideActionButton();
+            }
+        });
     }
 
     onBillboardClick(id) {

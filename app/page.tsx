@@ -167,7 +167,7 @@ export default function Home() {
       try {
         const { configStore } = await import('@/lib/stores/ConfigStore')
         const config = await configStore.getPointsConfig()
-        console.log('✅ 积分配置已预加载:', config)
+        // console.log('✅ 积分配置已预加载:', config)
         // 将配置暴露到全局（用于 Phaser 游戏访问）
         if (typeof window !== 'undefined') {
           (window as any).pointsConfig = config

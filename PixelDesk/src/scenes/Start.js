@@ -131,8 +131,7 @@ export class Start extends Phaser.Scene {
     this.loadTilemap()
     this.loadTilesetImages()
     this.loadLibraryImages()
-    // 加载下班标识
-    this.load.image('closed_sign', '/assets/ui/closed_sign.png')
+
   }
 
   async create() {
