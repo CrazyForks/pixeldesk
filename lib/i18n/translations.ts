@@ -537,6 +537,18 @@ export const translations = {
             empty: '暂无通知',
             loading: '加载中...',
             new_message: '条新消息'
+        },
+        welcome: {
+            title: '👋 欢迎来到 PixelDesk！',
+            subtitle: '这是一个充满像素艺术风格的虚拟办公空间，在这里，工作也可以很有趣。',
+            features: {
+                workstation: '💺 租用工位：拥有自己的专属地盘，标记你此刻的工作状态。',
+                interaction: '🤝 互动交流：与其他开发者在线聊天、发帖分享，发现有趣的灵魂。',
+                newspaper: '📰 阅读报纸：获取社区日报、最新动态、八卦和各种实用攻略。',
+            },
+            cta: '准备好开启你的像素生活了吗？注册账号解锁所有功能！',
+            start_btn: '开始探索',
+            login_btn: '登录 / 注册'
         }
     },
     'en': {
@@ -1075,6 +1087,18 @@ export const translations = {
             empty: 'No notifications',
             loading: 'Loading...',
             new_message: 'new messages'
+        },
+        welcome: {
+            title: '👋 Welcome to PixelDesk!',
+            subtitle: 'A pixel-art style virtual office space where work meets fun.',
+            features: {
+                workstation: '💺 Rent Workstation: Own your space and mark your real-time status.',
+                interaction: '🤝 Interaction: Chat with others, share posts, and find like-minded souls.',
+                newspaper: '📰 Newspaper: Get community news, latest updates, and diverse content.',
+            },
+            cta: 'Ready to start your pixel life? Register to unlock all features!',
+            start_btn: 'Start Exploring',
+            login_btn: 'Login / Register'
         }
     }
 }

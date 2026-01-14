@@ -132,6 +132,10 @@ const BillboardUI = dynamic(() => import('@/components/billboard/BillboardUI'), 
   ssr: false
 })
 
+const WelcomeModal = dynamic(() => import('@/components/WelcomeModal'), {
+  ssr: false
+})
+
 export default function Home() {
   // 认证相关状态
   const { user, isLoading, playerExists, setPlayerExists } = useUser()
@@ -151,6 +155,7 @@ export default function Home() {
   const [authPromptMessage, setAuthPromptMessage] = useState('')
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login')
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   const { t, locale } = useTranslation()
 
   // 设置全局登录状态标志
@@ -337,6 +342,12 @@ export default function Home() {
       (window as any).updatePhaserUserData(currentUser);
     }
   }, [currentUser])
+  // 检查首次访问
+  useEffect(() => {
+    if (isFirstTimeVisitor()) {
+      setShowWelcomeModal(true)
+    }
+  }, [])
 
   // 检测移动设备和加载用户数据 - 优化resize处理
   useEffect(() => {
@@ -1332,6 +1343,16 @@ export default function Home() {
         request={postcardRequest}
         onAccept={handleAcceptExchange}
         onReject={handleRejectExchange}
+      />
+
+      {/* 欢迎弹窗 */}
+      <WelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+        onLogin={() => {
+          setAuthModalMode('login')
+          setShowAuthModal(true)
+        }}
       />
     </div>
   )
