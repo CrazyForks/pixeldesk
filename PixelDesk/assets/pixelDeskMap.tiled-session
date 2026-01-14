@@ -7,7 +7,7 @@
     "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
         "": {
-            "scaleInDock": 1,
+            "scaleInDock": 0.25,
             "scaleInEditor": 1
         },
         "#tileset": {
