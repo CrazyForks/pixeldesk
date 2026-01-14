@@ -1027,11 +1027,16 @@ export default function Home() {
       isCollapsed={leftPanelCollapsed}
       onCollapsedChange={setLeftPanelCollapsed}
       onOpenPostcardDesigner={() => setShowPostcardDesigner(true)}
+      isTemporaryPlayer={isTemporaryPlayer}
+      onAuthClick={() => {
+        setAuthPromptMessage('登录或注册账号即可享受完整体验，包括工位绑定、名信片收集等功能！')
+        setShowAuthPrompt(true)
+      }}
     >
       {/* 状态更新组件 */}
       {memoizedPostStatus}
     </LeftPanel>
-  ), [currentUser?.id, currentUser?.name, currentUser?.points, workstationStats, isMobile, isTablet, memoizedPostStatus, leftPanelCollapsed])
+  ), [currentUser?.id, currentUser?.name, currentUser?.points, workstationStats, isMobile, isTablet, memoizedPostStatus, leftPanelCollapsed, isTemporaryPlayer])
 
   // Create memoized right panel content
   const memoizedRightPanel = useMemo(() => (
@@ -1053,7 +1058,7 @@ export default function Home() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-16 h-16 border-4 border-retro-purple border-t-transparent rounded-full "></div>
-          <p className="text-white text-lg">Loading PixelDesk...</p>
+          <p className="text-white text-lg">Loading Tembo PX Workshop...</p>
         </div>
       </div>
     )
@@ -1102,11 +1107,6 @@ export default function Home() {
             await initializePlayerSync()
             setPlayerExists(true)
             setShowCharacterCreation(false)
-          }}
-          onSkip={() => {
-            console.log('跳过角色创建')
-            setShowCharacterCreation(false)
-            setPlayerExists(true) // 跳过后也允许进入游戏
           }}
         />
       </div>
@@ -1294,27 +1294,6 @@ export default function Home() {
               <p className="text-retro-textMuted text-xs text-center">
                 💡 注册完全免费，只需30秒即可完成
               </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 临时玩家状态指示器 */}
-      {isTemporaryPlayer && (
-        <div className="fixed bottom-4 left-4 z-40">
-          <div className="bg-gradient-to-r from-yellow-600/90 to-orange-600/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-yellow-500/30">
-            <div className="flex items-center space-x-2">
-              <span className="text-white text-sm">🎮</span>
-              <span className="text-white text-sm font-medium">体验模式</span>
-              <button
-                onClick={() => {
-                  setAuthPromptMessage('注册账号即可享受完整游戏体验，包括工位绑定、进度保存等功能！')
-                  setShowAuthPrompt(true)
-                }}
-                className="text-yellow-200 hover:text-white text-xs underline "
-              >
-                升级账号
-              </button>
             </div>
           </div>
         </div>

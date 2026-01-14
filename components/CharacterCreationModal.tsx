@@ -9,10 +9,9 @@ interface CharacterCreationModalProps {
   isOpen: boolean
   userName: string
   onComplete: (playerData: any) => void
-  onSkip?: () => void
 }
 
-export default function CharacterCreationModal({ isOpen, userName, onComplete, onSkip }: CharacterCreationModalProps) {
+export default function CharacterCreationModal({ isOpen, userName, onComplete }: CharacterCreationModalProps) {
   const [characters, setCharacters] = useState<Character[]>([])
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -187,17 +186,6 @@ export default function CharacterCreationModal({ isOpen, userName, onComplete, o
             >
               {isLoading ? t.character.creating : t.character.confirm_create}
             </button>
-
-            {onSkip && (
-              <button
-                type="button"
-                onClick={onSkip}
-                disabled={isLoading}
-                className="px-6 py-3 bg-retro-bg-dark border border-retro-border text-retro-text hover:border-retro-purple/50 rounded-lg transition-all disabled:opacity-50"
-              >
-                {t.character.skip}
-              </button>
-            )}
           </div>
         </div>
       </div>

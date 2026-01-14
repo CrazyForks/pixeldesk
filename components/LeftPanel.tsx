@@ -23,6 +23,8 @@ interface LeftPanelProps {
   isTablet?: boolean
   isCollapsed?: boolean
   onCollapsedChange?: (collapsed: boolean) => void
+  isTemporaryPlayer?: boolean
+  onAuthClick?: () => void
 }
 
 export default function LeftPanel({
@@ -33,7 +35,9 @@ export default function LeftPanel({
   isTablet = false,
   isCollapsed: externalIsCollapsed,
   onCollapsedChange,
-  onOpenPostcardDesigner
+  onOpenPostcardDesigner,
+  isTemporaryPlayer = false,
+  onAuthClick
 }: LeftPanelProps) {
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
@@ -155,6 +159,32 @@ export default function LeftPanel({
 
       {/* 可滚动内容区域 */}
       <div className="flex-1 overflow-y-auto">
+        {/* 临时玩家引导 - 体验模式 */}
+        {isTemporaryPlayer && (
+          <div className="p-3 border-b border-yellow-500/20 bg-gradient-to-br from-yellow-600/10 to-orange-600/10">
+            <button
+              onClick={onAuthClick}
+              className="w-full group relative overflow-hidden bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 p-3 rounded-xl shadow-lg shadow-orange-950/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-xl filter drop-shadow-md group-hover:animate-bounce">🎮</span>
+                <div className="text-left">
+                  <div className="text-white text-sm font-bold leading-tight flex items-center gap-1.5">
+                    体验模式
+                    <span className="text-[10px] bg-white/20 px-1 rounded uppercase tracking-widest font-normal border border-white/10">Trial</span>
+                  </div>
+                  <div className="text-yellow-100 text-[11px] font-medium opacity-90 group-hover:opacity-100 transition-opacity">
+                    登录与注册以保存进度
+                  </div>
+                </div>
+                <svg className="w-4 h-4 text-white/50 group-hover:text-white transition-colors ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* 用户资料卡片 */}
         {currentUser && (
           <div className="p-3 border-b border-gray-800">
@@ -310,7 +340,17 @@ export default function LeftPanel({
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
             <span className="uppercase">{t.common.system_online}</span>
           </div>
-          <span>{t.common.version} 2.1.0</span>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/about"
+              target="_blank"
+              className="hover:text-gray-400 hover:underline transition-all"
+            >
+              {t.common.about}
+            </Link>
+            <span className="text-gray-800">|</span>
+            <span>{t.common.version} 2.1.0</span>
+          </div>
         </div>
       </div>
 

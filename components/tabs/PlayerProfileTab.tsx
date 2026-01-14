@@ -234,25 +234,27 @@ export default function PlayerProfileTab({
         <div className="absolute inset-0 bg-gradient-to-br from-retro-purple/8 via-retro-blue/10 to-retro-pink/8"></div>
 
         <div className="relative z-10 space-y-6">
-          {/* 像素化等待图标 */}
+          {/* 像素化等待图标 - 增加雷达扫描动效 */}
           <div className="relative">
-            <div className={`${iconSize} bg-gradient-to-br from-retro-purple/30 via-retro-pink/40 to-retro-blue/30 rounded-xl flex items-center justify-center mx-auto shadow-xl border-2 border-retro-border/50`}>
-              <div className="absolute inset-1 bg-gradient-to-br from-white/10 to-white/5 rounded-lg"></div>
-              <svg className={`${iconInnerSize} text-white drop-shadow-lg relative z-10`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="absolute inset-0 bg-retro-purple/30 rounded-xl animate-ping opacity-20 scale-150"></div>
+            <div className="absolute inset-0 bg-retro-blue/20 rounded-xl animate-pulse delay-75 opacity-20 scale-125"></div>
+            <div className={`${iconSize} relative bg-gradient-to-br from-retro-purple/40 via-retro-pink/40 to-retro-blue/40 rounded-xl flex items-center justify-center mx-auto shadow-2xl border-2 border-white/20 overflow-hidden group`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+              {/* 扫过光线 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+              <svg className={`${iconInnerSize} text-white drop-shadow-lg relative z-10 transition-transform group-hover:scale-110`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
-            {/* 静态装饰环 - 移除动画以节省CPU */}
-            <div className="absolute inset-0 border-2 border-retro-purple/30 rounded-xl opacity-50"></div>
           </div>
 
-          {/* 标题文本 */}
+          {/* 标题文本 - 使用翻译 */}
           <div className="text-center space-y-3">
-            <h3 className={`text-white font-bold mb-2 font-pixel tracking-wider drop-shadow-lg ${titleSize}`}>
-              WAITING FOR INTERACTION
+            <h3 className={`text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 font-bold mb-2 font-pixel tracking-widest drop-shadow-xl ${titleSize}`}>
+              {t.social.waiting_interaction || "WAITING FOR INTERACTION"}
             </h3>
-            <p className={`text-retro-textMuted leading-relaxed font-retro ${textSize}`}>
-              {isMobile ? "Get close to other players\nto view their posts" : "Move near other players to\nview their social posts"}
+            <p className={`text-white/40 leading-relaxed font-retro italic ${textSize} max-w-[240px] mx-auto`}>
+              {t.social.interaction_hint || (isMobile ? "Get close to other players\nto view their posts" : "Move near other players to\nview their social posts")}
             </p>
           </div>
 
@@ -263,12 +265,11 @@ export default function PlayerProfileTab({
             <div className="w-3 h-3 bg-gradient-to-br from-retro-blue to-retro-cyan rounded-sm shadow-lg"></div>
           </div>
 
-          {/* 操作提示 */}
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-retro-bg-dark/50 rounded-lg border border-retro-border/30 backdrop-blur-sm">
-              <div className="w-2 h-2 bg-retro-cyan rounded-full"></div>
-              <span className="text-xs text-retro-textMuted font-retro tracking-wide">
-                COLLISION DETECTION ACTIVE
+            <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner transition-all hover:bg-white/10">
+              <div className="w-2.5 h-2.5 bg-retro-cyan rounded-full animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+              <span className="text-[10px] text-white/60 font-pixel uppercase tracking-[0.2em]">
+                {t.social.collision_active || "COLLISION DETECTION ACTIVE"}
               </span>
             </div>
           </div>
@@ -497,12 +498,11 @@ export default function PlayerProfileTab({
 
   return (
     <div className={containerClasses}>
-      {/* 用户信息 + 广告卡片 - 合并布局,支持展开/压缩 */}
       {isLoadingAd ? (
         <div className="flex-shrink-0 p-4">
-          <div className="flex items-center justify-center gap-3 py-8">
-            <div className="w-5 h-5 border-3 border-retro-cyan/40 border-t-retro-cyan rounded-sm animate-spin"></div>
-            <span className="text-sm font-pixel text-retro-cyan tracking-wider">LOADING...</span>
+          <div className="flex items-center justify-center gap-4 py-10 bg-white/5 rounded-2xl border border-white/5 m-2 animate-pulse">
+            <div className="w-6 h-6 border-2 border-retro-cyan/40 border-t-retro-cyan rounded-full animate-spin"></div>
+            <span className="text-[10px] font-pixel text-retro-cyan tracking-[0.3em] uppercase">{t.social.loading || "LOADING"}...</span>
           </div>
         </div>
       ) : (
@@ -534,14 +534,18 @@ export default function PlayerProfileTab({
 
         {/* 加载状态 - 像素化加载器 */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-4">
-            <div className="relative">
+          <div className="flex flex-col items-center justify-center h-full space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-retro-cyan/20 blur-xl rounded-full scale-150 animate-pulse"></div>
               <LoadingSpinner />
-              <div className="absolute inset-0 border-2 border-retro-cyan/30 rounded-full opacity-30"></div>
             </div>
-            <div className="text-center space-y-2">
-              <div className="text-white font-bold font-pixel text-sm tracking-wide">LOADING</div>
-              <div className="text-retro-textMuted text-xs font-retro">Fetching player posts...</div>
+            <div className="text-center space-y-3 relative">
+              <div className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40 font-bold font-pixel text-[10px] tracking-[0.4em] uppercase">
+                {t.social.loading || "LOADING"}
+              </div>
+              <div className="text-white/20 text-[10px] font-pixel tracking-widest uppercase">
+                {t.social.loading_player_posts || "Fetching player posts..."}
+              </div>
             </div>
           </div>
         ) : posts.length === 0 ? (
@@ -559,12 +563,12 @@ export default function PlayerProfileTab({
             </div>
 
             {/* 空状态文本 */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-bold text-white font-pixel tracking-wider drop-shadow-sm">
-                NO POSTS YET
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white font-pixel tracking-widest drop-shadow-sm uppercase">
+                {t.social.no_posts_yet || "NO POSTS YET"}
               </h3>
-              <p className="text-retro-textMuted text-sm font-retro leading-relaxed max-w-xs">
-                {collisionPlayer.name} hasn't shared any posts yet. Check back later!
+              <p className="text-white/40 text-xs font-retro leading-relaxed max-w-[240px] mx-auto italic">
+                {t.social.no_posts_hint?.replace('{name}', collisionPlayer.name) || (collisionPlayer.name + " hasn't shared any posts yet. Check back later!")}
               </p>
             </div>
 
@@ -596,18 +600,17 @@ export default function PlayerProfileTab({
                 <button
                   onClick={handleLoadMore}
                   disabled={isRefreshing}
-                  className="group relative overflow-hidden bg-gradient-to-r from-retro-blue/20 to-retro-cyan/20 hover:from-retro-blue/30 hover:to-retro-cyan/30 text-white font-bold py-3 px-8 rounded-xl border-2 border-retro-blue/30 hover:border-retro-cyan/50  disabled:opacity-50 shadow-lg hover:shadow-xl backdrop-blur-sm"
+                  className="group/loadmore relative overflow-hidden bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold py-3.5 px-10 rounded-2xl border border-white/10 hover:border-retro-cyan/30 transition-all duration-300 active:scale-95 disabled:opacity-50 shadow-xl shadow-black/40"
                 >
-                  {/* 按钮装饰 */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100 "></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-retro-cyan/0 via-retro-cyan/5 to-retro-cyan/0 -translate-x-full group-hover/loadmore:translate-x-full transition-transform duration-1000"></div>
 
                   {/* 按钮内容 */}
-                  <div className="relative flex items-center gap-3">
-                    <div className="w-5 h-5 bg-white/20 rounded flex items-center justify-center">
+                  <div className="relative flex items-center gap-4">
+                    <div className={`w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center transition-transform duration-500 group-hover/loadmore:rotate-12 ${isRefreshing ? 'animate-spin' : ''}`}>
                       <span className="text-xs">{isRefreshing ? '⏳' : '⬇️'}</span>
                     </div>
-                    <span className="font-pixel text-sm tracking-wide">
-                      {isRefreshing ? 'LOADING...' : 'LOAD MORE'}
+                    <span className="font-pixel text-[10px] tracking-[0.2em] uppercase">
+                      {isRefreshing ? `${t.social.loading || 'LOADING'}...` : (t.social.load_more || 'LOAD MORE')}
                     </span>
                   </div>
                 </button>

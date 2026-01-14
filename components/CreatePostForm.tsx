@@ -95,9 +95,9 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
     : "p-4"
 
   return (
-    <div className={`${formClasses} relative`}>
-      <div className="relative bg-gradient-to-br from-retro-bg-dark/50 to-retro-bg-darker/50 backdrop-blur-sm border border-retro-border/50 rounded-lg p-3 shadow-lg">
-        <form onSubmit={handleSubmit} className="space-y-3">
+    <div className={`${formClasses} relative group/form`}>
+      <div className="relative bg-gradient-to-br from-retro-bg-dark/60 via-retro-bg-dark/40 to-retro-bg-darker/60 backdrop-blur-xl border border-white/5 rounded-2xl p-4 shadow-2xl shadow-black/40 transition-all duration-500 group-hover/form:border-white/10 group-hover/form:shadow-purple-500/5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* 内容输入 - 紧凑文本区域 */}
           <div className="relative group">
             <textarea
@@ -106,8 +106,8 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
               onChange={(e) => setContent(e.target.value)}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
-              className="relative w-full bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border border-retro-border focus:border-retro-purple rounded-lg px-3 py-2 text-white placeholder-retro-textMuted focus:outline-none backdrop-blur-md  font-retro text-sm resize-none focus:shadow-lg focus:shadow-retro-purple/20"
-              rows={isMobile ? 2 : 3}
+              className="relative w-full bg-black/40 border border-white/10 focus:border-retro-purple/50 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none backdrop-blur-md font-retro text-sm resize-none transition-all duration-300 focus:shadow-[0_0_20px_rgba(168,85,247,0.15)] focus:bg-black/60"
+              rows={isMobile ? 3 : 4}
               maxLength={2000}
               disabled={isSubmitting}
               data-input-container="true"
@@ -115,9 +115,9 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
 
             {/* 字符计数和错误显示 */}
             <div className="flex justify-between items-center mt-2 px-1">
-              <span className="text-xs text-retro-textMuted font-pixel">{content.length}/2000</span>
+              <span className="text-[10px] text-white/40 font-pixel tracking-tighter">{content.length} <span className="opacity-50">/ 2000</span></span>
               {error && (
-                <span className="text-retro-red text-xs font-pixel">{error}</span>
+                <span className="bg-red-500/10 text-retro-red text-[10px] font-pixel border border-red-500/20 px-2 py-0.5 rounded-full animate-shake">{error}</span>
               )}
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
                     handleAddImageUrl()
                   }
                 }}
-                className="flex-1 bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 border border-retro-border focus:border-retro-cyan rounded-lg px-3 py-1.5 text-white placeholder-retro-textMuted focus:outline-none backdrop-blur-md font-retro text-xs"
+                className="flex-1 bg-black/40 border border-white/10 focus:border-retro-cyan/50 rounded-xl px-4 py-2 text-white placeholder-white/30 focus:outline-none backdrop-blur-md font-retro text-xs transition-all duration-300"
                 disabled={isSubmitting}
                 data-input-container="true"
               />
@@ -146,7 +146,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
                 type="button"
                 onClick={handleAddImageUrl}
                 disabled={!imageUrlInput.trim() || isSubmitting}
-                className="bg-gradient-to-r from-retro-cyan/80 to-retro-blue/80 hover:from-retro-cyan hover:to-retro-blue text-white font-medium py-1.5 px-3 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm text-xs font-pixel uppercase"
+                className="bg-gradient-to-r from-retro-cyan/40 to-retro-blue/40 hover:from-retro-cyan/60 hover:to-retro-blue/60 text-white font-medium py-2 px-4 rounded-xl border border-white/10 hover:border-white/20 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md text-[10px] font-pixel uppercase tracking-widest whitespace-nowrap"
               >
                 📷 {t.social.add}
               </button>
@@ -200,29 +200,30 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
                 setError('')
               }}
               disabled={isSubmitting}
-              className="relative group overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-1.5 px-3 rounded-lg border border-retro-border hover:border-retro-yellow/60  shadow-sm hover:shadow-md backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 uppercase"
+              className="group relative overflow-hidden bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-medium py-2 px-5 rounded-xl border border-white/10 hover:border-retro-yellow/30 shadow-sm transition-all duration-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <div className="flex items-center gap-1">
-                <span className="text-xs">🧹</span>
-                <span className="font-pixel text-xs">{t.social.clear}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm transition-transform group-hover:rotate-12">🧹</span>
+                <span className="font-pixel text-[10px] uppercase tracking-wider">{t.social.clear}</span>
               </div>
             </button>
 
             <button
               type="submit"
               disabled={isSubmitting || !content.trim()}
-              className="relative group overflow-hidden bg-gradient-to-r from-retro-purple to-retro-blue hover:from-retro-blue hover:to-retro-cyan text-white font-bold py-1.5 px-4 rounded-lg border border-white/20 hover:border-white/40  shadow-sm hover:shadow-lg backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 "
+              className="relative group overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue text-white font-bold py-2 px-6 rounded-xl border border-white/20 hover:border-white/40 shadow-xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <div className="flex items-center gap-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative flex items-center gap-2">
                 {isSubmitting ? (
                   <>
-                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full "></div>
-                    <span className="font-pixel text-xs uppercase">{t.social.publish}...</span>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="font-pixel text-[10px] uppercase tracking-widest">{t.social.publish}...</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-xs">🚀</span>
-                    <span className="font-pixel text-xs uppercase">{t.social.publish}</span>
+                    <span className="text-sm transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">🚀</span>
+                    <span className="font-pixel text-[10px] uppercase tracking-widest">{t.social.publish}</span>
                   </>
                 )}
               </div>

@@ -6,10 +6,10 @@ async function main() {
   console.log('开始初始化数据库...')
 
   // 清理现有数据（可选）
-  await prisma.userWorkstation.deleteMany()
-  await prisma.workstation.deleteMany()
+  await prisma.user_workstations.deleteMany()
+  await prisma.workstations.deleteMany()
   await prisma.post_nodes.deleteMany()
-  await prisma.user.deleteMany()
+  await prisma.users.deleteMany()
 
   // 创建示例工位数据 - 使用与 Tiled 地图匹配的 ID
   const workstations = [
@@ -31,7 +31,7 @@ async function main() {
   ]
 
   for (const ws of workstations) {
-    await prisma.workstation.create({
+    await prisma.workstations.create({
       data: ws
     })
   }
@@ -63,9 +63,9 @@ async function main() {
       x: 1200,
       y: 600,
       isFixed: true,
-      personality: 'Warm and professional front desk receptionist for PixelDesk.',
+      personality: 'Warm and professional front desk receptionist for Tembo PX Workshop.',
       knowledge: 'Can help with workstation binding and general office navigation.',
-      greeting: 'Welcome to PixelDesk! I am Sarah. How can I assist you today?'
+      greeting: 'Welcome to Tembo PX Workshop! I am Sarah. How can I assist you today?'
     },
     {
       id: 'npc_arthur',

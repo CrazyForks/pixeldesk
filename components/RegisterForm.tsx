@@ -104,7 +104,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
           <div className="w-16 h-16 bg-gradient-to-r from-retro-purple to-retro-pink rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">✨</span>
           </div>
-          <h2 className="text-white text-xl font-bold">{t.auth.join_us.replace('{appName}', config?.app_name || 'PixelDesk')}</h2>
+          <h2 className="text-white text-xl font-bold">{t.auth.join_us.replace('{appName}', config?.app_name || 'Tembo PX Workshop')}</h2>
           <p className="text-retro-textMuted text-sm mt-1">{t.auth.registering}</p>
         </div>
 
