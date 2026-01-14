@@ -297,6 +297,10 @@ export const translations = {
             no_posts_yet: '暂无动态',
             no_posts_hint: '{name} 还没有分享过任何动态。',
             loading_player_posts: '正在获取玩家动态...',
+            post_detail: '动态详情',
+            author: '作者',
+            reply: '回复',
+            about: '关于',
         },
         studio: {
             title: '创作工作室',
@@ -847,6 +851,10 @@ export const translations = {
             no_posts_yet: 'NO POSTS YET',
             no_posts_hint: '{name} hasn\'t shared any posts yet.',
             loading_player_posts: 'Fetching player posts...',
+            post_detail: 'Post Detail',
+            author: 'Author',
+            reply: 'Reply',
+            about: 'About',
         },
         studio: {
             title: 'Studio',

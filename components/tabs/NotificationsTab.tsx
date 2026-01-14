@@ -99,12 +99,7 @@ export default function NotificationsTab({
 
   // 处理通知点击
   const handleNotificationClick = async (notification: Notification) => {
-    // 如果未读，标记为已读
-    if (!notification.isRead) {
-      await markAsRead(notification.id)
-    }
-
-    // If it's a postcard exchange request, open the modal
+    // 如果是名信片交换请求，打开模态框
     if (notification.type === NotificationType.POSTCARD_EXCHANGE_REQUEST && onOpenPostcardRequest) {
       onOpenPostcardRequest({
         exchangeId: notification.relatedExchangeId,
@@ -112,13 +107,16 @@ export default function NotificationsTab({
         senderName: notification.relatedUser?.name || 'Unknown',
         senderAvatar: notification.relatedUser?.avatar
       })
-      return // Don't mark as read immediately, let the user decide in modal (or mark read after modal opens?)
-      // Actually, user clicking it likely means they saw it. But let's keep it unread until they accept/reject?
-      // Or just mark read. The existing logic marks read on click. 
-      // User said "clicked message, buttons disappeared". If we open modal, we can mark read. 
+      // 注意：交换请求我们不在这里标记已读，让用户在处理完（同意/拒绝）后再标记，或者保持未读以提醒处理
+      return
     }
 
-    // If it's a postcard exchange acceptance, go to collection
+    // 其他类型的通知，点击即标记为已读
+    if (!notification.isRead) {
+      await markAsRead(notification.id)
+    }
+
+    // 如果是名信片交换接受，跳转到集邮册
     if (notification.type === NotificationType.POSTCARD_EXCHANGE_ACCEPT) {
       router.push('/collection')
       return
@@ -381,6 +379,24 @@ export default function NotificationsTab({
                               <p className="text-xs text-retro-textMuted line-clamp-2">
                                 {notification.relatedPost.content}
                               </p>
+                            </div>
+                          )}
+
+                          {/* 名信片交换操作按钮 */}
+                          {notification.type === NotificationType.POSTCARD_EXCHANGE_REQUEST && (
+                            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-800/50">
+                              <button
+                                onClick={(e) => handleExchangeAction(e, notification, 'ACCEPT')}
+                                className="flex-1 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold tracking-tight rounded transition-all flex items-center justify-center gap-1"
+                              >
+                                <span>{t.common.accept || 'ACCEPT'}</span>
+                              </button>
+                              <button
+                                onClick={(e) => handleExchangeAction(e, notification, 'REJECT')}
+                                className="flex-1 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 text-[10px] font-bold tracking-tight rounded transition-all flex items-center justify-center gap-1"
+                              >
+                                <span>{t.common.reject || 'REJECT'}</span>
+                              </button>
                             </div>
                           )}
 

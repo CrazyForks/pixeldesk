@@ -6,6 +6,8 @@ import UserAvatar from './UserAvatar'
 import UserStatusIndicator from './UserStatusIndicator'
 import NotificationsTab from './tabs/NotificationsTab'
 import BrandHeader from './BrandHeader'
+import { useSocialNotifications } from '@/lib/hooks/useSocialNotifications'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface InfoPanelProps {
   currentUser?: any
@@ -25,7 +27,15 @@ export default function InfoPanelWithBrand({
   isTablet = false
 }: InfoPanelProps) {
   const router = useRouter()
+  const { t } = useTranslation()
   const [showNotifications, setShowNotifications] = useState(false)
+  const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
+
+  const notificationState = useSocialNotifications({
+    userId: currentUser?.id,
+    autoFetch: showNotifications && !!currentUser?.id,
+    unreadOnly: notificationFilter === 'unread'
+  })
 
   const containerPadding = isMobile ? "p-3" : "p-6"
   const titleSize = isMobile ? "text-base" : "text-xl"
@@ -104,6 +114,9 @@ export default function InfoPanelWithBrand({
             isActive={true}
             isMobile={isMobile}
             isTablet={isTablet}
+            notificationState={notificationState}
+            filter={notificationFilter}
+            onFilterChange={setNotificationFilter}
           />
         </div>
       )}
