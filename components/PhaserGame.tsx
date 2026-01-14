@@ -145,8 +145,10 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
     }
 
     window.addEventListener('resize', debouncedHandleResize)
+    window.addEventListener('orientationchange', handleResize)
     return () => {
       window.removeEventListener('resize', debouncedHandleResize)
+      window.removeEventListener('orientationchange', handleResize)
       clearTimeout(resizeTimeout)
     }
   }, [])
@@ -154,7 +156,7 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
   return (
     <div
       ref={gameContainerRef}
-      className="w-full h-full"
+      className="w-full h-full min-h-0 relative touch-none select-none bg-black"
     />
   )
 }

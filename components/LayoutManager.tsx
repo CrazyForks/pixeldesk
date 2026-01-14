@@ -332,14 +332,14 @@ export default function LayoutManager({
   const renderMobileLayout = useCallback(() => {
     // Mobile layout: Tabbed navigation
     return (
-      <div className={`flex flex-col h-screen min-h-screen h-[100dvh] bg-gray-950 ${layoutClasses.container}`}>
+      <div className={`fixed inset-0 flex flex-col bg-gray-950 select-none ${layoutClasses.container}`}>
         {/* Main Content Area */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden min-h-0">
           {/* World Tab (Game) */}
           <div
             className={`absolute inset-0 transition-opacity duration-300 ${activeTab === 'world' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
           >
-            <div className="w-full h-full bg-gray-900 overflow-hidden relative">
+            <div className="w-full h-full bg-gray-900 overflow-hidden relative touch-none">
               {gameComponent}
             </div>
           </div>
@@ -348,8 +348,8 @@ export default function LayoutManager({
           <div
             className={`absolute inset-0 transition-transform duration-300 transform bg-gray-950 ${activeTab === 'workspace' ? 'translate-x-0 z-10' : '-translate-x-full z-0 pointer-events-none'}`}
           >
-            <div className="w-full h-full p-2 overflow-y-auto">
-              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm h-full overflow-hidden">
+            <div className="w-full h-full p-2 overflow-y-auto overscroll-contain">
+              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm min-h-full overflow-hidden">
                 {leftPanel}
               </div>
             </div>
@@ -359,8 +359,8 @@ export default function LayoutManager({
           <div
             className={`absolute inset-0 transition-transform duration-300 transform bg-gray-950 ${activeTab === 'social' ? 'translate-x-0 z-10' : 'translate-x-full z-0 pointer-events-none'}`}
           >
-            <div className="w-full h-full p-2 overflow-y-auto">
-              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm h-full overflow-hidden">
+            <div className="w-full h-full p-2 overflow-y-auto overscroll-contain">
+              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm min-h-full overflow-hidden">
                 {rightPanel}
               </div>
             </div>
@@ -368,7 +368,7 @@ export default function LayoutManager({
         </div>
 
         {/* Bottom Navigation Bar */}
-        <div className="h-16 bg-gray-900/95 border-t border-gray-800 backdrop-blur-md flex items-center justify-around px-4 pb-safe">
+        <div className="h-16 bg-gray-900/95 border-t border-gray-800 backdrop-blur-md flex items-center justify-around px-4 pb-safe flex-shrink-0">
           <button
             onClick={() => setActiveTab('workspace')}
             className={`flex flex-col items-center gap-1 flex-1 transition-all ${activeTab === 'workspace' ? 'text-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
