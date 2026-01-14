@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, ReactNode, useCallback, useMemo } from 'react'
+import { EventBus } from '@/lib/eventBus'
 
 /**
  * Props for the LayoutManager component
@@ -288,6 +289,24 @@ export default function LayoutManager({
       clearTimeout(resizeTimeout)
     }
   }, []) // Empty dependency array to run only once
+
+  // Listen for collision events to switch tabs on mobile
+  useEffect(() => {
+    if (screenSize.deviceType !== 'mobile') return
+
+    const handleInteraction = () => {
+      console.log('🎯 [LayoutManager] Interaction detected on mobile, switching to social tab')
+      setActiveTab('social')
+    }
+
+    EventBus.on('player:collision:start', handleInteraction)
+    EventBus.on('player:click', handleInteraction)
+
+    return () => {
+      EventBus.off('player:collision:start', handleInteraction)
+      EventBus.off('player:click', handleInteraction)
+    }
+  }, [screenSize.deviceType])
 
   // Memoized layout configuration based on current screen size and panel states
   const currentLayoutConfig = useMemo(() => {

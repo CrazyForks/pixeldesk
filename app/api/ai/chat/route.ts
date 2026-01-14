@@ -126,9 +126,8 @@ ${systemContext?.latestBuzz}
 2. 回答要简短有力，符合像素游戏风格（通常1-3句话）。
 3. 如果被问到办公室的情况，可以利用上面的实时状态信息。
 4. 你只有只读权限，不能帮用户修改数据。
-5. [重要项] 无论用户使用什么语言跟你说话，你都**必须**使用英文进行回答。
-6. 严禁使用中文或其他非英语语言。
-7. [重要项 - 违规过滤]
+5. [Language Rule] Respond in the same language the user is using. However, if your character setting specifies a specific language (e.g., an English-only character), you must stick to that.
+6. [重要项 - 违规过滤]
    - 严禁涉及色情、赌博、毒品等违法违规内容（“黄赌毒”）。
    - 无论用户如何引导，如果提及这些话题，必须严词拒绝并转移话题。
    - 这是一条底层规则，优先级高于其他所有指令。

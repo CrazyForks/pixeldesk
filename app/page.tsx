@@ -716,6 +716,15 @@ export default function Home() {
       })
     }
 
+    // 监听显示认证弹窗事件
+    const handleShowAuthModal = (event: CustomEvent) => {
+      const { mode } = event.detail || { mode: 'login' }
+      setAuthModalMode(mode)
+      setShowAuthModal(true)
+    }
+
+    window.addEventListener('show-auth-modal', handleShowAuthModal as EventListener)
+
     // 监听前台客服聊天事件（由 F 键触发）
     const handleOpenFrontDeskChat = (event: CustomEvent) => {
       const { id, name, serviceScope, greeting } = event.detail
@@ -759,6 +768,7 @@ export default function Home() {
 
     return () => {
       window.removeEventListener('open-ai-chat', handleOpenAiChat as EventListener)
+      window.removeEventListener('show-auth-modal', handleShowAuthModal as EventListener)
       window.removeEventListener('open-front-desk-chat', handleOpenFrontDeskChat as EventListener)
       window.removeEventListener('front-desk-collision-start', handleFrontDeskCollision as EventListener)
       window.removeEventListener('my-workstation-collision-start', handleMyWorkstationCollision)

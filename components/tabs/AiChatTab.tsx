@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { StatusData } from '@/lib/eventBus'
 import UserAvatar from '@/components/UserAvatar'
+import { useUser } from '@/contexts/UserContext'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -23,6 +24,7 @@ export default function AiChatTab({
     npcData,
     isActive = false
 }: AiChatTabProps) {
+    const { user } = useUser()
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -294,29 +296,49 @@ export default function AiChatTab({
 
             {/* Input Area */}
             <div className="p-3 bg-gray-900/50 border-t border-gray-800">
-                <div className="relative flex items-center">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onFocus={handleFocus}
-                        onBlur={handleBlur}
-                        placeholder="Say something to AI..."
-                        disabled={isLoading}
-                        className="w-full bg-gray-800/50 border border-gray-700 rounded-lg pl-3 pr-10 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-colors disabled:opacity-50"
-                    />
-                    <button
-                        onClick={sendMessage}
-                        disabled={isLoading || !input.trim()}
-                        className="absolute right-1.5 p-1.5 text-cyan-500 hover:text-cyan-400 disabled:text-gray-600 transition-colors"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                    </button>
-                </div>
+                {!user ? (
+                    <div className="flex flex-col items-center justify-center py-2 space-y-2">
+                        <p className="text-xs text-retro-textMuted font-retro">
+                            登录后即可与 NPC 对话
+                        </p>
+                        <button
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('show-auth-modal', {
+                                        detail: { mode: 'login' }
+                                    }))
+                                }
+                            }}
+                            className="px-4 py-1.5 bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 rounded-lg text-xs font-pixel hover:bg-cyan-600/30 transition-colors"
+                        >
+                            去登录 / 注册
+                        </button>
+                    </div>
+                ) : (
+                    <div className="relative flex items-center">
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            placeholder="Say something to AI..."
+                            disabled={isLoading}
+                            className="w-full bg-gray-800/50 border border-gray-700 rounded-lg pl-3 pr-10 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-colors disabled:opacity-50"
+                        />
+                        <button
+                            onClick={sendMessage}
+                            disabled={isLoading || !input.trim()}
+                            className="absolute right-1.5 p-1.5 text-cyan-500 hover:text-cyan-400 disabled:text-gray-600 transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )

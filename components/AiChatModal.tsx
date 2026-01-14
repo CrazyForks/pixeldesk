@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { useUser } from '@/contexts/UserContext'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -24,6 +25,7 @@ export default function AiChatModal({
     npcName,
     greeting
 }: AiChatModalProps) {
+    const { user } = useUser()
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -312,29 +314,49 @@ export default function AiChatModal({
 
                 {/* Input */}
                 <div className="p-4 border-t border-gray-800">
-                    <div className="flex items-center gap-2">
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onFocus={handleFocus}
-                            onBlur={handleBlur}
-                            placeholder={t.ai.placeholder}
-                            disabled={isLoading}
-                            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
-                        />
-                        <button
-                            onClick={sendMessage}
-                            disabled={isLoading || !input.trim()}
-                            className="p-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
-                        >
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                        </button>
-                    </div>
+                    {!user ? (
+                        <div className="flex flex-col items-center justify-center py-2 space-y-3">
+                            <p className="text-sm text-gray-400">
+                                登录后即可与 NPC 对话
+                            </p>
+                            <button
+                                onClick={() => {
+                                    if (typeof window !== 'undefined') {
+                                        window.dispatchEvent(new CustomEvent('show-auth-modal', {
+                                            detail: { mode: 'login' }
+                                        }))
+                                    }
+                                }}
+                                className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                            >
+                                去登录 / 注册
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onFocus={handleFocus}
+                                onBlur={handleBlur}
+                                placeholder={t.ai.placeholder}
+                                disabled={isLoading}
+                                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
+                            />
+                            <button
+                                onClick={sendMessage}
+                                disabled={isLoading || !input.trim()}
+                                className="p-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
+                            >
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
