@@ -323,7 +323,7 @@ export default function LayoutManager({
   const renderMobileLayout = useCallback(() => {
     // Mobile layout: Tabbed navigation
     return (
-      <div className={`flex flex-col h-screen bg-gray-950 ${layoutClasses.container}`}>
+      <div className={`flex flex-col h-full-dvh bg-gray-950 ${layoutClasses.container}`}>
         {/* Main Content Area */}
         <div className="flex-1 relative overflow-hidden">
           {/* World Tab (Game) */}

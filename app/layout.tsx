@@ -15,8 +15,16 @@ const vt323 = VT323({
   variable: '--font-retro'
 })
 
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import { prisma } from '@/lib/db'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
