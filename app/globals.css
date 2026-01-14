@@ -953,3 +953,21 @@ canvas {
 .animate-bounce-subtle {
   animation: bounce-subtle 2s infinite ease-in-out;
 }
+
+/* 移动端安全区域与高度适配 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.h-full-dvh {
+  height: 100vh;
+  /* Fallback */
+  height: 100dvh;
+}
+
+/* 针对现代浏览器的高度适配 */
+@supports (height: 100dvh) {
+  .h-screen {
+    height: 100dvh !important;
+  }
+}

@@ -17,10 +17,11 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
   const gameContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    console.log('🎮 [PhaserGame] Component mounted, searching for ref:', !!gameContainerRef.current)
     if (typeof window !== 'undefined' && !gameRef.current) {
       // 自定义 Phaser 配置 - 修复WebGL framebuffer错误，改为Canvas渲染器
       const config = {
-        type: Phaser.AUTO, // 修复: 从WEBGL改为CANVAS，避免framebuffer错误
+        type: Phaser.CANVAS, // 修复: 明确设为 CANVAS，避免 WebGL framebuffer 错误
         title: '象素工坊 Social',
         description: '社交办公游戏',
         parent: gameContainerRef.current,
@@ -34,8 +35,8 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
-          width: gameContainerRef.current?.clientWidth || 800,
-          height: gameContainerRef.current?.clientHeight || 600
+          width: gameContainerRef.current?.getBoundingClientRect().width || 800,
+          height: gameContainerRef.current?.getBoundingClientRect().height || 600
         },
         physics: {
           default: "arcade",
@@ -129,9 +130,10 @@ export default function PhaserGame({ onPlayerCollision, onWorkstationBinding, on
     let resizeTimeout: NodeJS.Timeout
 
     const handleResize = () => {
+      console.log('🎮 [PhaserGame] Resize event triggered')
       if (gameRef.current && gameContainerRef.current) {
-        const width = gameContainerRef.current.clientWidth
-        const height = gameContainerRef.current.clientHeight
+        const { width, height } = gameContainerRef.current.getBoundingClientRect()
+        console.log(`🎮 [PhaserGame] Resizing to: ${width}x${height}`)
         gameRef.current.scale.resize(width, height)
       }
     }
