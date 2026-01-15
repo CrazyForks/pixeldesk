@@ -1,143 +1,191 @@
-// 禁用Redis功能，避免兼容性问题
-console.log('Redis功能已禁用，使用内存缓存');
+import { createClient } from 'redis';
 
+// Redis connection status
 let redisConnected = false;
+let redisClient: any = null;
 
-// Memory cache fallback when Redis is disabled
+// Memory cache fallback when Redis is unavailable
 const memoryCache = new Map<string, { value: any, expiresAt: number | null }>();
 
-// 模拟Redis客户端
-const redisClient = {
-  connect: async () => { throw new Error('Redis已禁用'); },
-  set: async (key: string, value: string) => {
-    memoryCache.set(key, { value, expiresAt: null });
-    return 'OK';
-  },
-  get: async (key: string) => {
-    const item = memoryCache.get(key);
-    if (!item) return null;
-    if (item.expiresAt && item.expiresAt < Date.now()) {
-      memoryCache.delete(key);
-      return null;
+// Try to initialize Redis client
+const redisUrl = process.env.REDIS_URL;
+
+if (redisUrl) {
+  try {
+    redisClient = createClient({
+      url: redisUrl,
+      socket: {
+        reconnectStrategy: (retries) => {
+          if (retries > 5) {
+            console.warn('❌ [Redis] Reached maximum reconnect retries. Falling back to memory cache.');
+            redisConnected = false;
+            return false; // stop retrying
+          }
+          return Math.min(retries * 100, 3000);
+        }
+      }
+    });
+
+    redisClient.on('error', (err: any) => {
+      if (!redisConnected) {
+        // Only log serious errors if we weren't already aware it's down
+        console.error('❌ [Redis] Connection Error:', err.message);
+      }
+      redisConnected = false;
+    });
+
+    redisClient.on('connect', () => {
+      console.log('🚀 [Redis] Connecting...');
+    });
+
+    redisClient.on('ready', () => {
+      console.log('✅ [Redis] Connected and ready');
+      redisConnected = true;
+    });
+
+    // Initial connection attempt
+    redisClient.connect().catch((err: any) => {
+      console.warn('⚠️ [Redis] Initial connection failed. Using memory cache fallback.');
+      redisConnected = false;
+    });
+  } catch (error) {
+    console.error('❌ [Redis] Failed to initialize client:', error);
+  }
+} else {
+  console.warn('⚠️ [Redis] REDIS_URL not found in environment. Using memory cache.');
+}
+
+// Internal wrapper to handle fallback logic
+const execute = async <T>(
+  redisOp: (client: any) => Promise<T>,
+  memoryOp: () => T | Promise<T>
+): Promise<T> => {
+  if (redisConnected && redisClient) {
+    try {
+      return await redisOp(redisClient);
+    } catch (error) {
+      console.warn('⚠️ [Redis] Operation failed, falling back to memory:', error);
+      redisConnected = false;
+      return await memoryOp();
     }
-    return item.value;
-  },
-  del: async (key: string) => {
-    memoryCache.delete(key);
-    return 1;
-  },
-  exists: async (key: string) => {
-    const item = memoryCache.get(key);
-    if (!item) return false;
-    if (item.expiresAt && item.expiresAt < Date.now()) {
-      memoryCache.delete(key);
-      return false;
-    }
-    return true;
-  },
-  setEx: async (key: string, seconds: number, value: string) => {
-    memoryCache.set(key, { value, expiresAt: Date.now() + seconds * 1000 });
-    return 'OK';
-  },
-  quit: async () => { return null; }
+  }
+  return await memoryOp();
 };
 
-export default redisClient
-
-// Helper functions for common Redis operations
 export const redis = {
-  // Set a key with expiration
+  // Set a key with optional expiration
   async set(key: string, value: string, expirationInSeconds?: number) {
-    try {
-      if (expirationInSeconds) {
-        return await redisClient.setEx(key, expirationInSeconds, value)
+    return await execute(
+      async (client) => {
+        if (expirationInSeconds) {
+          return await client.setEx(key, expirationInSeconds, value);
+        }
+        return await client.set(key, value);
+      },
+      () => {
+        memoryCache.set(key, {
+          value,
+          expiresAt: expirationInSeconds ? Date.now() + expirationInSeconds * 1000 : null
+        });
+        return 'OK';
       }
-      return await redisClient.set(key, value)
-    } catch (error) {
-      console.warn('Redis set操作失败:', error);
-      return null;
-    }
+    );
   },
 
   // Get a key
   async get(key: string) {
-    try {
-      return await redisClient.get(key)
-    } catch (error) {
-      console.warn('Redis get操作失败:', error);
-      return null;
-    }
+    return await execute(
+      async (client) => await client.get(key),
+      () => {
+        const item = memoryCache.get(key);
+        if (!item) return null;
+        if (item.expiresAt && item.expiresAt < Date.now()) {
+          memoryCache.delete(key);
+          return null;
+        }
+        return item.value;
+      }
+    );
   },
 
-  // Delete a key
+  // Delete a key or multiple keys
   async del(key: string | string[]) {
-    try {
-      if (Array.isArray(key)) {
-        return await Promise.all(key.map(k => redisClient.del(k)))
+    return await execute(
+      async (client) => await client.del(key),
+      () => {
+        if (Array.isArray(key)) {
+          key.forEach(k => memoryCache.delete(k));
+          return key.length;
+        }
+        memoryCache.delete(key);
+        return 1;
       }
-      return await redisClient.del(key)
-    } catch (error) {
-      console.warn('Redis del操作失败:', error);
-      return null;
-    }
+    );
   },
 
   // Check if key exists
   async exists(key: string) {
-    try {
-      return await redisClient.exists(key)
-    } catch (error) {
-      console.warn('Redis exists操作失败:', error);
-      return false;
-    }
+    return await execute(
+      async (client) => (await client.exists(key)) === 1,
+      () => {
+        const item = memoryCache.get(key);
+        if (!item) return false;
+        if (item.expiresAt && item.expiresAt < Date.now()) {
+          memoryCache.delete(key);
+          return false;
+        }
+        return true;
+      }
+    );
   },
 
-  // Get keys by pattern
+  // Get keys by pattern (Limited support in memory mode)
   async keys(pattern: string) {
-    try {
-      // Mock implementation - return empty array for simplicity or implement pattern matching
-      return []
-    } catch (error) {
-      console.warn('Redis keys操作失败:', error);
-      return [];
-    }
+    return await execute(
+      async (client) => await client.keys(pattern),
+      () => {
+        // Basic prefix matching for memory cache
+        if (pattern.endsWith('*')) {
+          const prefix = pattern.slice(0, -1);
+          return Array.from(memoryCache.keys()).filter(k => k.startsWith(prefix));
+        }
+        return [];
+      }
+    );
   },
 
   // Set JSON value
   async setJSON(key: string, value: any, expirationInSeconds?: number) {
-    try {
-      const jsonValue = JSON.stringify(value)
-      if (expirationInSeconds) {
-        return await redisClient.setEx(key, expirationInSeconds, jsonValue)
-      }
-      return await redisClient.set(key, jsonValue)
-    } catch (error) {
-      console.warn('Redis setJSON操作失败:', error);
-      return null;
-    }
+    const jsonValue = JSON.stringify(value);
+    return this.set(key, jsonValue, expirationInSeconds);
   },
 
   // Get JSON value
   async getJSON(key: string) {
-    try {
-      const value = await redisClient.get(key)
-      if (value) {
-        return JSON.parse(value)
+    const value = await this.get(key);
+    if (value) {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        console.error('❌ [Redis] JSON Parse error:', e);
+        return null;
       }
-      return null
-    } catch (error) {
-      console.warn('Redis getJSON操作失败:', error);
-      return null;
     }
+    return null;
   },
 
   // Close connection
   async quit() {
-    try {
-      return await redisClient.quit()
-    } catch (error) {
-      console.warn('Redis quit操作失败:', error);
-      return null;
+    if (redisClient) {
+      try {
+        await redisClient.quit();
+        redisConnected = false;
+      } catch (e) {
+        console.warn('⚠️ [Redis] Quit error:', e);
+      }
     }
   }
-}
+};
+
+// Default export for compatibility
+export default redis;
