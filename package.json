@@ -24,6 +24,7 @@
     "crypto-browserify": "^3.12.1",
     "cuid": "^3.0.0",
     "events": "^3.3.0",
+    "firebase": "^12.8.0",
     "framer-motion": "^12.23.26",
     "gray-matter": "^4.0.3",
     "jose": "^6.1.0",
