@@ -86,6 +86,8 @@ sudo sh get-docker.sh
 2. **同步数据库**
    ```bash
    docker compose exec app npx prisma db push
+   # 初始化管理员账户和基础数据
+   docker compose exec app npm run prisma db seed
    ```
 
 3. **常用维护命令**

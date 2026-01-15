@@ -126,6 +126,14 @@ docker compose up -d --build
 docker compose exec app npx prisma db push
 ```
 
+### 3. 初始化管理员账户 (必要)
+由于首次部署数据库为空，我们需要运行种子脚本来创建默认管理员账户和基础配置：
+```bash
+# 此命令会创建默认管理员账户 (admin/admin123) 或根据 .env 配置创建
+docker compose exec app npm run prisma db seed
+```
+> **安全警告**: 请务必在 `.env` 中配置 `ADMIN_PASSWORD` 以确保账户安全。如果未配置，将使用默认的不安全密码。
+
 ---
 
 ## 🛡️ 第六阶段：数据持久化与安全建议

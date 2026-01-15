@@ -7,21 +7,49 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding admin users...')
 
+  // 1. 获取配置
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin'
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@pixeldesk.com'
+  let adminPasswordRaw = process.env.ADMIN_PASSWORD
+
+  // 如果没有提供密码，且是生产环境，则报错
+  if (!adminPasswordRaw && process.env.NODE_ENV === 'production') {
+    throw new Error('❌ 在生产环境中必须通过环境变量 ADMIN_PASSWORD 设置管理员密码')
+  }
+
+  // 如果没有提供密码且是非生产环境，使用默认密码但发出警告
+  if (!adminPasswordRaw) {
+    console.warn('⚠️ 未检测到 ADMIN_PASSWORD 环境变量，使用默认密码: "admin123"')
+    console.warn('⚠️ 请尽快在 .env 文件中配置强密码！')
+    adminPasswordRaw = 'admin123'
+  }
+
   // 创建超级管理员
-  const superAdminPassword = await bcrypt.hash('admin123', 10)
+  const hashedPassword = await bcrypt.hash(adminPasswordRaw, 10)
+
   const superAdmin = await prisma.admins.upsert({
-    where: { username: 'admin' },
-    update: { updatedAt: new Date() },
+    where: { username: adminUsername },
+    update: {
+      password: hashedPassword, // 允许通过重新运行 seed 更新密码
+      email: adminEmail,
+      updatedAt: new Date()
+    },
     create: {
       id: randomUUID(),
-      username: 'admin',
-      email: 'admin@pixeldesk.com',
-      password: superAdminPassword,
+      username: adminUsername,
+      email: adminEmail,
+      password: hashedPassword,
       role: 'SUPER_ADMIN',
       updatedAt: new Date()
     },
   })
-  console.log('✅ Super admin created:', superAdmin.username)
+
+  console.log('✅ Super admin ensured:', superAdmin.username)
+  if (!process.env.ADMIN_PASSWORD) {
+    console.log('🔑 Login Password:', adminPasswordRaw)
+  } else {
+    console.log('🔑 Login Password: [HIDDEN] (Set via env)')
+  }
 
   // 创建默认工位配置
   const workstationConfig = await prisma.workstation_config.upsert({
