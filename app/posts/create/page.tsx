@@ -7,17 +7,8 @@ import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
 import BlogSidebar from '@/components/blog/BlogSidebar'
 import BlogEditor from '@/components/blog/BlogEditor'
 import UserAvatar from '@/components/UserAvatar'
-import { SocialUser } from '@/types/social'
+import { SocialUser, Post } from '@/types/social'
 import { useTranslation } from '@/lib/hooks/useTranslation'
-
-interface BlogPost {
-  id: string
-  title: string
-  content: string
-  tags: string[]
-  coverImage?: string
-  isDraft: boolean
-}
 
 export default function BlogManagementPage() {
   const router = useRouter()
@@ -27,13 +18,13 @@ export default function BlogManagementPage() {
 
   const isAuthenticated = !!user
 
-  const [selectedBlog, setSelectedBlog] = useState<BlogPost | null>(null)
+  const [selectedBlog, setSelectedBlog] = useState<Post | null>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isCreatingNew, setIsCreatingNew] = useState(true)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // 处理选择博客
-  const handleSelectBlog = (blog: BlogPost) => {
+  const handleSelectBlog = (blog: Post) => {
     setSelectedBlog(blog)
     setIsCreatingNew(false)
   }

@@ -138,3 +138,12 @@ deploy/
 
 # Asset files that should be in public directory
 /generated/prisma
+
+# User uploads
+/uploads/
+/public/uploads
+/public/avatars
+/public/assets/blog
+/public/assets/brand
+/public/assets/characters/user-generated
+/public/assets/postcards/user-generated

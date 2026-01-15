@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     const fileName = `user_${payload.userId}_${timestamp}.${fileExtension}`
 
     // 确保上传目录存在
-    const uploadDir = join(process.cwd(), 'public', 'assets', 'characters', 'user-generated')
+    const uploadDir = join(process.cwd(), 'public', 'uploads', 'characters', 'user-generated')
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer)
 
     // 构建角色imageUrl
-    const imageUrl = `/assets/characters/user-generated/${fileName}`
+    const imageUrl = `/uploads/characters/user-generated/${fileName}`
 
     // 生成唯一的角色name（使用userId和时间戳）
     const characterName = `user_${payload.userId}_${timestamp}`

@@ -63,29 +63,52 @@ export default function MarkdownEditor({
           background-color: transparent !important;
           border: 1px solid rgba(255, 255, 255, 0.1) !important;
           box-shadow: none !important;
+          display: flex;
+          flex-direction: column;
         }
         .markdown-editor-wrapper .w-md-editor-toolbar {
-          background-color: rgba(17, 24, 39, 0.4) !important;
-          backdrop-filter: blur(8px);
+          background-color: rgba(17, 24, 39, 0.6) !important;
+          backdrop-filter: blur(12px);
           border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-          border-top-left-radius: 8px;
-          border-top-right-radius: 8px;
+          border-top-left-radius: 12px;
+          border-top-right-radius: 12px;
+          padding: 8px !important;
         }
         .markdown-editor-wrapper .w-md-editor-content {
           background-color: transparent !important;
         }
+        /* 关键修复：确保输入层和预览层行高严格一致 */
         .markdown-editor-wrapper .w-md-editor-text-pre, 
         .markdown-editor-wrapper .w-md-editor-text-input {
           background-color: transparent !important;
-          font-family: var(--font-mono), monospace !important;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+          font-size: 14px !important;
+          line-height: 1.6 !important;
+          padding: 20px !important;
+        }
+        .markdown-editor-wrapper .w-md-editor-text-input {
+          caret-color: #06b6d4 !important; /* 青色光标，更容易看清 */
         }
         .markdown-editor-wrapper .w-md-editor-preview {
-          background-color: rgba(0, 0, 0, 0.1) !important;
+          background-color: rgba(0, 0, 0, 0.2) !important;
           border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+          padding: 20px !important;
         }
         .markdown-editor-wrapper .wmde-markdown {
           background-color: transparent !important;
-          color: #d1d5db !important;
+          color: #e5e7eb !important;
+          font-size: 14px !important;
+          line-height: 1.6 !important;
+        }
+        /* 工具条按钮悬停效果 */
+        .markdown-editor-wrapper .w-md-editor-toolbar button {
+          color: #9ca3af !important;
+          border-radius: 4px !important;
+          transition: all 0.2s;
+        }
+        .markdown-editor-wrapper .w-md-editor-toolbar button:hover {
+          color: white !important;
+          background-color: rgba(255, 255, 255, 0.1) !important;
         }
       `}</style>
       <MDEditor
@@ -95,7 +118,8 @@ export default function MarkdownEditor({
         preview="live"
         visibleDragbar={false}
         textareaProps={{
-          placeholder: placeholder
+          placeholder: placeholder,
+          id: 'markdown-textarea'
         }}
         previewOptions={{
           rehypePlugins: [],

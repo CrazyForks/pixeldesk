@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     const filename = `${name}.${ext}`
 
     // 确保目录存在
-    const uploadDir = join(process.cwd(), 'public', 'assets', 'characters')
+    const uploadDir = join(process.cwd(), 'public', 'uploads', 'characters')
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
         name,
         displayName,
         description: description || null,
-        imageUrl: `/assets/characters/${filename}`,
+        imageUrl: `/uploads/characters/${filename}`,
         price,
         isCompactFormat,
         frameWidth,

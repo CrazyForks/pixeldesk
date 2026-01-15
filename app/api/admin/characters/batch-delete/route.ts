@@ -70,9 +70,8 @@ export async function POST(request: NextRequest) {
 
         // 尝试删除图片文件
         try {
-          const filename = character.imageUrl.split('/').pop()
-          if (filename) {
-            const filepath = join(process.cwd(), 'public', 'assets', 'characters', filename)
+          if (character.imageUrl.startsWith('/')) {
+            const filepath = join(process.cwd(), 'public', ...character.imageUrl.split('/').filter(Boolean))
             if (existsSync(filepath)) {
               await unlink(filepath)
             }

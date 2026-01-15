@@ -34,6 +34,14 @@ export const translations = {
             reject: '拒绝',
             exchange: '交换',
             about: '关于',
+            upload: {
+                click_or_drag: '点击或拖拽上传图片',
+                change_image: '更换图片',
+                delete_image: '删除图片',
+                uploading: '上传中...',
+                err_size_limit: '文件太大 ({size}KB) - 最大限制 {max}MB',
+                err_failed: '上传失败'
+            }
         },
         auth: {
             login: '登录',
@@ -323,6 +331,11 @@ export const translations = {
             metadata: '书籍元数据',
             description: '简介',
             cover_url: '封面图片 URL',
+            cover_image: '封面图片',
+            cover_image_hint: '建议尺寸: 1200x675 (16:9)，最大 500KB',
+            tags_label: '标签 (最多5个)',
+            tags_placeholder: '输入标签按回车...',
+            add_tag: '添加',
             preview: '预览区域',
             save_changes: '保存更改',
             publish: '发布书籍',
@@ -588,6 +601,14 @@ export const translations = {
             reject: 'Reject',
             exchange: 'Exchange',
             about: 'About',
+            upload: {
+                click_or_drag: 'Click or drag to upload image',
+                change_image: 'Change Image',
+                delete_image: 'Delete Image',
+                uploading: 'Uploading...',
+                err_size_limit: 'File too large ({size}KB) - Max limit {max}MB',
+                err_failed: 'Upload failed'
+            }
         },
         auth: {
             login: 'Login',
@@ -876,7 +897,12 @@ export const translations = {
             back_to_studio: 'Back to Studio',
             metadata: 'Metadata',
             description: 'Description',
-            cover_url: 'Cover URL',
+            cover_url: 'Cover Image URL',
+            cover_image: 'Cover Image',
+            cover_image_hint: 'Recommended: 1200x675 (16:9), max 500KB',
+            tags_label: 'Tags (Max 5)',
+            tags_placeholder: 'Type tag and press enter...',
+            add_tag: 'Add',
             preview: 'Preview',
             save_changes: 'Save Changes',
             publish: 'Publish',

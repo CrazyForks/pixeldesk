@@ -1,31 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SocialUser } from '@/types/social'
+import { SocialUser, Post } from '@/types/social'
 import BlogUserProfile from './BlogUserProfile'
-
-interface BlogPost {
-  id: string
-  title: string
-  content: string
-  summary?: string
-  tags: string[]
-  coverImage?: string
-  isDraft: boolean
-  publishedAt?: string
-  createdAt: string
-  updatedAt: string
-  viewCount: number
-  likeCount: number
-  replyCount: number
-  wordCount?: number
-  readTime?: number
-}
 
 interface BlogSidebarProps {
   user: SocialUser
   selectedBlogId?: string
-  onSelectBlog: (blog: BlogPost) => void
+  onSelectBlog: (blog: Post) => void
   onNewBlog: () => void
   isCollapsed?: boolean
   onToggleCollapse?: () => void
@@ -39,7 +21,7 @@ export default function BlogSidebar({
   isCollapsed = false,
   onToggleCollapse
 }: BlogSidebarProps) {
-  const [blogs, setBlogs] = useState<BlogPost[]>([])
+  const [blogs, setBlogs] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
@@ -139,14 +121,14 @@ export default function BlogSidebar({
               key={blog.id}
               onClick={() => onSelectBlog(blog)}
               className={`w-full h-10 rounded-lg transition-colors ${selectedBlogId === blog.id
-                  ? 'bg-gradient-to-r from-cyan-600 to-teal-600'
-                  : 'bg-gray-800 hover:bg-gray-700'
+                ? 'bg-gradient-to-r from-cyan-600 to-teal-600'
+                : 'bg-gray-800 hover:bg-gray-700'
                 }`}
-              title={blog.title}
+              title={blog.title || ''}
             >
               <div className="w-full h-full flex items-center justify-center">
                 <span className="text-xs font-bold">
-                  {blog.title.charAt(0).toUpperCase()}
+                  {(blog.title || '无').charAt(0).toUpperCase()}
                 </span>
               </div>
             </button>
@@ -210,8 +192,8 @@ export default function BlogSidebar({
           <button
             onClick={() => setStatusFilter('all')}
             className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === 'all'
-                ? 'bg-gray-700 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+              ? 'bg-gray-700 text-white'
+              : 'bg-gray-800 text-gray-400 hover:text-white'
               }`}
           >
             全部 ({stats.total})
@@ -219,8 +201,8 @@ export default function BlogSidebar({
           <button
             onClick={() => setStatusFilter('published')}
             className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === 'published'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-gray-800 text-gray-400 hover:text-white'
               }`}
           >
             已发布 ({stats.published})
@@ -228,8 +210,8 @@ export default function BlogSidebar({
           <button
             onClick={() => setStatusFilter('draft')}
             className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === 'draft'
-                ? 'bg-amber-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+              ? 'bg-amber-600 text-white'
+              : 'bg-gray-800 text-gray-400 hover:text-white'
               }`}
           >
             草稿 ({stats.draft})
@@ -274,8 +256,8 @@ export default function BlogSidebar({
                 key={blog.id}
                 onClick={() => onSelectBlog(blog)}
                 className={`w-full text-left p-4 transition-all cursor-pointer ${selectedBlogId === blog.id
-                    ? 'bg-gradient-to-r from-cyan-600/20 to-teal-600/20 border-l-4 border-cyan-500'
-                    : 'hover:bg-gray-800/50'
+                  ? 'bg-gradient-to-r from-cyan-600/20 to-teal-600/20 border-l-4 border-cyan-500'
+                  : 'hover:bg-gray-800/50'
                   }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -310,9 +292,9 @@ export default function BlogSidebar({
                   </div>
                 </div>
 
-                {blog.tags.length > 0 && (
+                {(blog.tags || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {blog.tags.slice(0, 3).map((tag, idx) => (
+                    {(blog.tags || []).slice(0, 3).map((tag, idx) => (
                       <span
                         key={idx}
                         className="px-2 py-0.5 bg-gray-800 text-gray-400 text-xs rounded"

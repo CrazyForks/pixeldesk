@@ -3,20 +3,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import MarkdownEditor from '@/components/MarkdownEditor'
+import ClassicMarkdownEditor from '@/components/ClassicMarkdownEditor'
+import BlogSidebar from '@/components/blog/BlogSidebar'
+import UserAvatar from '@/components/UserAvatar'
 
-interface BlogPost {
-  id: string
-  title: string
-  content: string
-  tags: string[]
-  coverImage?: string
-  imageUrls?: string[]
-  isDraft: boolean
-}
+import { Post } from '@/types/social'
+import ImageUpload from '@/components/common/ImageUpload'
+
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface BlogEditorProps {
-  blog?: BlogPost | null
+  blog?: Post | null
   userId: string
   onSaved?: () => void
   onPublished?: (blogId: string) => void
@@ -24,6 +21,7 @@ interface BlogEditorProps {
 
 export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogEditorProps) {
   const router = useRouter()
+  const { t } = useTranslation()
   const isEditMode = !!blog
 
   const [title, setTitle] = useState(blog?.title || '')
@@ -112,20 +110,6 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
   // 删除标签
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove))
-  }
-
-  // 添加图片URL
-  const handleAddImageUrl = () => {
-    const url = imageUrlInput.trim()
-    if (url && !imageUrls.includes(url)) {
-      setImageUrls([...imageUrls, url])
-      setImageUrlInput('')
-    }
-  }
-
-  // 删除图片URL
-  const handleRemoveImageUrl = (urlToRemove: string) => {
-    setImageUrls(imageUrls.filter(url => url !== urlToRemove))
   }
 
   // 计算阅读时间
@@ -403,7 +387,7 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
 
         {/* Markdown 编辑器 */}
         <div className="max-w-5xl mx-auto w-full flex-1">
-          <MarkdownEditor
+          <ClassicMarkdownEditor
             value={content}
             onChange={setContent}
             height={650}
@@ -427,12 +411,12 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  标签 (最多5个)
+                  {t.editor.tags_label}
                 </label>
                 <div className="flex gap-2 mb-3">
                   <input
                     type="text"
-                    placeholder="输入标签按回车..."
+                    placeholder={t.editor.tags_placeholder}
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={(e) => {
@@ -460,7 +444,7 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
                     disabled={!tagInput.trim() || tags.length >= 5}
                     className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg text-sm transition-all"
                   >
-                    添加
+                    {t.editor.add_tag}
                   </button>
                 </div>
 
@@ -487,100 +471,22 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
 
             {/* 右侧：封面图 */}
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  封面图片 URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://example.com/cover.jpg"
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-cyan-500 focus:border-transparent rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none text-sm transition-all"
-                  onFocus={() => {
-                    if (typeof window !== 'undefined' && (window as any).disableGameKeyboard) {
-                      (window as any).disableGameKeyboard()
-                    }
-                  }}
-                  onBlur={() => {
-                    if (typeof window !== 'undefined' && (window as any).enableGameKeyboard) {
-                      (window as any).enableGameKeyboard()
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="h-px bg-gray-800/50"></div>
-
-          {/* 内容图片 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              更多插图 URL (可添加多个)
-            </label>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="url"
-                placeholder="https://example.com/content-image.jpg"
-                value={imageUrlInput}
-                onChange={(e) => setImageUrlInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddImageUrl()
-                  }
-                }}
-                className="flex-1 bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-cyan-500 focus:border-transparent rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none text-sm transition-all"
-                onFocus={() => {
-                  if (typeof window !== 'undefined' && (window as any).disableGameKeyboard) {
-                    (window as any).disableGameKeyboard()
-                  }
-                }}
-                onBlur={() => {
-                  if (typeof window !== 'undefined' && (window as any).enableGameKeyboard) {
-                    (window as any).enableGameKeyboard()
-                  }
-                }}
+              <ImageUpload
+                value={coverImage}
+                onChange={setCoverImage}
+                label={t.editor.cover_image}
+                hint={t.editor.cover_image_hint}
+                maxSize={500 * 1024}
+                aspectRatio="video"
               />
-              <button
-                onClick={handleAddImageUrl}
-                disabled={!imageUrlInput.trim()}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg text-sm transition-all"
-              >
-                添加
-              </button>
             </div>
-
-            {imageUrls.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {imageUrls.map((url, index) => (
-                  <div
-                    key={index}
-                    className="relative aspect-square bg-gray-900 border border-gray-800 rounded-lg overflow-hidden group"
-                  >
-                    <img
-                      src={url}
-                      alt={`图片 ${index + 1}`}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect fill="%23111" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23333" font-size="10"%3ENone%3C/text%3E%3C/svg%3E'
-                      }}
-                    />
-                    <button
-                      onClick={() => handleRemoveImageUrl(url)}
-                      className="absolute top-1 right-1 p-1 bg-red-600/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
+
+        <div className="h-px bg-gray-800/50"></div>
+        <p className="text-[10px] text-gray-500 font-pixel">
+          * 提示：你可以直接点击编辑器工具栏的图片图标 🖼️ 上传本地图片（最大 500KB）。
+        </p>
       </div>
     </div>
   )

@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
         const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'png'
         const fileName = `${type}_${payload.userId}_${timestamp}.${fileExtension}`
 
-        // 存储目录: /public/assets/postcards/user-generated/
-        const uploadDir = join(process.cwd(), 'public', 'assets', 'postcards', 'user-generated')
+        // 存储目录: /public/uploads/postcards/user-generated/
+        const uploadDir = join(process.cwd(), 'public', 'uploads', 'postcards', 'user-generated')
         if (!existsSync(uploadDir)) {
             await mkdir(uploadDir, { recursive: true })
         }
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         const filePath = join(uploadDir, fileName)
         await writeFile(filePath, buffer)
 
-        const imageUrl = `/assets/postcards/user-generated/${fileName}`
+        const imageUrl = `/uploads/postcards/user-generated/${fileName}`
 
         return NextResponse.json({
             success: true,

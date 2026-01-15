@@ -65,10 +65,8 @@ export async function DELETE(
 
     // 尝试删除图片文件（如果存在）
     try {
-      // 从imageUrl中提取文件名
-      const filename = character.imageUrl.split('/').pop()
-      if (filename) {
-        const filepath = join(process.cwd(), 'public', 'assets', 'characters', filename)
+      if (character.imageUrl.startsWith('/')) {
+        const filepath = join(process.cwd(), 'public', ...character.imageUrl.split('/').filter(Boolean))
         if (existsSync(filepath)) {
           await unlink(filepath)
           console.log(`已删除角色图片文件: ${filepath}`)
@@ -173,8 +171,8 @@ export async function PUT(
           action: 'UPDATE',
           changes,
           ipAddress: request.headers.get('x-forwarded-for') ||
-                     request.headers.get('x-real-ip') ||
-                     'unknown',
+            request.headers.get('x-real-ip') ||
+            'unknown',
           userAgent: request.headers.get('user-agent') || undefined
         }
       })

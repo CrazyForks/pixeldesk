@@ -3566,7 +3566,7 @@ export class Start extends Phaser.Scene {
       transitionDuration: 2000, // 2秒过渡时间
       checkInterval: 60000, // 每分钟检查一次
       nightTint: 0x3030aa,  // 夜晚色调（深蓝紫色）
-      nightAlpha: 0.7      // 夜晚透明度
+      nightAlpha: 0.2     // 夜晚透明度
     })
 
     // 🔧 暂时禁用室内外检测以优化性能

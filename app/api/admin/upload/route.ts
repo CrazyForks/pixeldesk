@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         const fileName = `${timestamp}-${random}.${ext}`
 
         // 确保目录存在
-        const uploadDir = join(process.cwd(), 'public', 'assets', folder)
+        const uploadDir = join(process.cwd(), 'public', 'uploads', 'assets', folder)
         if (!existsSync(uploadDir)) {
             await mkdir(uploadDir, { recursive: true })
         }
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            url: `/assets/${folder}/${fileName}`
+            url: `/uploads/assets/${folder}/${fileName}`
         })
 
     } catch (error: any) {
