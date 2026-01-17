@@ -11,6 +11,9 @@ import ActivityStats from './ActivityStats'
 import { useBrandConfig } from '@/lib/hooks/useBrandConfig'
 import Link from 'next/link'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { LevelProgress } from './LevelProgress'
+import { LevelBadge } from './LevelBadge'
+import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
 
 
 
@@ -39,6 +42,7 @@ export default function LeftPanel({
   isTemporaryPlayer = false,
   onAuthClick
 }: LeftPanelProps) {
+  const { currentUserLevelDef } = useLevelPermission()
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const { theme, toggleTheme } = useTheme()
@@ -63,7 +67,7 @@ export default function LeftPanel({
       <div className="h-full flex flex-col bg-transparent w-12 border-r border-gray-800 relative z-50">
         <button
           onClick={() => handleToggle(false)}
-          className="absolute top-1/2 -right-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-gray-900/80 hover:bg-gray-800 border border-gray-700 rounded-full text-gray-400 hover:text-white transition-all shadow-lg backdrop-blur-sm opacity-50 hover:opacity-100"
+          className="absolute top-1/2 -right-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-900/80 hover:bg-slate-50 dark:hover:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-full text-slate-400 dark:text-gray-400 transition-all shadow-md dark:shadow-lg backdrop-blur-sm opacity-80 hover:opacity-100"
           title={t.leftPanel.expand}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +83,7 @@ export default function LeftPanel({
       {/* 收起按钮 - 右上角 */}
       <button
         onClick={() => handleToggle(true)}
-        className="absolute top-1/2 -right-4 -translate-y-1/2 z-50 w-8 h-8 flex items-center justify-center bg-gray-900/80 hover:bg-gray-800 border border-gray-700 rounded-full text-gray-400 hover:text-white transition-all shadow-lg backdrop-blur-sm opacity-50 hover:opacity-100"
+        className="absolute top-1/2 -right-4 -translate-y-1/2 z-50 w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-900/80 hover:bg-slate-50 dark:hover:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-full text-slate-400 dark:text-gray-400 transition-all shadow-md dark:shadow-lg backdrop-blur-sm opacity-80 hover:opacity-100"
         title={t.leftPanel.collapse}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,7 +92,7 @@ export default function LeftPanel({
       </button>
 
       {/* 头部区域 - 紧凑设计 */}
-      <div className="border-b border-gray-800 bg-gray-900/50">
+      <div className="border-b border-slate-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
         <div className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -99,7 +103,7 @@ export default function LeftPanel({
                 <img
                   src={brandConfig.app_logo}
                   alt={brandConfig.app_name}
-                  className="w-8 h-8 rounded-lg object-cover border border-gray-700"
+                  className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-gray-700"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none'
                     e.currentTarget.nextElementSibling?.classList.remove('hidden')
@@ -107,14 +111,14 @@ export default function LeftPanel({
                 />
               )}
               {/* 备用图标（图片加载失败时显示） */}
-              <div className="hidden w-8 h-8 bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="hidden w-8 h-8 bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-slate-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm font-medium text-gray-200">
+                  <h1 className="text-sm font-medium text-slate-700 dark:text-gray-200">
                     {isBrandLoading ? t.common.loading : brandConfig.app_name}
                   </h1>
                   <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] leading-none font-mono rounded border border-blue-500/20">{t.common.beta}</span>
@@ -127,7 +131,7 @@ export default function LeftPanel({
             <div className="flex items-center gap-1">
               <button
                 onClick={toggleTheme}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-1.5 text-slate-400 dark:text-gray-400 hover:text-indigo-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 title={theme === 'dark' ? t.leftPanel.toggle_light : t.leftPanel.toggle_dark}
               >
                 {theme === 'dark' ? (
@@ -145,7 +149,7 @@ export default function LeftPanel({
                 href="/shop"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 text-gray-400 hover:text-purple-400 hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-1.5 text-slate-400 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 title={t.nav.shop}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,7 +192,7 @@ export default function LeftPanel({
         {/* 用户资料卡片 */}
         {currentUser && (
           <div className="p-3 border-b border-gray-800">
-            <div className="bg-gray-900/80 border border-gray-800 rounded-lg p-3">
+            <div className="bg-gray-900/80 border border-gray-800 rounded-lg p-3 shadow-xl">
               <div className="flex items-center gap-2 mb-3">
                 <UserAvatar
                   userId={currentUser.id}
@@ -199,18 +203,39 @@ export default function LeftPanel({
                   showStatus={true}
                 />
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-100 truncate">{currentUser.name}</h3>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="text-sm font-bold text-gray-100 truncate">{currentUser.name}</h3>
+                    {currentUserLevelDef && (
+                      <span
+                        className="px-1.5 py-0.5 text-[8px] font-black uppercase tracking-tighter shadow-sm pixel-font"
+                        style={{
+                          backgroundColor: `${currentUserLevelDef.visualConfig?.color}22`,
+                          color: currentUserLevelDef.visualConfig?.color || '#3b82f6',
+                          boxShadow: `
+                                -2px 0 0 0 #000,
+                                2px 0 0 0 #000,
+                                0 -2px 0 0 #000,
+                                0 2px 0 0 #000
+                            `
+                        }}
+                      >
+                        {currentUserLevelDef.name}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-gray-500 text-[10px] font-mono truncate">{currentUser.email}</p>
                 </div>
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="p-1.5 hover:bg-gray-700/50 rounded-lg text-gray-400 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="p-1.5 hover:bg-gray-700/50 rounded-lg text-gray-400 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 mb-3">
@@ -255,14 +280,14 @@ export default function LeftPanel({
                   <div className="flex items-center gap-2">
                     {currentUser.workstationId ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-400 text-xs font-mono font-bold mr-1">{currentUser.workstationId}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-mono font-bold mr-1">{currentUser.workstationId}</span>
                         <button
                           onClick={() => {
                             if (typeof window !== 'undefined' && (window as any).teleportToWorkstation) {
                               (window as any).teleportToWorkstation()
                             }
                           }}
-                          className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 hover:bg-emerald-900/60 hover:text-white transition-all uppercase tracking-tighter"
+                          className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 hover:text-emerald-700 dark:hover:text-white transition-all uppercase tracking-tighter"
                         >
                           {t.leftPanel.go}
                         </button>
@@ -272,7 +297,7 @@ export default function LeftPanel({
                               window.showUnbindingDialog(parseInt(currentUser.workstationId))
                             }
                           }}
-                          className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-950/40 text-red-400 border border-red-900/50 hover:bg-red-900/60 hover:text-white transition-all uppercase tracking-tighter"
+                          className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-200 dark:hover:bg-red-900/60 hover:text-red-700 dark:hover:text-white transition-all uppercase tracking-tighter"
                         >
                           {t.leftPanel.terminate_lease}
                         </button>
@@ -282,6 +307,11 @@ export default function LeftPanel({
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Level Progress */}
+              <div className="mt-2">
+                <LevelProgress userId={currentUser.id} />
               </div>
             </div>
           </div>
@@ -293,7 +323,7 @@ export default function LeftPanel({
             <span className="w-1.5 h-3 bg-cyan-500 rounded-full"></span>
             <h2 className="text-xs font-bold text-gray-400 uppercase">{t.leftPanel.status}</h2>
           </div>
-          <div className="bg-gray-900/40 rounded-lg p-1">
+          <div className="bg-gray-900/40 border border-transparent rounded-lg p-1">
             {children}
           </div>
         </div>
@@ -305,7 +335,7 @@ export default function LeftPanel({
               <span className="w-1.5 h-3 bg-purple-500 rounded-full"></span>
               <h2 className="text-xs font-bold text-gray-400 uppercase">{t.leftPanel.activity}</h2>
             </div>
-            <div className="bg-gray-900/80 border border-gray-800 rounded-lg p-3 space-y-4">
+            <div className="bg-gray-900/80 border border-gray-800 rounded-lg p-3 space-y-4 shadow-xl">
               <ActivityHeatmap userId={currentUser.id} days={90} />
               <ActivityStats userId={currentUser.id} days={90} />
             </div>
@@ -320,11 +350,11 @@ export default function LeftPanel({
           </div>
           {workstationStats && (
             <div className="grid grid-cols-2 gap-2 font-mono text-[10px]">
-              <div className="p-2 bg-gray-900/80 border border-gray-800 rounded flex justify-between">
+              <div className="p-2 bg-gray-900/80 border border-gray-800 rounded flex justify-between shadow-sm">
                 <span className="text-gray-500 uppercase">{t.leftPanel.total}</span>
                 <span className="text-gray-200">{workstationStats.totalWorkstations}</span>
               </div>
-              <div className="p-2 bg-gray-900/80 border border-gray-800 rounded flex justify-between">
+              <div className="p-2 bg-white dark:bg-gray-900/80 border border-slate-200 dark:border-gray-800 rounded flex justify-between shadow-sm">
                 <span className="text-emerald-500 uppercase">{t.leftPanel.used}</span>
                 <span className="text-emerald-500">{workstationStats.boundWorkstations}</span>
               </div>
@@ -334,8 +364,8 @@ export default function LeftPanel({
       </div>
 
       {/* 底部操作 */}
-      <div className="mt-auto p-3 border-t border-gray-800 bg-gray-900/50">
-        <div className="flex items-center justify-between text-[10px] font-mono text-gray-600">
+      <div className="mt-auto p-3 border-t border-slate-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-gray-600">
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
             <span className="uppercase">{t.common.system_online}</span>
@@ -348,7 +378,7 @@ export default function LeftPanel({
             >
               {t.common.about}
             </Link>
-            <span className="text-gray-800">|</span>
+            <span className="text-slate-200 dark:text-gray-800">|</span>
             <span>{t.common.version} 2.1.0</span>
           </div>
         </div>

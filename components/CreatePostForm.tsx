@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { CreatePostData } from '@/types/social'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { useNodes } from '@/lib/hooks/useNodes'
+import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
 
 interface CreatePostFormProps {
   onSubmit: (postData: CreatePostData) => Promise<boolean>
@@ -25,6 +26,10 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
   const fileInputRef = useRef<HTMLInputElement>(null)
   const nodeDropdownRef = useRef<HTMLDivElement>(null)
   const { t } = useTranslation()
+  const { hasPermission, getRequiredLevel, loading: permissionsLoading } = useLevelPermission()
+
+  const canUploadImage = hasPermission('social_image_upload')
+  const requiredLevelForImage = getRequiredLevel('social_image_upload')
 
   // 设置默认节点
   useEffect(() => {
@@ -231,14 +236,19 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
 
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isSubmitting || isUploading}
-              className="w-full bg-gradient-to-r from-retro-cyan/40 to-retro-blue/40 hover:from-retro-cyan/60 hover:to-retro-blue/60 text-white font-medium py-3 px-4 rounded-xl border border-white/10 hover:border-white/20 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md text-xs font-pixel uppercase tracking-widest flex items-center justify-center gap-2"
+              onClick={() => canUploadImage ? fileInputRef.current?.click() : null}
+              disabled={isSubmitting || isUploading || !canUploadImage}
+              className={`w-full bg-gradient-to-r from-retro-cyan/40 to-retro-blue/40 hover:from-retro-cyan/60 hover:to-retro-blue/60 text-white font-medium py-3 px-4 rounded-xl border border-white/10 hover:border-white/20 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md text-xs font-pixel uppercase tracking-widest flex items-center justify-center gap-2 ${!canUploadImage ? 'grayscale opacity-60' : ''}`}
             >
               {isUploading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>上传中...</span>
+                </>
+              ) : !canUploadImage ? (
+                <>
+                  <span className="text-base text-retro-red">🔒</span>
+                  <span>{requiredLevelForImage ? `等级 LV.${requiredLevelForImage} 解锁图片上传` : '图片上传暂未开放'}</span>
                 </>
               ) : (
                 <>

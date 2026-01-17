@@ -6,6 +6,7 @@ import { useCurrentUserId } from '@/lib/hooks/useCurrentUser'
 import PostCard from '@/components/PostCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import UserAvatar from '@/components/UserAvatar'
+import { LevelProgress } from '@/components/LevelProgress'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface PlayerProfileTabProps {

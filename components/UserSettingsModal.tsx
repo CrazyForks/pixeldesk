@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useUser } from '../contexts/UserContext'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import GameCompatibleInput from './GameCompatibleInput'
+import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
+import UserAvatar from './UserAvatar'
 
 interface UserSettingsModalProps {
   isOpen: boolean
@@ -12,6 +14,7 @@ interface UserSettingsModalProps {
 
 export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModalProps) {
   const { user, refreshUser, logout } = useUser()
+  const { hasPermission, getRequiredLevel } = useLevelPermission()
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'avatar'>('profile')
   const [isLoading, setIsLoading] = useState(false)
@@ -236,7 +239,12 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
   }
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.8)_100%)] pointer-events-none"></div>
 
@@ -454,26 +462,29 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
           {activeTab === 'avatar' && (
             <div className="space-y-8 max-w-md mx-auto py-4">
               {/* Current Avatar */}
-              <div className="text-center space-y-4">
-                <div className="relative w-32 h-32 mx-auto">
-                  <div className="absolute inset-0 bg-gradient-to-br from-retro-purple to-retro-pink rounded-full blur-lg opacity-50 animate-pulse"></div>
-                  <div className="relative w-full h-full rounded-full overflow-hidden bg-black/40 border-4 border-white/10 flex items-center justify-center">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={t.settings.current_avatar}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-5xl">👤</span>
-                    )}
+              <div className="text-center space-y-6">
+                <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-gradient-to-br from-retro-purple to-retro-pink rounded-full blur-xl opacity-40 animate-pulse"></div>
+                  <UserAvatar
+                    userId={user.id}
+                    userName={user.name}
+                    userAvatar={user.avatar}
+                    customAvatar={user.customAvatar}
+                    size="xl"
+                    className="relative border-4 border-white/10 shadow-2xl"
+                  />
+                  <div className="absolute -bottom-2 -right-2 bg-retro-purple text-white p-1.5 rounded-full border-2 border-retro-bg-dark shadow-lg">
+                    <span className="text-xs">✨</span>
                   </div>
                 </div>
-                <p className="text-gray-400 font-medium">{t.settings.current_avatar}</p>
+                <div className="space-y-1">
+                  <p className="text-white font-bold text-lg">{t.settings.current_avatar}</p>
+                  <p className="text-gray-500 text-xs uppercase tracking-widest">{user.customAvatar ? '已使用自定义头像' : '使用系统默认形象'}</p>
+                </div>
               </div>
 
-              {/* File Upload */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
+              {/* File Upload Area */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 shadow-inner">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -483,53 +494,79 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
                 />
 
                 {previewUrl && (
-                  <div className="text-center bg-black/20 rounded-lg p-4 border border-white/5">
-                    <p className="text-gray-400 text-xs uppercase tracking-wider mb-3">{t.settings.preview}</p>
-                    <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-retro-purple/50">
-                      <img
-                        src={previewUrl}
-                        alt={t.settings.preview}
-                        className="w-full h-full object-cover"
-                      />
+                  <div className="text-center bg-black/40 rounded-2xl p-6 border border-retro-purple/30 shadow-xl animate-in fade-in zoom-in duration-300">
+                    <p className="text-retro-purple text-[10px] font-pixel uppercase tracking-[0.2em] mb-4">待上传预览 PREVIEW</p>
+                    <div className="relative inline-block">
+                      <div className="absolute inset-0 bg-retro-purple rounded-full blur-md opacity-30"></div>
+                      <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-retro-purple/50 relative">
+                        <img
+                          src={previewUrl}
+                          alt={t.settings.preview}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-4">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full bg-white/5 hover:bg-white/10 text-white py-3 px-4 rounded-lg border border-white/10 border-dashed hover:border-white/30 transition-all"
+                    onClick={() => {
+                      if (hasPermission('upload_avatar')) {
+                        fileInputRef.current?.click()
+                      } else {
+                        showMessage('error', `此功能需等级 ${getRequiredLevel('upload_avatar')} 解锁`)
+                      }
+                    }}
+                    className={`w-full py-4 px-6 rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 group ${hasPermission('upload_avatar')
+                      ? 'bg-retro-purple/5 hover:bg-retro-purple/10 text-white border-white/10 hover:border-retro-purple/40 cursor-pointer'
+                      : 'bg-black/40 text-gray-500 border-white/5 cursor-not-allowed'
+                      }`}
                   >
-                    {t.settings.select_image}
+                    {!hasPermission('upload_avatar') ? (
+                      <span className="text-xl">🔒</span>
+                    ) : (
+                      <span className="text-xl group-hover:scale-110 transition-transform">📁</span>
+                    )}
+                    <span className="font-pixel text-[10px] uppercase tracking-widest">{t.settings.select_image}</span>
                   </button>
 
-                  {selectedFile && (
-                    <button
-                      type="button"
-                      onClick={handleAvatarUpload}
-                      disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-retro-purple to-retro-pink hover:from-retro-purple/90 hover:to-retro-pink/90 text-white font-bold py-3 px-4 rounded-lg shadow-lg disabled:opacity-50 transition-all"
-                    >
-                      {isLoading ? t.settings.uploading : t.settings.upload_avatar}
-                    </button>
-                  )}
+                  <div className="flex gap-3">
+                    {selectedFile && (
+                      <button
+                        type="button"
+                        onClick={handleAvatarUpload}
+                        disabled={isLoading}
+                        className="flex-1 bg-gradient-to-r from-retro-purple to-retro-pink hover:opacity-90 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-purple-900/40 disabled:opacity-50 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      >
+                        {isLoading ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          <span>✨ {t.settings.upload_avatar}</span>
+                        )}
+                      </button>
+                    )}
 
-                  {user.avatar && (
-                    <button
-                      type="button"
-                      onClick={handleAvatarDelete}
-                      disabled={isLoading}
-                      className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 py-3 px-4 rounded-lg border border-red-500/20 transition-all disabled:opacity-50"
-                    >
-                      {isLoading ? t.settings.deleting : t.settings.delete_avatar}
-                    </button>
-                  )}
+                    {user.customAvatar && (
+                      <button
+                        type="button"
+                        onClick={handleAvatarDelete}
+                        disabled={isLoading}
+                        className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold py-3 px-4 rounded-xl border border-red-500/30 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
+                      >
+                        <span>🗑️ {(t.settings as any).delete_avatar || '删除头像'}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-gray-500 text-xs text-center">
-                  {t.settings.upload_hint}
-                </p>
+                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-black/30 rounded-full border border-white/5">
+                  <span className="text-xs text-gray-500">💡</span>
+                  <p className="text-gray-500 text-[10px] tracking-wide uppercase">
+                    {t.settings.upload_hint}
+                  </p>
+                </div>
               </div>
             </div>
           )}

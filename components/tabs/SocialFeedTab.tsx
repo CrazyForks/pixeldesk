@@ -140,16 +140,16 @@ export default function SocialFeedTab({
   return (
     <div className={containerClasses}>
       {/* 头部 - 深色极客风格 */}
-      <div className="flex-shrink-0 p-3 border-b border-gray-800 bg-gray-900/60">
+      <div className="flex-shrink-0 p-3 border-b border-black/5 dark:border-gray-800 bg-white/10 dark:bg-gray-900/60">
         <div className="flex items-center gap-2">
           {/* 刷新按钮 - 固定宽度 */}
           <button
             onClick={refreshPosts}
             disabled={isRefreshing}
-            className="p-2 bg-gray-800 border border-gray-700 hover:bg-gray-700 rounded-lg disabled:opacity-50 flex-shrink-0"
+            className="p-2 bg-white/10 dark:bg-gray-800 border border-black/5 dark:border-gray-700 hover:bg-black/5 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 flex-shrink-0"
             title={t.common.refresh}
           >
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-gray-400 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>

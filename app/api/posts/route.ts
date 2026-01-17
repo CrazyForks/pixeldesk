@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { rewardPoints } from '@/lib/pointsManager'
 import { randomUUID } from 'crypto'
+import { LevelingService } from '@/lib/services/leveling'
 
 // 获取帖子列表
 export async function GET(request: NextRequest) {
@@ -268,6 +269,12 @@ export async function POST(request: NextRequest) {
         console.log(`✨ [POST posts] 用户 ${userId} 发布${postTypeText}获得 ${reward.points} 积分奖励`)
         currentPoints = reward.newTotal
       }
+
+      // 奖励经验值 (Award Bits)
+      // post_create: 10, blog_create: 50
+      const bitSourceType = type === 'MARKDOWN' ? 'blog_create' : 'post_create'
+      const baseBits = type === 'MARKDOWN' ? 50 : 10
+      await LevelingService.addBits(userId, baseBits, bitSourceType, post.id)
     }
 
     // 转换数据结构：将 users 映射为 author(与 GET 方法保持一致)

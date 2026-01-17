@@ -27,7 +27,7 @@ export default function UserAvatar({
   isOnline = false,
   lastSeen,
   size = 'md',
-  showStatus = true,
+  showStatus = false,
   statusPosition = 'bottom-right',
   className = '',
   onClick
@@ -146,7 +146,7 @@ export default function UserAvatar({
           </span>
         )}
       </div>
-      
+
       {showStatus && (
         <div className={`absolute ${statusPositionClasses[statusPosition]}`}>
           <UserStatusIndicator

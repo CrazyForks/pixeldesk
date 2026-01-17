@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import { NotificationType } from '@prisma/client'
+import { LevelingService } from '@/lib/services/leveling'
 
 /**
  * GET/POST/PUT /api/postcards/exchange
@@ -230,7 +231,18 @@ export async function PUT(request: NextRequest) {
                         updatedAt: new Date()
                     }
                 })
+
+                // 5. 奖励经验值 (Award Bits to both users) - BUT LevelingService needs prisma client outside tx?
+                // Actually LevelingService uses `prisma` directly... using it inside a transaction might be tricky if it expects to manage its own tx.
+                // However, bits adding is a separate concern (log + update).
+                // Let's do it AFTER the transaction to avoid locking issues or complexity, or modify LevelingService to accept a transaction client.
+                // For now, let's keep it simple and run it after the main transaction succeeds.
             })
+
+            // Post-transaction: Award bits
+            // Import LevelingService at the top first!
+            await LevelingService.addBits(exchange.senderId, 15, 'postcard_exchange', exchangeId)
+            await LevelingService.addBits(exchange.receiverId, 15, 'postcard_exchange', exchangeId)
 
             return NextResponse.json({ success: true, message: '交换成功！已存入青鸟集' })
         }

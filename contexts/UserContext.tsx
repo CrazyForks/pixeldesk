@@ -9,7 +9,10 @@ export interface User {
   name: string
   email: string
   avatar?: string
+  customAvatar?: string | null
   points?: number
+  level?: number
+  bits?: number
   emailVerified?: boolean
   workstationId?: string
   inviteCode?: string

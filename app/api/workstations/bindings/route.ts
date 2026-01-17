@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getPointsConfig } from '@/lib/pointsManager'
 import { randomUUID } from 'crypto'
+import { LevelingService } from '@/lib/services/leveling'
 
 export async function GET(request: NextRequest) {
   try {
@@ -118,8 +119,21 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // 奖励经验值 (Award 20 Bits)
+      // Since LevelingService uses the default prisma client, we should ideally call it outside,
+      // but to keep it atomic with the "success" of this operation, maybe we just fire and forget or await it?
+      // Actually LevelingService.addBits handles its own logging.
+      // We'll call it here. Even if it fails, it shouldn't revert the binding transaction necessarily?
+      // But we are inside a transaction.
+      // IMPORTANT: LevelingService uses `prisma` (the global one).
+      // If we use it inside here, it's a separate connection/transaction.
+      // It's safer to do it AFTER this transaction returns successfully.
+
       return { user: updatedUser, binding: userWorkstation }
     })
+
+    // Post-transaction: Award bits
+    await LevelingService.addBits(userId, 20, 'workstation_rent', result.binding.id.toString())
 
     // Redis缓存已永久禁用，避免缓存导致的数据不一致问题
     // 不再使用Redis缓存

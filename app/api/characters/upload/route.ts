@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { LevelingService } from '@/lib/services/leveling'
 
 /**
  * POST /api/characters/upload
@@ -156,6 +157,9 @@ export async function POST(request: NextRequest) {
     })
 
     // 返回成功响应
+    // 奖励经验值 (Award 30 Bits)
+    await LevelingService.addBits(payload.userId, 30, 'character_upload', character.id)
+
     return NextResponse.json({
       success: true,
       data: {

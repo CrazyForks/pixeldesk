@@ -129,6 +129,8 @@ export async function PUT(request: NextRequest) {
       email: updatedUser.email,
       avatar: updatedUser.avatar,
       points: updatedUser.points,
+      level: (updatedUser as any).level,
+      bits: (updatedUser as any).bits,
       emailVerified: updatedUser.emailVerified,
       updatedAt: updatedUser.updatedAt,
       inviteCode: updatedUser.inviteCode
@@ -194,6 +196,8 @@ export async function GET(request: NextRequest) {
       email: authResult.user.email,
       avatar: authResult.user.avatar,
       points: authResult.user.points,
+      level: authResult.user.level,
+      bits: authResult.user.bits,
       emailVerified: authResult.user.emailVerified,
       inviteCode: authResult.user.inviteCode
     }

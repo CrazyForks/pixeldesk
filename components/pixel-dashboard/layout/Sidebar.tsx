@@ -63,6 +63,11 @@ const menuItems: MenuItem[] = [
         icon: 'ℹ️',
         href: '/pixel-dashboard/settings/about',
       },
+      {
+        title: '等级配置',
+        icon: '🏆',
+        href: '/pixel-dashboard/settings/levels',
+      },
     ],
   },
   {

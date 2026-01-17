@@ -12,6 +12,8 @@ interface PlayerDetails {
     email: string | null
     characterSprite: string
     points: number
+    bits: number
+    level: number
     totalPlayTime: number
     totalPlayTimeText: string
     lastActiveAt: string
@@ -27,6 +29,11 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
 
+    // Admin Edit States
+    const [isEditingBits, setIsEditingBits] = useState(false)
+    const [newBits, setNewBits] = useState<number>(0)
+    const [isUpdating, setIsUpdating] = useState(false)
+
     useEffect(() => {
         fetchPlayerDetails()
     }, [params.id])
@@ -37,6 +44,7 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
             if (response.ok) {
                 const data = await response.json()
                 setPlayer(data.data)
+                setNewBits(data.data.bits)
             } else {
                 setError('无法加载玩家详情')
             }
@@ -44,6 +52,27 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
             setError('加载出错')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleUpdateBits = async () => {
+        setIsUpdating(true)
+        try {
+            const response = await fetch(`/api/pixel-dashboard/players/${params.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bits: newBits })
+            })
+            if (response.ok) {
+                await fetchPlayerDetails()
+                setIsEditingBits(false)
+            } else {
+                alert('更新失败')
+            }
+        } catch (err) {
+            alert('更新出错')
+        } finally {
+            setIsUpdating(false)
         }
     }
 
@@ -112,7 +141,7 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column: Profile Card */}
                 <div className="md:col-span-1 bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center">
-                    <div className="w-32 h-32 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-purple-500/20">
+                    <div className="w-32 h-32 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-purple-500/20 relative">
                         <Image
                             src={`/assets/characters/${player.characterSprite}.png`}
                             alt={player.characterSprite}
@@ -120,6 +149,9 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
                             height={80}
                             className="pixelated"
                         />
+                        <div className="absolute -bottom-2 -right-2 bg-purple-600 text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold border-2 border-gray-950 shadow-lg">
+                            {player.level}
+                        </div>
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-1">{player.playerName}</h2>
                     <p className="text-gray-400 text-sm mb-4">@{player.userName}</p>
@@ -133,8 +165,26 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
                 <div className="md:col-span-2 space-y-6">
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col justify-between">
+                            <div>
+                                <p className="text-gray-500 text-sm mb-1">经验等级 (Level)</p>
+                                <p className="text-2xl font-bold text-purple-400">{player.level}</p>
+                            </div>
+                        </div>
+                        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col justify-between relative group">
+                            <div>
+                                <p className="text-gray-500 text-sm mb-1">解析进度 (Bits)</p>
+                                <p className="text-2xl font-bold text-indigo-400">{player.bits}</p>
+                            </div>
+                            <button
+                                onClick={() => setIsEditingBits(true)}
+                                className="absolute top-2 right-2 p-1 text-gray-600 hover:text-indigo-400 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                                ✏️
+                            </button>
+                        </div>
                         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                            <p className="text-gray-500 text-sm mb-1">当前积分</p>
+                            <p className="text-gray-500 text-sm mb-1">当前积分 (Points)</p>
                             <p className="text-2xl font-bold text-yellow-400">{player.points}</p>
                         </div>
                         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -142,6 +192,35 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
                             <p className="text-2xl font-bold text-blue-400">{player.totalPlayTimeText}</p>
                         </div>
                     </div>
+
+                    {/* Admin Tools: Bits Adjustment */}
+                    {isEditingBits && (
+                        <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-2xl p-6 animate-in slide-in-from-top-2 duration-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-indigo-100 flex items-center gap-2">
+                                    <span>🛠️</span> 管理员调试：修改 Bits
+                                </h3>
+                                <button onClick={() => setIsEditingBits(false)} className="text-gray-500 hover:text-white">✕</button>
+                            </div>
+                            <div className="flex gap-3">
+                                <input
+                                    type="number"
+                                    value={newBits}
+                                    onChange={(e) => setNewBits(parseInt(e.target.value) || 0)}
+                                    className="flex-1 bg-black/40 border border-indigo-500/30 rounded-lg px-4 py-2 text-white outline-none focus:border-indigo-500"
+                                    placeholder="输入新的 Bits 数值"
+                                />
+                                <button
+                                    onClick={handleUpdateBits}
+                                    disabled={isUpdating}
+                                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg font-bold transition-all"
+                                >
+                                    {isUpdating ? '更新中...' : '提交修改'}
+                                </button>
+                            </div>
+                            <p className="mt-2 text-xs text-indigo-300/60">提示：增加 Bits 可能会触发等级提升逻辑。</p>
+                        </div>
+                    )}
 
                     {/* Detailed Info */}
                     <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">

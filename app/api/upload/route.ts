@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { jwtVerify } from 'jose'
+import { LevelingService } from '@/lib/services/leveling'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
 const ADMIN_JWT_SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || 'default-secret')
@@ -41,8 +42,20 @@ export async function POST(request: NextRequest) {
         }
 
         const formData = await request.formData()
-        const file = formData.get('file') as File
         const folder = (formData.get('folder') as string) || 'blog'
+
+        // 如果是社交帖子图片上传，检查权限
+        if (folder === 'posts') {
+            const hasPermission = await LevelingService.checkPermission(userId, 'social_image_upload')
+            if (!hasPermission) {
+                return NextResponse.json({
+                    success: false,
+                    error: '等级不足，无法在帖子中上传图片。请继续提升等级以解锁此特权。'
+                }, { status: 403 })
+            }
+        }
+
+        const file = formData.get('file') as File
 
         if (!file) {
             return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })

@@ -8,6 +8,8 @@ export interface AuthenticatedUser {
   email: string
   avatar?: string
   points?: number
+  level?: number
+  bits?: number
   emailVerified?: boolean
   inviteCode?: string
 }
@@ -69,6 +71,8 @@ export async function verifyAuthFromRequest(request: NextRequest): Promise<AuthR
       email: user.email!,
       avatar: user.avatar || undefined,
       points: user.points,
+      level: (user as any).level,
+      bits: (user as any).bits,
       emailVerified: user.emailVerified,
       inviteCode: user.inviteCode || undefined
     }
@@ -118,6 +122,8 @@ export async function getBasicUserFromRequest(request: NextRequest): Promise<Aut
       email: user.email!,
       avatar: user.avatar || undefined,
       points: user.points,
+      level: (user as any).level,
+      bits: (user as any).bits,
       emailVerified: user.emailVerified,
       inviteCode: user.inviteCode || undefined
     }

@@ -491,6 +491,8 @@ model user_workstations {
 
 model users {
   id                                               String                      @id
+  level                                            Int                         @default(0)
+  bits                                             Int                         @default(0)
   points                                           Int                         @default(100)
   createdAt                                        DateTime                    @default(now())
   updatedAt                                        DateTime
@@ -503,6 +505,7 @@ model users {
   password                                         String?
   customAvatar                                     String?
   inviteCode                                       String?                     @unique
+  bits_history                                     bits_history[]
   ai_usage                                         ai_usage[]
   billboard_promotions                             billboard_promotions[]
   books                                            books[]
@@ -752,4 +755,31 @@ model user_postcard_collection {
 
   @@index([userId])
   @@index([postcardOwnerId])
+}
+
+model level_definitions {
+  id              String   @id @default(cuid())
+  level           Int      @unique
+  name            String
+  minBits         Int
+  visualConfig    Json?    // Stores icon, color, frame style
+  unlockedFeatures Json?   // Stores list of unlocked feature keys
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([level])
+}
+
+model bits_history {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int
+  sourceType  String   // e.g., "post", "walk", "like"
+  sourceId    String?  // ID of the post/interaction
+  balance     Int      // Balance after this transaction
+  createdAt   DateTime @default(now())
+  user        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([sourceType])
 }

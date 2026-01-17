@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { randomUUID } from 'crypto'
+import { LevelingService } from '@/lib/services/leveling'
 
 // 点赞/取消点赞帖子
 export async function POST(
@@ -130,6 +131,15 @@ export async function POST(
 
       action = 'liked'
       newLikeCount = post.likeCount + 1
+
+      // 奖励经验值 (Award Bits)
+      // 1. 点赞者获得经验 (Like Give)
+      await LevelingService.addBits(userId, 2, 'like_give', postId)
+
+      // 2. 作者获得经验 (Like Receive) - if not self-like
+      if (post.authorId !== userId) {
+        await LevelingService.addBits(post.authorId, 5, 'like_receive', postId)
+      }
     }
 
     return NextResponse.json({

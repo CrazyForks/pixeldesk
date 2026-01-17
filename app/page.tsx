@@ -140,6 +140,14 @@ const BuildingRenovationModal = dynamic(() => import('@/components/BuildingRenov
   ssr: false
 })
 
+const LevelUpModal = dynamic(() => import('@/components/LevelUpModal'), {
+  ssr: false
+})
+
+const PrivilegeModal = dynamic(() => import('@/components/PrivilegeModal'), {
+  ssr: false
+})
+
 export default function Home() {
   // 认证相关状态
   const { user, isLoading, playerExists, setPlayerExists } = useUser()
@@ -243,6 +251,37 @@ export default function Home() {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false)
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
 
+  // 标记是否已经完成了初始Layout状态加载，防止覆盖localStorage
+  const [isLayoutInitialized, setIsLayoutInitialized] = useState(false)
+
+  // 从 localStorage 恢复面板状态
+  useEffect(() => {
+    // 延迟执行，确保在客户端环境中
+    const savedLeft = localStorage.getItem('pixeldesk_left_panel_collapsed')
+    if (savedLeft !== null) {
+      setLeftPanelCollapsed(savedLeft === 'true')
+    }
+    const savedRight = localStorage.getItem('pixeldesk_right_panel_collapsed')
+    if (savedRight !== null) {
+      setRightPanelCollapsed(savedRight === 'true')
+    }
+    // 标记初始化完成
+    setIsLayoutInitialized(true)
+  }, [])
+
+  // 监听面板状态变化并保存到 localStorage
+  useEffect(() => {
+    if (isLayoutInitialized) {
+      localStorage.setItem('pixeldesk_left_panel_collapsed', String(leftPanelCollapsed))
+    }
+  }, [leftPanelCollapsed, isLayoutInitialized])
+
+  useEffect(() => {
+    if (isLayoutInitialized) {
+      localStorage.setItem('pixeldesk_right_panel_collapsed', String(rightPanelCollapsed))
+    }
+  }, [rightPanelCollapsed, isLayoutInitialized])
+
   // AI 聊天弹窗状态
   const [aiChatModal, setAiChatModal] = useState({
     isOpen: false,
@@ -268,6 +307,41 @@ export default function Home() {
     isOpen: false,
     name: ''
   })
+
+  // 升级 modal 状态
+  const [levelUpModal, setLevelUpModal] = useState({
+    isOpen: false,
+    newLevel: 0,
+    levelName: '',
+    rewards: [] as string[]
+  })
+
+  // 权限面板状态
+  const [showPrivilegeModal, setShowPrivilegeModal] = useState(false)
+
+  // 监听升级事件
+  useEffect(() => {
+    const handleLevelUp = (e: CustomEvent) => {
+      const { newLevel, levelName, rewards } = e.detail;
+      setLevelUpModal({
+        isOpen: true,
+        newLevel,
+        levelName,
+        rewards
+      });
+    };
+
+    const handleShowPrivileges = () => {
+      setShowPrivilegeModal(true);
+    };
+
+    window.addEventListener('level-up' as any, handleLevelUp);
+    window.addEventListener('show-privilege-modal' as any, handleShowPrivileges);
+    return () => {
+      window.removeEventListener('level-up' as any, handleLevelUp);
+      window.removeEventListener('show-privilege-modal' as any, handleShowPrivileges);
+    };
+  }, []);
 
   // 排行榜弹窗状态
 
@@ -1366,6 +1440,24 @@ export default function Home() {
       <PostcardDesignerModal
         isOpen={showPostcardDesigner}
         onClose={() => setShowPostcardDesigner(false)}
+        initialReceiverId={postcardRequest?.senderId}
+        initialReceiverName={postcardRequest?.senderName}
+        requestId={postcardRequest?.exchangeId}
+      />
+
+      {/* 升级模态框 */}
+      <LevelUpModal
+        isOpen={levelUpModal.isOpen}
+        onClose={() => setLevelUpModal(p => ({ ...p, isOpen: false }))}
+        newLevel={levelUpModal.newLevel}
+        levelName={levelUpModal.levelName}
+        rewards={levelUpModal.rewards}
+      />
+
+      {/* 权限模态框 */}
+      <PrivilegeModal
+        isOpen={showPrivilegeModal}
+        onClose={() => setShowPrivilegeModal(false)}
       />
 
       <PostcardRequestModal

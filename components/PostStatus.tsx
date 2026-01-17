@@ -171,7 +171,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
       {currentStatus && (
         <div className="group relative overflow-hidden">
           {/* 状态卡片 - 紧凑布局 */}
-          <div className="relative bg-gradient-to-br from-retro-bg-darker/90 to-retro-bg-dark/85 backdrop-blur-md border border-gray-800 rounded-lg p-3 shadow-xl hover:shadow-2xl  hover:border-retro-purple/60">
+          <div className="relative bg-gradient-to-br from-retro-bg-darker/90 to-retro-bg-dark/85 backdrop-blur-md border border-gray-800 rounded-lg p-3 shadow-xl hover:shadow-2xl hover:border-retro-purple/60 transition-all">
             <div className="flex items-center gap-3">
               {/* 紧凑状态图标 */}
               <div className="relative">
@@ -221,7 +221,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
         {userId && (
           <button
             onClick={memoizedHandleToggleHistory}
-            className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-2.5 px-3 rounded-lg  border border-gray-700 hover:border-retro-blue/60 shadow-lg hover:shadow-xl backdrop-blur-sm"
+            className="flex-1 group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/80 to-retro-bg-darker/80 hover:from-retro-border/60 hover:to-retro-border/80 text-white font-medium py-2.5 px-3 rounded-lg border border-gray-700 hover:border-retro-blue/60 shadow-lg hover:shadow-xl transition-all backdrop-blur-sm"
           >
             {/* 按钮内容 - 紧凑版 */}
             <div className="relative flex items-center justify-center gap-2">
@@ -230,7 +230,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                 {showHistory ? t.status.hide.toUpperCase() : t.leftPanel.history.toUpperCase()}
               </span>
               {/* 小型计数器 */}
-              <span className="text-xs bg-cyan-500/50 text-white px-1.5 py-0.5 rounded-full font-pixel">
+              <span className="text-xs bg-indigo-500/50 dark:bg-cyan-500/50 text-white px-1.5 py-0.5 rounded-full font-pixel">
                 {statusHistory.length}
               </span>
             </div>
@@ -241,7 +241,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
       {/* 详细状态设置 - 超紧凑面板 */}
       {isExpanded && (
         <div
-          className="space-y-2 bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-dark/90 to-retro-bg-darker/95 backdrop-blur-lg border border-gray-800 rounded-lg p-3 shadow-2xl "
+          className="space-y-2 bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-dark/90 to-retro-bg-darker/95 backdrop-blur-lg border border-gray-800 rounded-lg p-3 shadow-2xl"
           onClick={(e) => {
             // 阻止点击事件冒泡到Phaser游戏
             e.stopPropagation()
@@ -252,7 +252,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
           }}
         >
           {/* 面板标题 */}
-          <div className="flex items-center gap-2 pb-1 border-b border-gray-800/50">
+          <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-gray-800/50">
             <div className="w-4 h-4 bg-gradient-to-br from-cyan-500 to-teal-500 rounded flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <span className="text-[10px]">⚙️</span>
             </div>
@@ -273,7 +273,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                   onClick={() => memoizedHandleStatusSelect(status.id)}
                   className={`group relative overflow-hidden p-2 rounded-lg border transition-all ${selectedStatus === status.id
                     ? `border-white/40 bg-gradient-to-br ${status.color} text-white shadow-lg shadow-cyan-500/10`
-                    : "border-gray-700/50 bg-gray-800/40 hover:border-cyan-500/50 hover:bg-gray-800/60 shadow-md"
+                    : "border-gray-700/50 bg-gray-800/40 hover:border-cyan-500/50 hover:bg-gray-800/60 shadow-sm"
                     }`}
                 >
                   {/* 选择状态的光效 */}
@@ -322,7 +322,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                   e.stopPropagation()
                 }}
                 placeholder={t.status.placeholder}
-                className="relative w-full p-2 bg-gray-800/50 border border-gray-700 rounded-lg resize-none focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800/80 focus:shadow-lg focus:shadow-cyan-500/10 text-white placeholder-gray-500 backdrop-blur-md font-retro text-sm leading-relaxed transition-all"
+                className="relative w-full p-2 bg-gray-800/50 border border-gray-700 rounded-lg resize-none focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800/80 focus:shadow-lg text-white placeholder-gray-500 backdrop-blur-md font-retro text-sm leading-relaxed transition-all"
                 rows={3}
               />
               {/* 字符计数器 */}
@@ -353,11 +353,11 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
             {/* 取消按钮 */}
             <button
               onClick={memoizedHandleCancel}
-              className="flex-1 group relative overflow-hidden bg-gray-800/80 hover:bg-gray-700/80 text-white font-medium py-2 px-3 rounded-lg border border-gray-700 hover:border-gray-600 shadow-lg transition-all active:scale-[0.98]"
+              className="flex-1 group relative overflow-hidden bg-gray-800/80 hover:bg-gray-700/80 text-white font-medium py-2 px-3 rounded-lg border border-gray-700 hover:border-gray-600 shadow-sm transition-all active:scale-[0.98]"
             >
               {/* 取消按钮内容 */}
-              <div className="relative flex items-center justify-center gap-2 text-gray-400 group-hover:text-gray-200">
-                <div className="w-4 h-4 bg-gray-700 rounded flex items-center justify-center group-hover:bg-gray-600">
+              <div className="relative flex items-center justify-center gap-2 text-slate-500 dark:text-gray-400 group-hover:text-slate-700 dark:group-hover:text-gray-200">
+                <div className="w-4 h-4 bg-slate-200 dark:bg-gray-700 rounded flex items-center justify-center group-hover:bg-slate-300 dark:group-hover:bg-gray-600">
                   <span className="text-xs">✕</span>
                 </div>
                 <span className="font-pixel text-xs tracking-wide">{t.common.cancel.toUpperCase()}</span>
@@ -369,11 +369,11 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
 
       {/* 状态历史显示 - 紧凑像素风格 */}
       {showHistory && userId && (
-        <div className="space-y-3 bg-gradient-to-br from-retro-bg-darker/95 via-retro-bg-dark/90 to-retro-bg-darker/95 backdrop-blur-lg border border-gray-800 rounded-lg p-3 shadow-2xl ">
+        <div className="space-y-3 bg-white dark:bg-gradient-to-br dark:from-retro-bg-darker/95 dark:via-retro-bg-dark/90 dark:to-retro-bg-darker/95 backdrop-blur-lg border border-slate-200 dark:border-gray-800 rounded-lg p-3 shadow-xl dark:shadow-2xl">
           {/* 历史记录标题 */}
-          <div className="flex items-center justify-between pb-2 border-b border-gray-800/50">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-gray-800/50">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 bg-gradient-to-br from-retro-cyan to-retro-blue rounded flex items-center justify-center shadow-lg">
+              <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-blue-500 dark:from-retro-cyan dark:to-retro-blue rounded flex items-center justify-center shadow-lg">
                 <span className="text-sm">📊</span>
               </div>
               <h3 className="text-white font-bold text-sm font-pixel tracking-wider">
@@ -381,8 +381,8 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
               </h3>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 bg-retro-cyan rounded-full "></div>
-              <span className="text-xs text-retro-textMuted font-retro tracking-wide">
+              <div className="w-1.5 h-1.5 bg-indigo-500 dark:bg-retro-cyan rounded-full "></div>
+              <span className="text-xs text-slate-400 dark:text-retro-textMuted font-retro tracking-wide">
                 {statusHistory.length}
               </span>
             </div>
@@ -408,7 +408,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
               statusHistory.map((history, index) => (
                 <div
                   key={history.id || index}
-                  className="group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/60 to-retro-bg-darker/60 rounded-lg p-2.5 border border-gray-700/50 hover:border-retro-cyan/50  hover:shadow-lg backdrop-blur-sm"
+                  className="group relative overflow-hidden bg-gradient-to-r from-retro-bg-dark/60 to-retro-bg-darker/60 rounded-lg p-2.5 border border-gray-700/50 hover:border-retro-cyan/50 dark:hover:shadow-lg transition-all backdrop-blur-sm"
                 >
                   {/* 记录内容 */}
                   <div className="relative space-y-2">
@@ -441,43 +441,43 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
 
           {/* 状态统计仪表板 */}
           {statusHistory.length > 0 && (
-            <div className="pt-2 border-t border-gray-800/50">
+            <div className="pt-2 border-t border-slate-100 dark:border-gray-800/50">
               <div className="grid grid-cols-3 gap-2">
                 {/* 今日状态 */}
-                <div className="text-center space-y-1 bg-gradient-to-br from-retro-green/10 to-retro-blue/10 rounded p-2 border border-retro-green/20">
-                  <div className="w-5 h-5 bg-gradient-to-br from-retro-green to-retro-cyan rounded flex items-center justify-center mx-auto shadow-lg">
+                <div className="text-center space-y-1 bg-indigo-50/50 dark:bg-gradient-to-br dark:from-retro-green/10 dark:to-retro-blue/10 rounded p-2 border border-indigo-100 dark:border-retro-green/20">
+                  <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-blue-500 dark:from-retro-green dark:to-retro-cyan rounded flex items-center justify-center mx-auto shadow-sm">
                     <span className="text-xs">📅</span>
                   </div>
-                  <div className="text-lg font-bold text-white font-pixel">
+                  <div className="text-lg font-bold text-slate-800 dark:text-white font-pixel">
                     {
                       statusHistoryManager.getStatusHistoryStats(userId)
                         .todayCount
                     }
                   </div>
-                  <div className="text-xs text-retro-textMuted font-retro tracking-wide uppercase">
+                  <div className="text-xs text-slate-400 dark:text-retro-textMuted font-retro tracking-wide uppercase">
                     {t.status.today}
                   </div>
                 </div>
 
                 {/* 总记录数 */}
-                <div className="text-center space-y-1 bg-gradient-to-br from-retro-purple/10 to-retro-pink/10 rounded p-2 border border-retro-purple/20">
-                  <div className="w-5 h-5 bg-gradient-to-br from-retro-purple to-retro-pink rounded flex items-center justify-center mx-auto shadow-lg">
+                <div className="text-center space-y-1 bg-purple-50/50 dark:bg-gradient-to-br dark:from-retro-purple/10 dark:to-retro-pink/10 rounded p-2 border border-purple-100 dark:border-retro-purple/20">
+                  <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-indigo-500 dark:from-retro-purple dark:to-retro-pink rounded flex items-center justify-center mx-auto shadow-sm">
                     <span className="text-xs">📈</span>
                   </div>
-                  <div className="text-lg font-bold text-white font-pixel">
+                  <div className="text-lg font-bold text-slate-800 dark:text-white font-pixel">
                     {statusHistory.length}
                   </div>
-                  <div className="text-xs text-retro-textMuted font-retro tracking-wide uppercase">
+                  <div className="text-xs text-slate-400 dark:text-retro-textMuted font-retro tracking-wide uppercase">
                     {t.leftPanel.total}
                   </div>
                 </div>
 
                 {/* 最常用状态 */}
-                <div className="text-center space-y-1 bg-gradient-to-br from-retro-yellow/10 to-retro-orange/10 rounded p-2 border border-retro-yellow/20">
-                  <div className="w-5 h-5 bg-gradient-to-br from-retro-yellow to-retro-orange rounded flex items-center justify-center mx-auto shadow-lg">
+                <div className="text-center space-y-1 bg-amber-50/50 dark:bg-gradient-to-br dark:from-retro-yellow/10 dark:to-retro-orange/10 rounded p-2 border border-amber-100 dark:border-retro-yellow/20">
+                  <div className="w-5 h-5 bg-gradient-to-br from-amber-500 to-orange-500 dark:from-retro-yellow dark:to-retro-orange rounded flex items-center justify-center mx-auto shadow-sm">
                     <span className="text-xs">⭐</span>
                   </div>
-                  <div className="text-lg font-bold text-white font-pixel">
+                  <div className="text-lg font-bold text-slate-800 dark:text-white font-pixel">
                     {statusHistoryManager.getStatusHistoryStats(userId)
                       .mostUsedStatus === "working"
                       ? "💼"
@@ -495,7 +495,7 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
                               ? "🍽️"
                               : "🚻"}
                   </div>
-                  <div className="text-xs text-retro-textMuted font-retro tracking-wide uppercase">
+                  <div className="text-xs text-slate-400 dark:text-retro-textMuted font-retro tracking-wide uppercase">
                     {t.status.popular}
                   </div>
                 </div>

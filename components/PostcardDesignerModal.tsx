@@ -9,9 +9,19 @@ interface PostcardDesignerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSaveSuccess?: () => void;
+    initialReceiverId?: string;
+    initialReceiverName?: string;
+    requestId?: string;
 }
 
-const PostcardDesignerModal: React.FC<PostcardDesignerModalProps> = ({ isOpen, onClose, onSaveSuccess }) => {
+const PostcardDesignerModal: React.FC<PostcardDesignerModalProps> = ({
+    isOpen,
+    onClose,
+    onSaveSuccess,
+    initialReceiverId,
+    initialReceiverName,
+    requestId
+}) => {
     const { t } = useTranslation();
     const { user } = useUser();
     const [cardName, setCardName] = useState('');

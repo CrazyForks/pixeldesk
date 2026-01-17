@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { rewardPoints } from '@/lib/pointsManager'
 import { randomUUID } from 'crypto'
+import { LevelingService } from '@/lib/services/leveling'
 
 // 获取帖子的回复 - 带重试机制处理数据库连接问题
 export async function GET(
@@ -280,9 +281,11 @@ export async function POST(
 
       // 奖励积分给回复者（不影响回复创建，失败也不抛出错误）
       rewardPoints(userId, 'reply_post_reward', `回复帖子 ${postId}`)
-        .then(reward => {
+        .then(async reward => {
           if (reward.success) {
             console.log(`✨ [POST replies] 用户 ${userId} 获得 ${reward.points} 积分奖励`)
+            // 奖励经验值 (Award 5 Bits)
+            await LevelingService.addBits(userId, 5, 'comment_create', result.id)
           }
         })
         .catch(err => {

@@ -9,7 +9,7 @@ export async function GET(
     try {
         await requirePermission('players.view')
 
-        const player = await prisma.players.findUnique({
+        const player = await (prisma.players as any).findUnique({
             where: { id: params.id },
             include: {
                 users: {
@@ -18,6 +18,8 @@ export async function GET(
                         name: true,
                         email: true,
                         points: true,
+                        bits: true,
+                        level: true,
                         isActive: true,
                         createdAt: true,
                         lastLogin: true,
@@ -39,6 +41,8 @@ export async function GET(
             userName: player.users.name,
             email: player.users.email,
             points: player.users.points,
+            bits: player.users.bits,
+            level: player.users.level,
             isActive: player.users.isActive,
             totalPlayTimeText: totalHours > 0
                 ? `${totalHours}小时${totalMinutes}分钟`
@@ -53,6 +57,53 @@ export async function GET(
         console.error('Failed to get player:', error)
         return NextResponse.json(
             { error: '获取玩家详情失败' },
+            { status: 500 }
+        )
+    }
+}
+
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        await requirePermission('players.edit')
+
+        const body = await request.json()
+        const { bits, points } = body
+
+        const player = await prisma.players.findUnique({
+            where: { id: params.id },
+            select: { userId: true }
+        })
+
+        if (!player) {
+            return NextResponse.json({ error: '玩家未找到' }, { status: 404 })
+        }
+
+        const updateData: any = {}
+        if (bits !== undefined) updateData.bits = parseInt(bits)
+        if (points !== undefined) updateData.points = parseInt(points)
+
+        const updatedUser = await (prisma.users as any).update({
+            where: { id: player.userId },
+            data: updateData
+        })
+
+        // Check if level needs update
+        if (bits !== undefined) {
+            const { LevelingService } = await import('@/lib/services/leveling');
+            await LevelingService.syncUserLevel(player.userId);
+        }
+
+        return NextResponse.json({
+            success: true,
+            data: updatedUser,
+        })
+    } catch (error) {
+        console.error('Failed to update player:', error)
+        return NextResponse.json(
+            { error: '更新玩家失败' },
             { status: 500 }
         )
     }
