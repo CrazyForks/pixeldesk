@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { CreatePostData } from '@/types/social'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { useNodes } from '@/lib/hooks/useNodes'
 
 interface CreatePostFormProps {
   onSubmit: (postData: CreatePostData) => Promise<boolean>
@@ -14,10 +15,36 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [imageUrls, setImageUrls] = useState<string[]>([])
-  const [imageUrlInput, setImageUrlInput] = useState('')
+  const [dismissedUrls, setDismissedUrls] = useState<string[]>([])
+  const { nodes } = useNodes()
+  const [selectedNodeId, setSelectedNodeId] = useState<string>('')
+  const [isNodeDropdownOpen, setIsNodeDropdownOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const nodeDropdownRef = useRef<HTMLDivElement>(null)
   const { t } = useTranslation()
+
+  // 设置默认节点
+  useEffect(() => {
+    if (nodes.length > 0 && !selectedNodeId) {
+      // 优先选择 slug 为 "main" or "general" 的节点，否则选第一个
+      const defaultNode = nodes.find(n => n.slug === 'main' || n.slug === 'general') || nodes[0]
+      setSelectedNodeId(defaultNode.id)
+    }
+  }, [nodes, selectedNodeId])
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (nodeDropdownRef.current && !nodeDropdownRef.current.contains(event.target as Node)) {
+        setIsNodeDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // 简单的键盘输入控制
   const handleInputFocus = () => {
@@ -32,18 +59,85 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
     }
   }
 
-  // 添加图片URL
-  const handleAddImageUrl = () => {
-    const url = imageUrlInput.trim()
-    if (url && !imageUrls.includes(url)) {
-      setImageUrls([...imageUrls, url])
-      setImageUrlInput('')
+  // 自动解析图片 URL
+  const detectImageUrls = (text: string) => {
+    // 匹配常见的图片扩展名，支持带有查询参数的 URL
+    const imageRegex = /https?:\/\/[^\s$.?#].[^\s]*\.(?:jpg|jpeg|gif|png|webp|svg)(?:\?[^\s]*)?/gi
+    const matches = text.match(imageRegex)
+
+    if (matches) {
+      const newUrls = matches.filter(url => !imageUrls.includes(url) && !dismissedUrls.includes(url))
+      if (newUrls.length > 0) {
+        console.log('🔍 [CreatePostForm] 检测到新图片 URL:', newUrls)
+        setImageUrls(prev => [...prev, ...newUrls])
+      }
+    }
+  }
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value
+    setContent(newContent)
+    detectImageUrls(newContent)
+  }
+
+  // 上传图片文件
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    setError('')
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // 验证文件类型
+        if (!file.type.startsWith('image/')) {
+          throw new Error('只支持图片文件')
+        }
+
+        // 验证文件大小 (500KB)
+        const MAX_SIZE = 500 * 1024
+        if (file.size > MAX_SIZE) {
+          throw new Error(`图片太大 (最大 500KB)，当前大小: ${Math.round(file.size / 1024)}KB`)
+        }
+
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'posts')
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await response.json()
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || '上传失败')
+        }
+
+        return data.url
+      })
+
+      const uploadedUrls = await Promise.all(uploadPromises)
+      setImageUrls([...imageUrls, ...uploadedUrls])
+    } catch (err) {
+      console.error('图片上传失败:', err)
+      setError(err instanceof Error ? err.message : '图片上传失败')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
   // 删除图片URL
   const handleRemoveImageUrl = (urlToRemove: string) => {
     setImageUrls(imageUrls.filter(url => url !== urlToRemove))
+    // 如果是外部链接，记录到已忽略列表，防止再次自动解析
+    if (urlToRemove.startsWith('http')) {
+      setDismissedUrls(prev => [...prev, urlToRemove])
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +161,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
         title: title.trim() || undefined,
         content: content.trim(),
         type: 'TEXT',
+        nodeId: selectedNodeId || undefined,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined
       }
 
@@ -78,7 +173,8 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
         setTitle('')
         setContent('')
         setImageUrls([])
-        setImageUrlInput('')
+        setDismissedUrls([])
+        // 保持当前节点选择
       } else {
         setError(t.social.err_failed)
       }
@@ -103,7 +199,7 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
             <textarea
               placeholder={t.social.share_placeholder}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={handleContentChange}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
               className="relative w-full bg-black/40 border border-white/10 focus:border-retro-purple/50 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none backdrop-blur-md font-retro text-sm resize-none transition-all duration-300 focus:shadow-[0_0_20px_rgba(168,85,247,0.15)] focus:bg-black/60"
@@ -122,35 +218,36 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
             </div>
           </div>
 
-          {/* 图片URL输入区域 */}
+          {/* 图片上传区域 */}
           <div className="space-y-2">
-            <div className="flex gap-2">
-              <input
-                type="url"
-                placeholder={t.social.img_url_placeholder}
-                value={imageUrlInput}
-                onChange={(e) => setImageUrlInput(e.target.value)}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddImageUrl()
-                  }
-                }}
-                className="flex-1 bg-black/40 border border-white/10 focus:border-retro-cyan/50 rounded-xl px-4 py-2 text-white placeholder-white/30 focus:outline-none backdrop-blur-md font-retro text-xs transition-all duration-300"
-                disabled={isSubmitting}
-                data-input-container="true"
-              />
-              <button
-                type="button"
-                onClick={handleAddImageUrl}
-                disabled={!imageUrlInput.trim() || isSubmitting}
-                className="bg-gradient-to-r from-retro-cyan/40 to-retro-blue/40 hover:from-retro-cyan/60 hover:to-retro-blue/60 text-white font-medium py-2 px-4 rounded-xl border border-white/10 hover:border-white/20 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md text-[10px] font-pixel uppercase tracking-widest whitespace-nowrap"
-              >
-                📷 {t.social.add}
-              </button>
-            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => handleFileUpload(e.target.files)}
+              className="hidden"
+            />
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSubmitting || isUploading}
+              className="w-full bg-gradient-to-r from-retro-cyan/40 to-retro-blue/40 hover:from-retro-cyan/60 hover:to-retro-blue/60 text-white font-medium py-3 px-4 rounded-xl border border-white/10 hover:border-white/20 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md text-xs font-pixel uppercase tracking-widest flex items-center justify-center gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>上传中...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-base">📷</span>
+                  <span>点击上传图片</span>
+                  <span className="text-[10px] opacity-60">(最大 500KB)</span>
+                </>
+              )}
+            </button>
 
             {/* 图片URL列表 */}
             {imageUrls.length > 0 && (
@@ -189,45 +286,87 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
           </div>
 
           {/* 操作按钮 - 紧凑设计 */}
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setTitle('')
-                setContent('')
-                setImageUrls([])
-                setImageUrlInput('')
-                setError('')
-              }}
-              disabled={isSubmitting}
-              className="group relative overflow-hidden bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-medium py-2 px-5 rounded-xl border border-white/10 hover:border-retro-yellow/30 shadow-sm transition-all duration-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm transition-transform group-hover:rotate-12">🧹</span>
-                <span className="font-pixel text-[10px] uppercase tracking-wider">{t.social.clear}</span>
-              </div>
-            </button>
+          {/* 操作按钮 - 紧凑设计 */}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="relative flex-shrink-0" ref={nodeDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsNodeDropdownOpen(!isNodeDropdownOpen)}
+                className="flex items-center justify-between gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-pixel text-white/70 hover:bg-white/10 hover:text-white transition-all min-w-[100px] uppercase tracking-tighter"
+              >
+                <span className="truncate">
+                  {nodes.find(n => n.id === selectedNodeId)?.name || '选择节点'}
+                </span>
+                <svg className={`w-3 h-3 transition-transform ${isNodeDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-            <button
-              type="submit"
-              disabled={isSubmitting || !content.trim()}
-              className="relative group overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue text-white font-bold py-2 px-6 rounded-xl border border-white/20 hover:border-white/40 shadow-xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative flex items-center gap-2">
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span className="font-pixel text-[10px] uppercase tracking-widest">{t.social.publish}...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">🚀</span>
-                    <span className="font-pixel text-[10px] uppercase tracking-widest">{t.social.publish}</span>
-                  </>
-                )}
-              </div>
-            </button>
+              {isNodeDropdownOpen && (
+                <div className="absolute bottom-full left-0 mb-2 w-40 bg-retro-bg-dark border border-white/10 rounded-xl shadow-2xl z-[60] py-1 backdrop-blur-xl overflow-hidden">
+                  <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                    {nodes.map((node) => (
+                      <button
+                        key={node.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedNodeId(node.id)
+                          setIsNodeDropdownOpen(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-[10px] font-pixel uppercase tracking-tighter transition-colors ${selectedNodeId === node.id ? 'bg-retro-purple/20 text-retro-purple' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                      >
+                        # {node.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setTitle('')
+                  setContent('')
+                  setImageUrls([])
+                  setDismissedUrls([])
+                  if (nodes.length > 0) {
+                    const defaultNode = nodes.find(n => n.slug === 'main' || n.slug === 'general') || nodes[0]
+                    setSelectedNodeId(defaultNode.id)
+                  }
+                  setError('')
+                }}
+                disabled={isSubmitting}
+                className="group relative overflow-hidden bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-medium py-2 px-5 rounded-xl border border-white/10 hover:border-retro-yellow/30 shadow-sm transition-all duration-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm transition-transform group-hover:rotate-12">🧹</span>
+                  <span className="font-pixel text-[10px] uppercase tracking-wider">{t.social.clear}</span>
+                </div>
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting || !content.trim()}
+                className="relative group overflow-hidden bg-gradient-to-r from-retro-purple via-retro-pink to-retro-blue text-white font-bold py-2 px-6 rounded-xl border border-white/20 hover:border-white/40 shadow-xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative flex items-center gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span className="font-pixel text-[10px] uppercase tracking-widest">{t.social.publish}...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm transition-transform group-hover:-translate-y-1 group-hover:translate-x-1">🚀</span>
+                      <span className="font-pixel text-[10px] uppercase tracking-widest">{t.social.publish}</span>
+                    </>
+                  )}
+                </div>
+              </button>
+            </div>
           </div>
         </form>
       </div>

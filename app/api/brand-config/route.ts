@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin } from '@/lib/admin/permissions'
+import { requireAdmin } from '@/lib/pixel-dashboard/permissions'
 
 
 // GET - 获取品牌配置

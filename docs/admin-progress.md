@@ -20,15 +20,15 @@
 #### 2. 管理员认证系统 ✅
 - [x] bcrypt 密码加密
 - [x] JWT token 认证
-- [x] 登录 API (`/api/admin/auth/login`)
-- [x] 登出 API (`/api/admin/auth/logout`)
-- [x] 获取管理员信息 API (`/api/admin/auth/me`)
+- [x] 登录 API (`/api/pixel-dashboard/auth/login`)
+- [x] 登出 API (`/api/pixel-dashboard/auth/logout`)
+- [x] 获取管理员信息 API (`/api/pixel-dashboard/auth/me`)
 - [x] 权限验证工具函数
 - [x] 操作日志记录
 
 #### 3. 后台布局和路由 ✅
-- [x] 管理员登录页 (`/admin/login`)
-- [x] 后台主页/仪表盘 (`/admin`)
+- [x] 管理员登录页 (`/pixel-dashboard/login`)
+- [x] 后台主页/仪表盘 (`/pixel-dashboard`)
 - [x] 侧边栏导航组件
 - [x] 路由保护中间件
 - [x] 响应式布局
@@ -40,7 +40,7 @@
 - [x] API 权限验证
 
 #### 5. 初始数据 ✅
-- [x] 创建默认超级管理员（admin/admin123）
+- [x] 创建默认超级管理员（admin/pixel-dashboard123）
 - [x] 导入 21 个现有角色形象到数据库
 - [x] 创建默认工位配置
 - [x] Seed 脚本
@@ -53,29 +53,29 @@
 
 ### 文件结构
 ```
-/app/admin/                       # 后台页面
+/app/pixel-dashboard/                       # 后台页面
   /login/page.tsx                 # 登录页
   /page.tsx                       # 仪表盘
   /layout.tsx                     # 后台布局
 
-/app/api/admin/                   # 后台 API
+/app/api/pixel-dashboard/                   # 后台 API
   /auth/
     /login/route.ts               # 登录
     /logout/route.ts              # 登出
     /me/route.ts                  # 获取信息
 
-/components/admin/                # 后台组件
+/components/pixel-dashboard/                # 后台组件
   /layout/
     /Sidebar.tsx                  # 侧边栏
 
-/lib/admin/                       # 后台工具
+/lib/pixel-dashboard/                       # 后台工具
   /auth.ts                        # 认证函数
   /permissions.ts                 # 权限控制
   /logger.ts                      # 日志记录
 
 /docs/                            # 文档
-  /admin-dashboard-design.md      # 设计文档
-  /admin-progress.md              # 进度记录
+  /pixel-dashboard-dashboard-design.md      # 设计文档
+  /pixel-dashboard-progress.md              # 进度记录
 
 /prisma/
   /schema.prisma                  # 数据库模型
@@ -84,7 +84,7 @@
 
 ### Git 提交
 - Commit: `273af137`
-- Branch: `feature/admin-dashboard`
+- Branch: `feature/pixel-dashboard-dashboard`
 - Message: "feat: 实现后台管理系统第一阶段 - 基础架构"
 
 ---
@@ -94,61 +94,61 @@
 ### 待开发功能
 
 #### 1. 玩家管理模块
-- [ ] 玩家列表页（`/admin/players`）
+- [ ] 玩家列表页（`/pixel-dashboard/players`）
   - [ ] 表格展示
   - [ ] 搜索和筛选
   - [ ] 分页
   - [ ] 排序
-- [ ] 玩家详情页（`/admin/players/[id]`）
+- [ ] 玩家详情页（`/pixel-dashboard/players/[id]`）
   - [ ] 基本信息
   - [ ] 统计数据
   - [ ] 积分历史
   - [ ] 游戏时长图表
 - [ ] API 端点
-  - [ ] GET `/api/admin/players` - 玩家列表
-  - [ ] GET `/api/admin/players/[id]` - 玩家详情
-  - [ ] PATCH `/api/admin/players/[id]` - 编辑玩家
-  - [ ] GET `/api/admin/players/[id]/history` - 积分历史
+  - [ ] GET `/api/pixel-dashboard/players` - 玩家列表
+  - [ ] GET `/api/pixel-dashboard/players/[id]` - 玩家详情
+  - [ ] PATCH `/api/pixel-dashboard/players/[id]` - 编辑玩家
+  - [ ] GET `/api/pixel-dashboard/players/[id]/history` - 积分历史
 
 #### 2. 角色形象管理模块
-- [ ] 形象列表页（`/admin/characters`）
+- [ ] 形象列表页（`/pixel-dashboard/characters`）
   - [ ] 网格/列表视图
   - [ ] 搜索和筛选
   - [ ] 拖拽排序
   - [ ] 批量操作
-- [ ] 创建形象页（`/admin/characters/create`）
+- [ ] 创建形象页（`/pixel-dashboard/characters/create`）
   - [ ] 图片上传
   - [ ] 自动尺寸检测
   - [ ] 帧预览
   - [ ] 表单验证
-- [ ] 编辑形象页（`/admin/characters/[id]/edit`）
+- [ ] 编辑形象页（`/pixel-dashboard/characters/[id]/edit`）
   - [ ] 更新信息
   - [ ] 更换图片
   - [ ] 使用统计
 - [ ] API 端点
-  - [ ] GET `/api/admin/characters` - 列表
-  - [ ] POST `/api/admin/characters` - 创建
-  - [ ] GET `/api/admin/characters/[id]` - 详情
-  - [ ] PATCH `/api/admin/characters/[id]` - 编辑
-  - [ ] DELETE `/api/admin/characters/[id]` - 删除
-  - [ ] POST `/api/admin/upload` - 上传图片
+  - [ ] GET `/api/pixel-dashboard/characters` - 列表
+  - [ ] POST `/api/pixel-dashboard/characters` - 创建
+  - [ ] GET `/api/pixel-dashboard/characters/[id]` - 详情
+  - [ ] PATCH `/api/pixel-dashboard/characters/[id]` - 编辑
+  - [ ] DELETE `/api/pixel-dashboard/characters/[id]` - 删除
+  - [ ] POST `/api/pixel-dashboard/upload` - 上传图片
 
 #### 3. 工位管理模块
-- [ ] 工位配置页（`/admin/workstations`）
+- [ ] 工位配置页（`/pixel-dashboard/workstations`）
   - [ ] 统计卡片
   - [ ] 占用情况可视化
   - [ ] 绑定记录表格
   - [ ] 批量解绑
-- [ ] 积分规则配置（`/admin/workstations/settings`）
+- [ ] 积分规则配置（`/pixel-dashboard/workstations/settings`）
   - [ ] 配置表单
   - [ ] 修改历史
   - [ ] 二次确认
 - [ ] API 端点
-  - [ ] GET `/api/admin/workstations/stats` - 统计
-  - [ ] GET `/api/admin/workstations/bindings` - 绑定列表
-  - [ ] DELETE `/api/admin/workstations/bindings/[id]` - 解绑
-  - [ ] GET `/api/admin/workstations/config` - 配置
-  - [ ] PUT `/api/admin/workstations/config` - 更新配置
+  - [ ] GET `/api/pixel-dashboard/workstations/stats` - 统计
+  - [ ] GET `/api/pixel-dashboard/workstations/bindings` - 绑定列表
+  - [ ] DELETE `/api/pixel-dashboard/workstations/bindings/[id]` - 解绑
+  - [ ] GET `/api/pixel-dashboard/workstations/config` - 配置
+  - [ ] PUT `/api/pixel-dashboard/workstations/config` - 更新配置
 
 ### 预计时间
 4-5 天

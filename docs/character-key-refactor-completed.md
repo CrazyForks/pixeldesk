@@ -432,7 +432,7 @@ export function getCharacterImageUrl(key: string, format = 'png') {
 
 这些文件可能还需要review（非必需）：
 - `/api/posts/*` - 帖子作者头像
-- `/api/admin/players` - 管理后台
+- `/api/pixel-dashboard/players` - 管理后台
 - 各种UI组件中直接使用avatar的地方
 
 但由于API层已经返回正确的URL，这些文件**理论上无需修改**。

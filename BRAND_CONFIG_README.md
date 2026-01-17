@@ -48,11 +48,11 @@
 - ✅ 批量保存功能
 
 **文件位置：**
-- `app/admin/settings/brand/page.tsx`
+- `app/pixel-dashboard/settings/brand/page.tsx`
 
 **访问地址：**
 ```
-http://localhost:3000/admin/settings/brand
+http://localhost:3000/pixel-dashboard/settings/brand
 ```
 
 ### 6️⃣ 文档
@@ -70,7 +70,7 @@ http://localhost:3000/admin/settings/brand
 
 ### 第一步：访问后台管理
 
-1. 打开浏览器访问：`http://localhost:3000/admin/settings/brand`
+1. 打开浏览器访问：`http://localhost:3000/pixel-dashboard/settings/brand`
 2. 选择语言（中文/英文/日文等）
 3. 修改配置项：
    - **应用名称** (app_name): 象素工坊
@@ -143,7 +143,7 @@ export default function MyComponent() {
 ❌ components/PostDetailModal.tsx
 ❌ components/PhaserGame.tsx
 ❌ app/posts/[id]/page.tsx
-❌ app/admin/login/page.tsx
+❌ app/pixel-dashboard/login/page.tsx
 ❌ app/posts/create/page.tsx
 ❌ app/posts/[id]/edit/page.tsx
 ❌ app/settings/page.tsx
@@ -283,7 +283,7 @@ CREATE TABLE brand_config (
 如有问题或建议，请查看：
 - 📖 完整文档：`docs/BRAND_CONFIG_USAGE.md`
 - 💻 代码示例：`components/InfoPanelWithBrand.tsx`
-- 🎨 管理界面：`http://localhost:3000/admin/settings/brand`
+- 🎨 管理界面：`http://localhost:3000/pixel-dashboard/settings/brand`
 
 ---
 
@@ -313,7 +313,7 @@ CREATE TABLE brand_config (
 - ✅ 自动缓存优化性能
 
 **立即开始使用：**
-1. 访问 `/admin/settings/brand` 配置品牌信息
+1. 访问 `/pixel-dashboard/settings/brand` 配置品牌信息
 2. 在组件中导入 `BrandHeader` 或 `useBrandConfig`
 3. 享受统一管理带来的便利！
 

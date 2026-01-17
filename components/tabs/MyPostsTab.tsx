@@ -164,29 +164,32 @@ export default function MyPostsTab({
         </div>
       </div>
 
-      {/* 发帖区域 */}
-      <div className="flex-shrink-0 border-b border-retro-border/50 bg-gradient-to-r from-retro-bg-darker/40 to-retro-bg-dark/40">
-        <CreatePostForm
-          onSubmit={handleCreatePost}
-          onCancel={() => { }} // 不需要取消功能，因为表单始终显示
-          isMobile={isMobile}
-        />
-      </div>
+      {/* 统一的滚动容器 - 包含发帖区域和动态列表 */}
+      <div className="flex-1 overflow-y-auto">
+        {/* 发帖区域 - 在滚动容器内 */}
+        <div className="border-b border-retro-border/50 bg-gradient-to-r from-retro-bg-darker/40 to-retro-bg-dark/40">
+          <CreatePostForm
+            onSubmit={handleCreatePost}
+            onCancel={() => { }} // 不需要取消功能，因为表单始终显示
+            isMobile={isMobile}
+          />
+        </div>
 
-      {/* 内容区域 */}
-      <div className="flex-1 overflow-hidden">
+        {/* 错误提示 */}
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 m-4 rounded-lg">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
 
+        {/* 加载状态 */}
         {isLoading ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center py-20">
             <LoadingSpinner />
           </div>
         ) : posts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-gradient-to-b from-transparent to-black/20">
+          /* 空状态 */
+          <div className="flex flex-col items-center justify-center py-20 px-8 text-center bg-gradient-to-b from-transparent to-black/20">
             <div className="relative group/empty mb-6">
               <div className="absolute inset-0 bg-retro-purple/20 blur-2xl rounded-full scale-150 transition-all duration-700 group-hover/empty:bg-retro-purple/40"></div>
               <div className="relative w-24 h-24 bg-gradient-to-br from-retro-bg-dark/80 to-retro-bg-darker/80 rounded-2xl flex items-center justify-center border-2 border-retro-border/30 shadow-2xl transition-transform duration-500 group-hover/empty:scale-110 group-hover/empty:rotate-3">
@@ -203,33 +206,32 @@ export default function MyPostsTab({
             </p>
           </div>
         ) : (
-          <div className="h-full overflow-y-auto">
-            <div className="space-y-4 p-4">
-              {posts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={currentUserId || ''}
-                  onLike={() => handleLikePost(post.id)}
-                  onReplyCountUpdate={handleReplyCountUpdate}
-                  isMobile={isMobile}
-                />
-              ))}
+          /* 动态列表 */
+          <div className="space-y-4 p-4">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={currentUserId || ''}
+                onLike={() => handleLikePost(post.id)}
+                onReplyCountUpdate={handleReplyCountUpdate}
+                isMobile={isMobile}
+              />
+            ))}
 
-              {/* 加载更多按钮 */}
-              {pagination.hasNextPage && (
-                <div className="flex justify-center py-4">
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={isRefreshing}
-                    className="group/loadmore relative px-8 py-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl border border-white/10 hover:border-retro-purple/30 transition-all duration-300 active:scale-95 disabled:opacity-50 font-pixel text-[10px] uppercase tracking-widest overflow-hidden shadow-lg"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/0 via-retro-purple/5 to-retro-purple/0 -translate-x-full group-hover/loadmore:translate-x-full transition-transform duration-1000"></div>
-                    {isRefreshing ? `${t.social.loading || 'Loading'}...` : (t.social.load_more || 'Load More')}
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* 加载更多按钮 */}
+            {pagination.hasNextPage && (
+              <div className="flex justify-center py-4">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isRefreshing}
+                  className="group/loadmore relative px-8 py-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl border border-white/10 hover:border-retro-purple/30 transition-all duration-300 active:scale-95 disabled:opacity-50 font-pixel text-[10px] uppercase tracking-widest overflow-hidden shadow-lg"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-retro-purple/0 via-retro-purple/5 to-retro-purple/0 -translate-x-full group-hover/loadmore:translate-x-full transition-transform duration-1000"></div>
+                  {isRefreshing ? `${t.social.loading || 'Loading'}...` : (t.social.load_more || 'Load More')}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

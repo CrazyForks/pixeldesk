@@ -135,8 +135,8 @@ const aiResponse = await callAiProvider(
 ### 后台管理路径
 
 ```
-/admin/ai/npcs         - NPC管理界面
-/admin/front-desk      - 前台管理界面（建议使用相同UI组件）
+/pixel-dashboard/ai/npcs         - NPC管理界面
+/pixel-dashboard/front-desk      - 前台管理界面（建议使用相同UI组件）
 ```
 
 ### 配置字段说明

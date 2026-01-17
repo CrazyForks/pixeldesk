@@ -16,7 +16,7 @@
   - 多个玩家可以为同一篇文章加热，累积热度。
 
 ### 2.2 管理后台配置
-管理员可在 `/admin/workstations` (或专用配置页) 对此功能进行全局调优：
+管理员可在 `/pixel-dashboard/workstations` (或专用配置页) 对此功能进行全局调优：
 - **`HOT_BILLBOARD_COST`**：单次推流所需的象素币数量（默认：50 象素币）。
 - **`HOT_BILLBOARD_DURATION`**：推流热度的基础衰减时长（例如：1单位热度持续1小时）。
 - **`MAX_POSTS_ON_SCREEN`**：大屏循环滚动的文章最大数量（例如：前3篇）。

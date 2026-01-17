@@ -34,7 +34,7 @@ npm run dev
 打开浏览器访问：
 
 ```
-http://localhost:3000/admin/login
+http://localhost:3000/pixel-dashboard/login
 ```
 
 使用默认账号登录：
@@ -46,23 +46,23 @@ http://localhost:3000/admin/login
 ## 📁 目录结构
 
 ```
-/app/admin/                    # 后台管理页面
+/app/pixel-dashboard/                    # 后台管理页面
   /login/page.tsx              # 登录页 ✅
   /page.tsx                    # 仪表盘 ✅
   /players/                    # 玩家管理 🚧
   /characters/                 # 角色形象管理 🚧
   /workstations/               # 工位管理 🚧
 
-/app/api/admin/                # 后台 API
+/app/api/pixel-dashboard/                # 后台 API
   /auth/                       # 认证相关 ✅
   /players/                    # 玩家API 🚧
   /characters/                 # 角色API 🚧
   /workstations/               # 工位API 🚧
 
-/components/admin/             # 后台组件
+/components/pixel-dashboard/             # 后台组件
   /layout/Sidebar.tsx          # 侧边栏 ✅
 
-/lib/admin/                    # 工具函数
+/lib/pixel-dashboard/                    # 工具函数
   /auth.ts                     # 认证 ✅
   /permissions.ts              # 权限 ✅
   /logger.ts                   # 日志 ✅
@@ -110,32 +110,32 @@ http://localhost:3000/admin/login
 
 ```typescript
 // 登录
-POST /api/admin/auth/login
+POST /api/pixel-dashboard/auth/login
 Body: { username: string, password: string }
 
 // 登出
-POST /api/admin/auth/logout
+POST /api/pixel-dashboard/auth/logout
 
 // 获取当前管理员信息
-GET /api/admin/auth/me
+GET /api/pixel-dashboard/auth/me
 ```
 
 ### 玩家管理（开发中）
 
 ```typescript
 // 获取玩家列表
-GET /api/admin/players
+GET /api/pixel-dashboard/players
 Query: { page, pageSize, search, isActive, sortBy, sortOrder }
 
 // 获取玩家详情
-GET /api/admin/players/[id]
+GET /api/pixel-dashboard/players/[id]
 
 // 编辑玩家
-PATCH /api/admin/players/[id]
+PATCH /api/pixel-dashboard/players/[id]
 Body: { points?, characterId?, isActive? }
 
 // 获取玩家积分历史
-GET /api/admin/players/[id]/history
+GET /api/pixel-dashboard/players/[id]/history
 Query: { page, pageSize }
 ```
 
@@ -143,42 +143,42 @@ Query: { page, pageSize }
 
 ```typescript
 // 获取角色列表
-GET /api/admin/characters
+GET /api/pixel-dashboard/characters
 Query: { page, pageSize, search, isActive, priceMin, priceMax }
 
 // 创建角色
-POST /api/admin/characters
+POST /api/pixel-dashboard/characters
 Body: FormData (multipart/form-data)
 
 // 获取角色详情
-GET /api/admin/characters/[id]
+GET /api/pixel-dashboard/characters/[id]
 
 // 编辑角色
-PATCH /api/admin/characters/[id]
+PATCH /api/pixel-dashboard/characters/[id]
 Body: FormData
 
 // 删除角色
-DELETE /api/admin/characters/[id]
+DELETE /api/pixel-dashboard/characters/[id]
 ```
 
 ### 工位管理（开发中）
 
 ```typescript
 // 获取工位统计
-GET /api/admin/workstations/stats
+GET /api/pixel-dashboard/workstations/stats
 
 // 获取工位绑定列表
-GET /api/admin/workstations/bindings
+GET /api/pixel-dashboard/workstations/bindings
 Query: { page, pageSize, search, status }
 
 // 解绑工位
-DELETE /api/admin/workstations/bindings/[id]
+DELETE /api/pixel-dashboard/workstations/bindings/[id]
 
 // 获取工位配置
-GET /api/admin/workstations/config
+GET /api/pixel-dashboard/workstations/config
 
 // 更新工位配置
-PUT /api/admin/workstations/config
+PUT /api/pixel-dashboard/workstations/config
 Body: WorkstationConfigForm
 ```
 
@@ -188,41 +188,41 @@ Body: WorkstationConfigForm
 
 ### 添加新页面
 
-1. 在 `/app/admin/` 下创建新目录
+1. 在 `/app/pixel-dashboard/` 下创建新目录
 2. 创建 `page.tsx` 文件
 3. 在 `Sidebar.tsx` 中添加菜单项
 
 例如：
 
 ```typescript
-// /app/admin/settings/page.tsx
+// /app/pixel-dashboard/settings/page.tsx
 export default function SettingsPage() {
   return <div>系统设置</div>
 }
 
-// /components/admin/layout/Sidebar.tsx
+// /components/pixel-dashboard/layout/Sidebar.tsx
 const menuItems = [
   // ...
   {
     title: '系统设置',
     icon: '⚙️',
-    href: '/admin/settings',
+    href: '/pixel-dashboard/settings',
   },
 ]
 ```
 
 ### 添加新 API
 
-1. 在 `/app/api/admin/` 下创建路由
+1. 在 `/app/api/pixel-dashboard/` 下创建路由
 2. 使用 `requirePermission` 验证权限
 3. 使用 `logAdminAction` 记录操作
 
 例如：
 
 ```typescript
-// /app/api/admin/example/route.ts
-import { requirePermission } from '@/lib/admin/permissions'
-import { logAdminAction } from '@/lib/admin/logger'
+// /app/api/pixel-dashboard/example/route.ts
+import { requirePermission } from '@/lib/pixel-dashboard/permissions'
+import { logAdminAction } from '@/lib/pixel-dashboard/logger'
 
 export async function POST(request: Request) {
   const admin = await requirePermission('example.create')
@@ -245,7 +245,7 @@ export async function POST(request: Request) {
 
 ```typescript
 // 在 API 路由中
-import { requirePermission } from '@/lib/admin/permissions'
+import { requirePermission } from '@/lib/pixel-dashboard/permissions'
 
 // 要求特定权限
 const admin = await requirePermission('characters.delete')
@@ -261,7 +261,7 @@ const admin = await requireAdmin()
 ### 测试登录
 
 ```bash
-curl -X POST http://localhost:3000/api/admin/auth/login \
+curl -X POST http://localhost:3000/api/pixel-dashboard/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
 ```
@@ -270,7 +270,7 @@ curl -X POST http://localhost:3000/api/admin/auth/login \
 
 ```bash
 # 需要先登录获取 cookie
-curl http://localhost:3000/api/admin/auth/me \
+curl http://localhost:3000/api/pixel-dashboard/auth/me \
   -H "Cookie: admin-token=YOUR_TOKEN"
 ```
 
@@ -369,8 +369,8 @@ npx prisma studio
 
 ## 📚 相关文档
 
-- [完整开发方案](./admin-dashboard-design.md)
-- [开发进度](./admin-progress.md)
+- [完整开发方案](./pixel-dashboard-dashboard-design.md)
+- [开发进度](./pixel-dashboard-progress.md)
 - [Prisma 文档](https://www.prisma.io/docs)
 - [Next.js 文档](https://nextjs.org/docs)
 

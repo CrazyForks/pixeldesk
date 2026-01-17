@@ -103,10 +103,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 保护 /admin 路径（除了登录页）
-  if (pathname.startsWith('/admin')) {
+  // 保护 /pixel-dashboard 路径（除了登录页）
+  if (pathname.startsWith('/pixel-dashboard')) {
     // 允许访问登录页
-    if (pathname === '/admin/login') {
+    if (pathname === '/pixel-dashboard/login') {
       return NextResponse.next()
     }
 
@@ -114,7 +114,7 @@ export async function middleware(request: NextRequest) {
     const token = request.cookies.get('admin-token')
 
     if (!token) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+      return NextResponse.redirect(new URL('/pixel-dashboard/login', request.url))
     }
 
     try {
@@ -124,7 +124,7 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
       // Token 无效，重定向到登录页
       console.error('Admin token verification failed:', error)
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+      return NextResponse.redirect(new URL('/pixel-dashboard/login', request.url))
     }
   }
 

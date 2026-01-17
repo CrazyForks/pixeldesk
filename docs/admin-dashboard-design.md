@@ -30,7 +30,7 @@
 
 ### 2.2 项目结构
 ```
-/app/admin                    # 后台管理系统根目录
+/app/pixel-dashboard                    # 后台管理系统根目录
   /layout.tsx                 # 后台布局（侧边栏、顶栏）
   /page.tsx                   # 仪表盘首页
   /login/page.tsx             # 管理员登录页
@@ -47,7 +47,7 @@
   /settings                   # 系统设置
     /page.tsx                 # 全局设置
 
-/components/admin             # 后台专用组件
+/components/pixel-dashboard             # 后台专用组件
   /layout/
     /Sidebar.tsx              # 侧边栏导航
     /TopBar.tsx               # 顶部导航栏
@@ -61,7 +61,7 @@
     /CharacterForm.tsx        # 角色形象表单
     /WorkstationForm.tsx      # 工位配置表单
 
-/lib/admin                    # 后台专用工具
+/lib/pixel-dashboard                    # 后台专用工具
   /auth.ts                    # 管理员认证逻辑
   /permissions.ts             # 权限控制
   /validations.ts             # 数据验证规则
@@ -160,9 +160,9 @@ model Player {
 
 #### 4.1.1 登录流程
 ```
-1. 管理员访问 /admin -> 检查登录状态
-2. 未登录 -> 重定向到 /admin/login
-3. 输入用户名/密码 -> 调用 /api/admin/auth/login
+1. 管理员访问 /pixel-dashboard -> 检查登录状态
+2. 未登录 -> 重定向到 /pixel-dashboard/login
+3. 输入用户名/密码 -> 调用 /api/pixel-dashboard/auth/login
 4. 验证成功 -> 创建 session -> 跳转到仪表盘
 5. 验证失败 -> 显示错误信息
 ```
@@ -194,10 +194,10 @@ const PERMISSIONS = {
 ```typescript
 // middleware.ts
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  if (request.nextUrl.pathname.startsWith('/pixel-dashboard')) {
     const session = await getServerSession()
     if (!session?.user?.isAdmin) {
-      return NextResponse.redirect('/admin/login')
+      return NextResponse.redirect('/pixel-dashboard/login')
     }
   }
 }
@@ -207,7 +207,7 @@ export function middleware(request: NextRequest) {
 
 ### 4.2 玩家管理模块
 
-#### 4.2.1 玩家列表页 (`/admin/players`)
+#### 4.2.1 玩家列表页 (`/pixel-dashboard/players`)
 
 **功能需求**:
 - 表格展示所有玩家
@@ -232,7 +232,7 @@ export function middleware(request: NextRequest) {
 
 **API 端点**:
 ```
-GET /api/admin/players
+GET /api/pixel-dashboard/players
 Query参数:
   - page: number (页码)
   - pageSize: number (每页数量)
@@ -253,7 +253,7 @@ Response:
 }
 ```
 
-#### 4.2.2 玩家详情页 (`/admin/players/[id]`)
+#### 4.2.2 玩家详情页 (`/pixel-dashboard/players/[id]`)
 
 **功能需求**:
 - 查看玩家完整信息
@@ -288,13 +288,13 @@ Response:
 
 **API 端点**:
 ```
-GET /api/admin/players/[id]
+GET /api/pixel-dashboard/players/[id]
 Response: Player 详细信息
 
-PATCH /api/admin/players/[id]
+PATCH /api/pixel-dashboard/players/[id]
 Body: { points?: number, characterId?: string, isActive?: boolean }
 
-GET /api/admin/players/[id]/history
+GET /api/pixel-dashboard/players/[id]/history
 Query: page, pageSize
 Response: { data: PointHistory[], pagination }
 ```
@@ -303,7 +303,7 @@ Response: { data: PointHistory[], pagination }
 
 ### 4.3 角色形象管理模块
 
-#### 4.3.1 形象列表页 (`/admin/characters`)
+#### 4.3.1 形象列表页 (`/pixel-dashboard/characters`)
 
 **功能需求**:
 - 网格/列表视图切换
@@ -323,7 +323,7 @@ Response: { data: PointHistory[], pagination }
 
 **API 端点**:
 ```
-GET /api/admin/characters
+GET /api/pixel-dashboard/characters
 Query参数:
   - page, pageSize
   - search: string
@@ -334,12 +334,12 @@ Query参数:
 
 Response: { data: Character[], pagination }
 
-DELETE /api/admin/characters/[id]
-POST /api/admin/characters/batch
+DELETE /api/pixel-dashboard/characters/[id]
+POST /api/pixel-dashboard/characters/batch
 Body: { action: 'enable' | 'disable' | 'delete', ids: string[] }
 ```
 
-#### 4.3.2 创建形象页 (`/admin/characters/create`)
+#### 4.3.2 创建形象页 (`/pixel-dashboard/characters/create`)
 
 **功能需求**:
 - 表单上传角色图片
@@ -383,7 +383,7 @@ interface CharacterFormData {
 
 **API 端点**:
 ```
-POST /api/admin/characters
+POST /api/pixel-dashboard/characters
 Body: FormData (multipart/form-data)
   - imageFile: File
   - 其他字段: JSON string
@@ -391,7 +391,7 @@ Body: FormData (multipart/form-data)
 Response: { success: boolean, data: Character }
 ```
 
-#### 4.3.3 编辑形象页 (`/admin/characters/[id]/edit`)
+#### 4.3.3 编辑形象页 (`/pixel-dashboard/characters/[id]/edit`)
 
 **功能需求**:
 - 加载现有数据
@@ -402,13 +402,13 @@ Response: { success: boolean, data: Character }
 
 **API 端点**:
 ```
-GET /api/admin/characters/[id]
+GET /api/pixel-dashboard/characters/[id]
 Response: Character
 
-PATCH /api/admin/characters/[id]
+PATCH /api/pixel-dashboard/characters/[id]
 Body: FormData (允许部分更新)
 
-GET /api/admin/characters/[id]/usage
+GET /api/pixel-dashboard/characters/[id]/usage
 Response: { playerCount: number, canDelete: boolean }
 ```
 
@@ -416,7 +416,7 @@ Response: { playerCount: number, canDelete: boolean }
 
 ### 4.4 工位管理模块
 
-#### 4.4.1 工位配置页 (`/admin/workstations`)
+#### 4.4.1 工位配置页 (`/pixel-dashboard/workstations`)
 
 **功能需求**:
 - 查看当前工位统计
@@ -442,7 +442,7 @@ Response: { playerCount: number, canDelete: boolean }
 
 **API 端点**:
 ```
-GET /api/admin/workstations/stats
+GET /api/pixel-dashboard/workstations/stats
 Response: {
   total: number,
   occupied: number,
@@ -450,16 +450,16 @@ Response: {
   occupancyRate: number
 }
 
-GET /api/admin/workstations/bindings
+GET /api/pixel-dashboard/workstations/bindings
 Query: page, pageSize, search, status
 Response: { data: WorkstationBinding[], pagination }
 
-DELETE /api/admin/workstations/bindings/[id]
-POST /api/admin/workstations/bindings/batch-unbind
+DELETE /api/pixel-dashboard/workstations/bindings/[id]
+POST /api/pixel-dashboard/workstations/bindings/batch-unbind
 Body: { ids: string[] }
 ```
 
-#### 4.4.2 积分规则配置页 (`/admin/workstations/settings`)
+#### 4.4.2 积分规则配置页 (`/pixel-dashboard/workstations/settings`)
 
 **功能需求**:
 - 配置各项积分规则
@@ -482,14 +482,14 @@ interface WorkstationConfigForm {
 
 **API 端点**:
 ```
-GET /api/admin/workstations/config
+GET /api/pixel-dashboard/workstations/config
 Response: WorkstationConfig
 
-PUT /api/admin/workstations/config
+PUT /api/pixel-dashboard/workstations/config
 Body: WorkstationConfigForm
 Response: { success: boolean, data: WorkstationConfig }
 
-GET /api/admin/workstations/config/history
+GET /api/pixel-dashboard/workstations/config/history
 Response: ConfigHistory[]
 ```
 
@@ -516,7 +516,7 @@ Response: ConfigHistory[]
 
 **API 端点**:
 ```
-GET /api/admin/dashboard/stats
+GET /api/pixel-dashboard/dashboard/stats
 Response: {
   totalPlayers: number,
   newPlayersThisWeek: number,
@@ -525,7 +525,7 @@ Response: {
   workstationOccupancy: number
 }
 
-GET /api/admin/dashboard/charts
+GET /api/pixel-dashboard/dashboard/charts
 Response: {
   registrationTrend: { date: string, count: number }[],
   activityDistribution: { range: string, count: number }[],
@@ -787,7 +787,7 @@ Response: Character[] (用户拥有的角色)
 
 **流程**:
 ```typescript
-// /app/api/admin/upload/route.ts
+// /app/api/pixel-dashboard/upload/route.ts
 export async function POST(request: Request) {
   const formData = await request.formData()
   const file = formData.get('file') as File
@@ -857,7 +857,7 @@ async function validateSpriteSheet(filePath: string) {
 ### 8.3 权限控制实现
 
 ```typescript
-// /lib/admin/permissions.ts
+// /lib/pixel-dashboard/permissions.ts
 import { getServerSession } from 'next-auth'
 
 export async function requireAdmin() {
@@ -892,7 +892,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 ### 8.4 分页组件封装
 
 ```typescript
-// /components/admin/Pagination.tsx
+// /components/pixel-dashboard/Pagination.tsx
 interface PaginationProps {
   currentPage: number
   totalPages: number

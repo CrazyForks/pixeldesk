@@ -95,7 +95,7 @@ import BrandHeader from '@/components/BrandHeader'
 
 ## 后台管理
 
-访问 `/admin/settings/brand` 进行品牌配置管理。
+访问 `/pixel-dashboard/settings/brand` 进行品牌配置管理。
 
 ### 管理界面功能
 
@@ -304,6 +304,6 @@ A: 可以直接使用 `useBrandConfig` Hook 获取配置数据，然后自定义
 - API路由: `/app/api/brand-config/route.ts`
 - React Hook: `/lib/hooks/useBrandConfig.ts`
 - 组件: `/components/BrandHeader.tsx`
-- 后台管理: `/app/admin/settings/brand/page.tsx`
+- 后台管理: `/app/pixel-dashboard/settings/brand/page.tsx`
 - 数据库模型: `/prisma/schema.prisma` (brand_config表)
 - 迁移脚本: `/prisma/migrations/add_brand_config.sql`

@@ -1,5 +1,5 @@
 {
-    "activeFile": "",
+    "activeFile": "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json",
     "expandedProjectPaths": [
         ".",
         "templates"
@@ -39,11 +39,14 @@
             "scaleInDock": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json": {
-            "scale": 0.25,
-            "selectedLayer": 12,
+            "expandedGroupLayers": [
+                11
+            ],
+            "scale": 0.5,
+            "selectedLayer": 8,
             "viewCenter": {
-                "x": 5270,
-                "y": 4132
+                "x": 5063,
+                "y": -2546
             }
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#announcement_board_wire": {
@@ -86,6 +89,9 @@
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#park_obj": {
             "dynamicWrapping": false,
             "scaleInDock": 0.25
+        },
+        "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#pixel_cafe_building_512": {
+            "scaleInDock": 1
         },
         "/Users/jiangyilong/project/PixelDesk/public/assets/officemap.json#road": {
             "scaleInDock": 1

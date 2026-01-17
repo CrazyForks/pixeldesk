@@ -54,23 +54,23 @@ export default function NewspaperModal({ isOpen, onClose, newsData }: NewspaperM
                         animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, rotateX: -20, y: 50 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="relative w-full max-w-5xl max-h-[90vh] bg-[#f4f1ea] text-[#2c2a27] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col font-serif"
+                        className="relative w-full max-w-5xl max-h-[90vh] bg-[#f4f1ea] text-[#2c2a27] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] overflow-y-auto custom-scrollbar flex flex-col font-serif"
                     >
                         {/* Paper Texture Overlay */}
                         <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]"></div>
                         <div className="absolute inset-0 pointer-events-none opacity-10 bg-gradient-to-tr from-[#3a2f23]/20 via-transparent to-white/10"></div>
 
                         {/* Master Header */}
-                        <div className={`px-8 pt-8 pb-4 border-b-4 border-double flex flex-col items-center ${newsData.lang === 'en' ? 'border-blue-900' : 'border-[#2c2a27]'
+                        <div className={`px-4 md:px-8 pt-8 pb-4 border-b-4 border-double flex flex-col items-center ${newsData.lang === 'en' ? 'border-blue-900' : 'border-[#2c2a27]'
                             }`}>
-                            <div className={`w-full flex justify-between items-end text-sm font-bold uppercase tracking-widest border-b mb-4 pb-1 ${newsData.lang === 'en' ? 'border-blue-900/30' : 'border-[#2c2a27]'
+                            <div className={`w-full flex justify-between items-end text-[10px] md:text-sm font-bold uppercase tracking-widest border-b mb-4 pb-1 ${newsData.lang === 'en' ? 'border-blue-900/30' : 'border-[#2c2a27]'
                                 }`}>
                                 <span>Vol. CCXXVI ... No. 13</span>
                                 <span>{newsData.lang === 'en' ? 'The Pixel Post • Global' : '象素晨报 Daily Gazette'}</span>
-                                <span>Established 2024</span>
+                                <span className="hidden sm:inline">Established 2024</span>
                             </div>
 
-                            <h1 className={`text-6xl md:text-8xl font-black tracking-tighter text-center uppercase mb-2 leading-none ${newsData.lang === 'en' ? 'text-blue-900' : 'text-[#2c2a27]'
+                            <h1 className={`text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter text-center uppercase mb-2 leading-none ${newsData.lang === 'en' ? 'text-blue-900' : 'text-[#2c2a27]'
                                 }`}
                                 style={{ fontFamily: '"Old Standard TT", serif', letterSpacing: '-0.05em' }}>
                                 {newsData.lang === 'en' ? 'The Pixel Post' : '象素晨报'}
@@ -88,10 +88,10 @@ export default function NewspaperModal({ isOpen, onClose, newsData }: NewspaperM
                                 </a>
                             )}
 
-                            <div className={`w-full border-y-2 py-2 flex justify-between items-center text-lg font-bold ${newsData.lang === 'en' ? 'border-blue-900/50' : 'border-[#2c2a27]'
+                            <div className={`w-full border-y-2 py-2 flex justify-between items-center text-sm md:text-lg font-bold ${newsData.lang === 'en' ? 'border-blue-900/50' : 'border-[#2c2a27]'
                                 }`}>
                                 <span className="flex-1">{newsData.date}</span>
-                                <span className="flex-1 text-center italic">
+                                <span className="flex-1 text-center italic hidden sm:inline">
                                     {newsData.lang === 'en' ? '"Your Window to the World"' : '"记录象素世界的每一秒"'}
                                 </span>
                                 <span className="flex-1 text-right">Price: 5 pts</span>
@@ -99,7 +99,7 @@ export default function NewspaperModal({ isOpen, onClose, newsData }: NewspaperM
                         </div>
 
                         {/* Content Area */}
-                        <div className="flex-1 overflow-y-auto px-8 py-6 relative custom-scrollbar">
+                        <div className="flex-1 px-4 md:px-8 py-6 relative">
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 h-full">
 
                                 {/* Left Column: Featured News */}
@@ -175,10 +175,10 @@ export default function NewspaperModal({ isOpen, onClose, newsData }: NewspaperM
                         </div>
 
                         {/* Footer / Close Button */}
-                        <div className={`px-8 py-4 border-t-2 flex justify-between items-center z-10 ${newsData.lang === 'en' ? 'bg-blue-50 border-blue-900/30' : 'bg-[#e8e4da] border-[#2c2a27]'
+                        <div className={`px-4 md:px-8 py-4 border-t-2 flex justify-between items-center z-10 sticky bottom-0 mt-auto ${newsData.lang === 'en' ? 'bg-blue-50 border-blue-900/30' : 'bg-[#e8e4da] border-[#2c2a27]'
                             }`}>
                             <div className="flex flex-col">
-                                <span className={`text-xs font-bold uppercase tracking-widest ${newsData.lang === 'en' ? 'text-blue-900/60' : 'opacity-60'
+                                <span className={`text-[10px] md:text-xs font-bold uppercase tracking-widest ${newsData.lang === 'en' ? 'text-blue-900/60' : 'opacity-60'
                                     }`}>
                                     {newsData.lang === 'en' ? 'Pixel Post Media Group' : '象素晨报 媒体集团'}
                                 </span>
@@ -187,7 +187,7 @@ export default function NewspaperModal({ isOpen, onClose, newsData }: NewspaperM
                                         href={newsData.link}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`text-[10px] underline mt-1 ${newsData.lang === 'en' ? 'text-blue-700 hover:text-blue-900' : 'text-amber-800 hover:text-amber-900'
+                                        className={`text-[9px] md:text-[10px] underline mt-1 ${newsData.lang === 'en' ? 'text-blue-700 hover:text-blue-900' : 'text-amber-800 hover:text-amber-900'
                                             }`}
                                     >
                                         {newsData.lang === 'en' ? 'ORIGINAL SOURCE ↗' : '查看原文链接 ↗'}
@@ -196,11 +196,11 @@ export default function NewspaperModal({ isOpen, onClose, newsData }: NewspaperM
                             </div>
                             <button
                                 onClick={onClose}
-                                className={`px-6 py-2 font-bold uppercase tracking-tight hover:scale-105 transition-transform ${newsData.lang === 'en' ? 'bg-blue-900 text-white' : 'bg-[#2c2a27] text-[#f4f1ea]'
+                                className={`px-4 md:px-6 py-2 text-sm md:text-base font-bold uppercase tracking-tight hover:scale-105 transition-transform ${newsData.lang === 'en' ? 'bg-blue-900 text-white' : 'bg-[#2c2a27] text-[#f4f1ea]'
                                     }`}
                                 style={{ boxShadow: '4px 4px 0px rgba(0,0,0,0.2)' }}
                             >
-                                {newsData.lang === 'en' ? 'CLOSE NEWSPAPER' : '收起报纸'}
+                                {newsData.lang === 'en' ? 'CLOSE' : '收起报纸'}
                             </button>
                         </div>
                     </motion.div>

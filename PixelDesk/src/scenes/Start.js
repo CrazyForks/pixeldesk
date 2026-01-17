@@ -104,6 +104,11 @@ export class Start extends Phaser.Scene {
       "desk-big-manager-right-1": "/assets/desk/desk-big-manager-right-1.png",
       "desk-big-manager-center-2": "/assets/desk/desk-big-manager-center-2.png",
 
+      // Park 系列工位
+      "desk_park_short_down": "/assets/desk/desk_park_short_down.png",
+      "desk_park_short_top": "/assets/desk/desk_park_short_top.png",
+      "desk_park_long_top": "/assets/desk/desk_park_long_top.png",
+
       // 装饰/其他
       "flower": "/assets/tileset/flower.png",
       "rug": "/assets/tileset/rug.png",
