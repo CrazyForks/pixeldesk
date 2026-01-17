@@ -1,11 +1,12 @@
 import prisma from '@/lib/db'
+import { randomUUID } from 'crypto'
 
 export type BitSource = 'walk' | 'post_create' | 'blog_create' | 'comment_create' | 'like_give' | 'like_receive' | 'online_time' | 'check_in' | 'system' | 'postcard_exchange' | 'workstation_rent' | 'character_upload' | 'unknown'
 
 // 定义不同行为的经验值配置 (可以后续移入数据库配置)
 export const BIT_REWARDS: Record<string, number> = {
-    'walk_100': 1,
-    'online_10min': 5,
+    'walk_5000': 1, // 降低步数权重：每5000步1点
+    'online_daily': 5, // 每日在线奖励
     'post_create': 10,
     'blog_create': 50,
     'like_give': 2,
@@ -46,12 +47,12 @@ export const LevelingService = {
                 data: {
                     bits: { increment: amount }
                 },
-                select: { id: true, bits: true, level: true }
+                select: { id: true, bits: true, level: true, createdAt: true }
             })
 
             // 3. 检查是否升级
             const u = user as any;
-            return await this.checkLevelUp(u.id, u.bits, u.level)
+            return await this.checkLevelUp(u.id, u.bits, u.level, u.createdAt)
         } catch (error) {
             console.error('Error adding bits:', error)
             return null
@@ -61,14 +62,29 @@ export const LevelingService = {
     /**
      * 检测是否满足升级条件
      */
-    async checkLevelUp(userId: string, currentBits: number, currentLevel: number) {
+    async checkLevelUp(userId: string, currentBits: number, currentLevel: number, userCreatedAt?: Date) {
+        // 如果没有提供创建时间，重新获取
+        let createdAt = userCreatedAt;
+        if (!createdAt) {
+            const user = await (prisma as any).users.findUnique({ where: { id: userId }, select: { createdAt: true } });
+            createdAt = user?.createdAt;
+        }
+
+        const daysSinceRegistration = createdAt
+            ? Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24))
+            : 0;
+
         // 获取所有等级定义，按等级从高到低排序
         const allLevels = await (prisma as any).level_definitions.findMany({
             orderBy: { level: 'desc' }
         })
 
-        // 找到当前 Bits 满足的最高等级
-        const targetLevelConfig = (allLevels as any[]).find((l: any) => currentBits >= l.minBits)
+        // 找到当前满足所有条件（Bits 和 Days）的最高等级
+        const targetLevelConfig = (allLevels as any[]).find((l: any) => {
+            const bitsMet = currentBits >= l.minBits;
+            const daysMet = daysSinceRegistration >= (l.minDays || 0); // 检查天数要求
+            return bitsMet && daysMet;
+        })
 
         if (!targetLevelConfig) return { leveledUp: false, currentLevel }
 
@@ -79,6 +95,18 @@ export const LevelingService = {
             await (prisma as any).users.update({
                 where: { id: userId },
                 data: { level: targetLevel }
+            })
+
+            // 发送系统通知
+            await (prisma as any).notifications.create({
+                data: {
+                    id: randomUUID(),
+                    userId: userId,
+                    type: 'SYSTEM',
+                    title: '系统升级: 分辨率提升',
+                    message: `恭喜！您已达到等级 ${targetLevel}: ${targetLevelConfig.name}。新的像素徽章已解锁！`,
+                    updatedAt: new Date()
+                }
             })
 
             return {
@@ -98,7 +126,7 @@ export const LevelingService = {
     async getUserLevelProgress(userId: string) {
         const user = await (prisma as any).users.findUnique({
             where: { id: userId },
-            select: { bits: true, level: true }
+            select: { bits: true, level: true, createdAt: true }
         })
 
         if (!user) return null
@@ -107,11 +135,39 @@ export const LevelingService = {
             where: { level: u.level }
         }) || { name: 'Unknown', visualConfig: {} }
 
-        // 找下一级
+        // 找下一级 (找到第一个比当前 Bits 高或者天数要求未满足的等级)
+        // 注意：Prisma findFirst query limitations checking calculated fields like 'days'. 
+        // So we fetch potential next levels and filter in memory or just simplistic 'minBits' check mostly.
+        // For accurate progress showing 'days' bottleneck, we need improved logic.
+
         const nextLevel = await (prisma as any).level_definitions.findFirst({
-            where: { minBits: { gt: u.bits } },
-            orderBy: { minBits: 'asc' }
+            where: {
+                OR: [
+                    { minBits: { gt: u.bits } },
+                    // We can't easily check days in DB query without raw SQL or known days.
+                    // But strictly speaking, next level is usually just level + 1
+                    { level: { gt: u.level } }
+                ]
+            },
+            orderBy: { level: 'asc' }
         })
+
+        if (!nextLevel) return { // Max level case
+            current: {
+                level: u.level,
+                bits: u.bits,
+                name: currentConfig.name,
+                config: currentConfig.visualConfig
+            },
+            next: null
+        }
+
+        const daysSinceRegistration = Math.floor((Date.now() - new Date(u.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+        const requiredDays = nextLevel.minDays || 0;
+
+        // Progress is min of bit progress and day progress
+        const bitProgress = Math.min(100, Math.floor((u.bits / nextLevel.minBits) * 100));
+        const dayProgress = requiredDays > 0 ? Math.min(100, Math.floor((daysSinceRegistration / requiredDays) * 100)) : 100;
 
         return {
             current: {
@@ -120,11 +176,14 @@ export const LevelingService = {
                 name: currentConfig.name,
                 config: currentConfig.visualConfig
             },
-            next: nextLevel ? {
+            next: {
                 level: nextLevel.level,
                 requiredBits: nextLevel.minBits,
-                progress: Math.min(100, Math.floor((u.bits / nextLevel.minBits) * 100))
-            } : null // Max level
+                requiredDays: requiredDays,
+                currentDays: daysSinceRegistration,
+                progress: Math.min(bitProgress, dayProgress), // Overall progress is bottlenecked by the slower one
+                isDayLimited: dayProgress < 100 && bitProgress >= 100 // Flag to show if waiting for days
+            }
         }
     },
 

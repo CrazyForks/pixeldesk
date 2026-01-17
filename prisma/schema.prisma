@@ -762,6 +762,7 @@ model level_definitions {
   level           Int      @unique
   name            String
   minBits         Int
+  minDays         Int      @default(0)
   visualConfig    Json?    // Stores icon, color, frame style
   unlockedFeatures Json?   // Stores list of unlocked feature keys
   createdAt       DateTime @default(now())

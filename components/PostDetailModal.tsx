@@ -197,7 +197,7 @@ export default function PostDetailModal({
         onPointerUp={(e) => e.stopPropagation()}
       >
         {/* 现代化头部设计 */}
-        <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200/50 dark:border-gray-700/50">
+        <div className="relative bg-gradient-to-r from-white to-slate-50 dark:from-gray-800 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700/50">
           {/* 头部装饰线 */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500"></div>
 
@@ -249,7 +249,7 @@ export default function PostDetailModal({
         </div>
 
         {/* 弹窗内容 - 现代化设计 */}
-        <div className="overflow-y-auto max-h-[calc(90vh-80px)] bg-gray-50 dark:bg-gray-900">
+        <div className="overflow-y-auto max-h-[calc(90vh-80px)] bg-white dark:bg-gray-900">
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
               <div className="flex flex-col items-center space-y-4">
@@ -397,7 +397,7 @@ export default function PostDetailModal({
               </div>
 
               {/* 回复区域 - 现代化设计 */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-slate-200 dark:border-gray-700/50 overflow-hidden">
                 <div className="p-6 space-y-6">
                   {/* 回复标题 */}
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
@@ -419,7 +419,7 @@ export default function PostDetailModal({
                   </div>
 
                   {/* 回复输入表单 */}
-                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+                  <div className="bg-white dark:bg-gray-900/50 rounded-2xl p-6 border border-slate-200 dark:border-gray-700/50 shadow-sm dark:shadow-none">
                     <CreateReplyForm
                       onSubmit={handleReplySubmit}
                       onCancel={() => { }}
@@ -464,7 +464,7 @@ export default function PostDetailModal({
                   {replies.length > 0 && (
                     <div className="space-y-4">
                       {replies.map((reply, index) => (
-                        <div key={reply.id} className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-lg " style={{ animationDelay: `${index * 100}ms` }}>
+                        <div key={reply.id} className="bg-white dark:bg-gray-900/50 rounded-2xl p-6 border border-slate-200 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all dark:hover:shadow-lg " style={{ animationDelay: `${index * 100}ms` }}>
                           <div className="flex items-start space-x-4">
                             {/* 回复者头像 */}
                             <div className="flex-shrink-0">
@@ -497,7 +497,7 @@ export default function PostDetailModal({
                             {/* 回复内容 */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-3 mb-3">
-                                <span className="font-bold text-gray-900 dark:text-white">
+                                <span className="font-bold text-slate-900 dark:text-white">
                                   {reply.author.name}
                                 </span>
                                 <span className="px-2 py-1 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded-full">
@@ -509,7 +509,7 @@ export default function PostDetailModal({
                                 </span>
                               </div>
                               <div className="prose dark:prose-invert max-w-none">
-                                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                <p className="text-slate-700 dark:text-gray-300 leading-relaxed font-normal">
                                   {reply.content}
                                 </p>
                               </div>

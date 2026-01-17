@@ -92,7 +92,7 @@ export default function LeftPanel({
       </button>
 
       {/* 头部区域 - 紧凑设计 */}
-      <div className="border-b border-slate-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
+      <div className="border-b border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900/50">
         <div className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ export default function LeftPanel({
                   </h1>
                   <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] leading-none font-mono rounded border border-blue-500/20">{t.common.beta}</span>
                 </div>
-                <p className="text-xs text-gray-500 font-mono">
+                <p className="text-xs text-slate-500 dark:text-gray-500 font-mono">
                   {isBrandLoading ? t.common.loading : brandConfig.app_slogan}
                 </p>
               </div>
@@ -363,9 +363,8 @@ export default function LeftPanel({
         </div>
       </div>
 
-      {/* 底部操作 */}
-      <div className="mt-auto p-3 border-t border-slate-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
-        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-gray-600">
+      <div className="mt-auto p-3 border-t border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-gray-600">
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
             <span className="uppercase">{t.common.system_online}</span>

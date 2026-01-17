@@ -320,35 +320,26 @@ export async function PUT(request: NextRequest) {
     })
 
     // 奖励经验值 (Award Bits for Steps)
-    // 逻辑：每1000步 = 1 Bit
+    // 逻辑：每5000步 = 1 Bit
     if (stepsToSync > 0) {
-      // 简单处理：积累步数逻辑略复杂，这里简化为每同步>=1000步给1bit，或者完全交给前端控制发送频率？
-      // 暂时：由于前端可能频繁发送小步数，这里只对大步数或者不处理步数奖励以防刷。
-      // Better approach: Let's defer step rewards to a dedicated "claim" or accept that it might be spammy if not careful.
-      // Re-reading requirements: "Movement (1 Bit / 1000 Steps)".
-      // Let's implement a 'step_milestone' check using bits_history? No, too heavy.
-      // For now, let's just log it or skip if too small.
-      if (stepsToSync >= 1000) {
-        await LevelingService.addBits(user.id, Math.floor(stepsToSync / 1000), 'walk', 'step_sync_' + Date.now())
+      if (stepsToSync >= 5000) {
+        await LevelingService.addBits(user.id, Math.floor(stepsToSync / 5000), 'walk', 'step_sync_' + Date.now())
       }
     }
 
     // 奖励经验值 (Award Bits for Online Time)
-    // 逻辑：每在线10分钟 = 5 Bits (Max 60 Bits/day -> 2 hours)
-    // 检查过去10分钟内是否获得过 "online_time" 奖励
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+    // 逻辑：每日登录奖励 (每24小时一次)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const recentOnlineReward = await prisma.bits_history.findFirst({
       where: {
         userId: user.id,
         sourceType: 'online_time',
-        createdAt: { gt: tenMinutesAgo }
+        createdAt: { gt: oneDayAgo }
       }
     })
 
     if (!recentOnlineReward) {
-      // 进一步检查每日上限 (Optional, but good to have)
-      // For MVP, just award it.
-      await LevelingService.addBits(user.id, 5, 'online_time', 'active_' + Date.now())
+      await LevelingService.addBits(user.id, 5, 'online_time', 'daily_active_' + Date.now())
     }
 
     return NextResponse.json({

@@ -46,7 +46,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             if (inline) {
               return (
                 <code
-                  className="bg-slate-100 dark:bg-gray-800 text-retro-cyan px-1.5 py-0.5 rounded text-sm font-mono"
+                  className="bg-slate-50 dark:bg-gray-800 text-slate-700 dark:text-retro-cyan px-1.5 py-0.5 rounded text-sm font-mono"
                   {...props}
                 >
                   {children}
@@ -60,7 +60,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             )
           },
           pre: ({ node, ...props }) => (
-            <pre className="bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg p-4 overflow-x-auto mb-4" {...props} />
+            <pre className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg p-4 overflow-x-auto mb-4" {...props} />
           ),
           ul: ({ node, ...props }) => (
             <ul className="list-disc list-inside mb-4 space-y-2" {...props} />
@@ -70,7 +70,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           ),
           blockquote: ({ node, ...props }) => (
             <blockquote
-              className="border-l-4 border-retro-purple pl-4 py-2 my-4 bg-slate-100/50 dark:bg-gray-800/30 italic"
+              className="border-l-4 border-indigo-500 dark:border-retro-purple pl-4 py-2 my-4 bg-slate-50/50 dark:bg-gray-800/30 italic text-slate-600 dark:text-gray-300"
               {...props}
             />
           ),
@@ -80,10 +80,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             </div>
           ),
           th: ({ node, ...props }) => (
-            <th className="bg-slate-50 dark:bg-gray-800 px-4 py-2 border border-slate-200 dark:border-gray-700 font-bold" {...props} />
+            <th className="bg-white dark:bg-gray-800 px-4 py-2 border border-slate-200 dark:border-gray-700 font-bold text-slate-900 dark:text-white" {...props} />
           ),
           td: ({ node, ...props }) => (
-            <td className="bg-white dark:bg-gray-900/50 px-4 py-2 border border-slate-200 dark:border-gray-700" {...props} />
+            <td className="bg-white dark:bg-gray-900/50 px-4 py-2 border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300" {...props} />
           ),
           img: ({ node, ...props }) => (
             <img className="rounded-lg my-4 max-w-full h-auto" {...props} alt={props.alt || ''} />

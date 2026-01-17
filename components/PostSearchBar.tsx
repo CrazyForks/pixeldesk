@@ -61,7 +61,7 @@ export default function PostSearchBar({ onSearch, onNodeChange, isMobile = false
             <div className="relative flex-shrink-0" ref={dropdownRef}>
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center justify-between gap-2 px-3 py-2 bg-white/10 dark:bg-gray-800/60 border border-black/5 dark:border-gray-700/50 rounded-lg text-xs font-mono text-gray-500 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-gray-700/70 hover:text-gray-900 dark:hover:text-white transition-all min-w-[100px]"
+                    className="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-gray-800/60 border border-slate-200 dark:border-gray-700/50 rounded-lg text-xs font-mono text-slate-500 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/70 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm min-w-[100px]"
                 >
                     <span className="truncate">{selectedNodeName}</span>
                     <svg className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +73,7 @@ export default function PostSearchBar({ onSearch, onNodeChange, isMobile = false
                     <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-xl z-[60] py-1 backdrop-blur-md">
                         <button
                             onClick={() => handleNodeSelect('all')}
-                            className={`w-full text-left px-4 py-2 text-xs font-mono transition-colors ${selectedNodeId === 'all' ? 'bg-indigo-500/10 text-indigo-600 dark:text-retro-blue' : 'text-gray-400 hover:bg-black/5 dark:hover:bg-gray-800 dark:hover:text-white'}`}
+                            className={`w-full text-left px-4 py-2 text-xs font-mono transition-colors ${selectedNodeId === 'all' ? 'bg-indigo-500/10 text-indigo-600 dark:text-retro-blue' : 'text-slate-400 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-gray-800 dark:hover:text-white'}`}
                         >
                             # {t.social.all_nodes}
                         </button>
@@ -81,7 +81,7 @@ export default function PostSearchBar({ onSearch, onNodeChange, isMobile = false
                             <button
                                 key={node.id}
                                 onClick={() => handleNodeSelect(node.id)}
-                                className={`w-full text-left px-4 py-2 text-xs font-mono transition-colors ${selectedNodeId === node.id ? 'bg-indigo-500/10 text-indigo-600 dark:text-retro-blue' : 'text-gray-400 hover:bg-black/5 dark:hover:bg-gray-800 dark:hover:text-white'}`}
+                                className={`w-full text-left px-4 py-2 text-xs font-mono transition-colors ${selectedNodeId === node.id ? 'bg-indigo-500/10 text-indigo-600 dark:text-retro-blue' : 'text-slate-400 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-gray-800 dark:hover:text-white'}`}
                             >
                                 # {node.name}
                             </button>
@@ -102,7 +102,7 @@ export default function PostSearchBar({ onSearch, onNodeChange, isMobile = false
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t.social.search_placeholder}
-                    className="w-full pl-10 pr-4 py-2 bg-white/10 dark:bg-gray-800/40 border border-black/5 dark:border-gray-700/50 rounded-lg text-xs font-mono text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 dark:focus:ring-retro-blue/50 focus:border-indigo-500/30 dark:focus:border-retro-blue/50 transition-all backdrop-blur-sm"
+                    className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800/40 border border-slate-200 dark:border-gray-700/50 rounded-lg text-xs font-mono text-slate-800 dark:text-gray-100 placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 dark:focus:ring-retro-blue/50 focus:border-indigo-500/30 dark:focus:border-retro-blue/50 transition-all backdrop-blur-sm shadow-sm"
                 />
                 {searchQuery && (
                     <button

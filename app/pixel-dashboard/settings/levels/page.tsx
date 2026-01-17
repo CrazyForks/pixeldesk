@@ -8,6 +8,7 @@ interface LevelDefinition {
     level: number
     name: string
     minBits: number
+    minDays: number
     visualConfig: any
     unlockedFeatures: string[]
 }
@@ -15,6 +16,21 @@ interface LevelDefinition {
 const DEFAULT_VISUAL_CONFIG = {
     icon: '📦',
     color: '#3b82f6',
+}
+
+// Hardcoded for display, should match lib/services/leveling.ts
+const BIT_REWARDS_DISPLAY = {
+    'Steps (5000)': 1,
+    'Daily Active': 5,
+    'Create Post': 10,
+    'Create Blog': 50,
+    'Like Given': 2,
+    'Like Received': 5,
+    'Comment': 5,
+    'Check-in': 20,
+    'Exchange Postcard': 15,
+    'Rent Workstation': 20,
+    'Upload Character': 30
 }
 
 const AVAILABLE_FEATURES = [
@@ -65,6 +81,7 @@ export default function LevelSettingsPage() {
             level: levels.length,
             name: '',
             minBits: 0,
+            minDays: 0,
             visualConfig: { ...DEFAULT_VISUAL_CONFIG },
             unlockedFeatures: []
         })
@@ -170,6 +187,20 @@ export default function LevelSettingsPage() {
                 </button>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">当前 Bits 获取规则</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {Object.entries(BIT_REWARDS_DISPLAY).map(([key, value]) => (
+                            <div key={key} className="bg-black/20 rounded-lg p-3 border border-gray-800">
+                                <div className="text-xs text-gray-500 mb-1">{key}</div>
+                                <div className="text-lg font-mono text-indigo-400">+{value}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
                 <table className="w-full text-left">
                     <thead className="bg-gray-800/50 text-gray-400 text-xs font-bold uppercase tracking-wider">
@@ -178,6 +209,7 @@ export default function LevelSettingsPage() {
                             <th className="px-6 py-4">预览</th>
                             <th className="px-6 py-4">等级名称 (Name)</th>
                             <th className="px-6 py-4">所需 Bits</th>
+                            <th className="px-6 py-4">需天数</th>
                             <th className="px-6 py-4">已解锁权限</th>
                             <th className="px-6 py-4 text-right">操作</th>
                         </tr>
@@ -196,6 +228,7 @@ export default function LevelSettingsPage() {
                                 </td>
                                 <td className="px-6 py-4 font-bold text-gray-100">{lvl.name}</td>
                                 <td className="px-6 py-4 text-indigo-400 font-mono">{lvl.minBits}</td>
+                                <td className="px-6 py-4 text-emerald-400 font-mono">{lvl.minDays || 0}</td>
                                 <td className="px-6 py-4">
                                     <div className="flex flex-wrap gap-1">
                                         {(lvl.unlockedFeatures || []).map(f => (
@@ -255,6 +288,15 @@ export default function LevelSettingsPage() {
                                         type="number"
                                         value={editingLevel.minBits}
                                         onChange={(e) => setEditingLevel({ ...editingLevel, minBits: parseInt(e.target.value) || 0 })}
+                                        className="w-full bg-black/40 border border-slate-800 rounded-lg px-4 py-2 text-white font-mono focus:border-purple-500 outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">所需天数 (Min Days)</label>
+                                    <input
+                                        type="number"
+                                        value={editingLevel.minDays || 0}
+                                        onChange={(e) => setEditingLevel({ ...editingLevel, minDays: parseInt(e.target.value) || 0 })}
                                         className="w-full bg-black/40 border border-slate-800 rounded-lg px-4 py-2 text-white font-mono focus:border-purple-500 outline-none"
                                     />
                                 </div>
