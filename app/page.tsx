@@ -21,8 +21,8 @@ declare global {
   interface Window {
     isUserAuthenticated: boolean // 用户是否已真正登录（非临时用户）
     setWorkstationBindingModal: (modalState: any) => void
-    showUnbindingDialog: (workstationId: number) => void
-    showWorkstationInfo: (workstationId: number, userId: string) => void
+    showUnbindingDialog: (workstationId: string) => void
+    showWorkstationInfo: (workstationId: string, userId: string) => void
     showPlayerInfo: (userId: string, userInfo: any) => void
     showCharacterInfo: (userId: string, userInfo: any, position: { x: number; y: number }) => void
     showTempPlayerAuthPrompt: (message: string) => void
@@ -223,7 +223,7 @@ export default function Home() {
   // 工位信息弹窗状态
   const [workstationInfoModal, setWorkstationInfoModal] = useState({
     isVisible: false,
-    workstationId: null as number | null,
+    workstationId: null as string | null,
     userId: null as string | null
   })
 
@@ -475,7 +475,7 @@ export default function Home() {
       }
 
       // 设置工位信息弹窗的全局函数
-      window.showWorkstationInfo = (workstationId: number, userId: string) => {
+      window.showWorkstationInfo = (workstationId: string, userId: string) => {
         setWorkstationInfoModal({
           isVisible: true,
           workstationId,

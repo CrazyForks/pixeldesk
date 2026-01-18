@@ -33,9 +33,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // 确保 workstationId 是数字类型
-    const workstationIdNum = parseInt(workstationId, 10)
-    if (isNaN(workstationIdNum)) {
+    // 确保 workstationId 存在
+    if (!workstationId || typeof workstationId !== 'string') {
       return NextResponse.json({ error: 'Invalid workstation ID' }, { status: 400 })
     }
 
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     // 检查工位是否已被其他用户绑定
     const workstationExistingBinding = await prisma.user_workstations.findFirst({
-      where: { workstationId: workstationIdNum }
+      where: { workstationId }
     })
 
     if (workstationExistingBinding) {
@@ -100,7 +99,7 @@ export async function POST(request: NextRequest) {
       const userWorkstation = await tx.user_workstations.create({
         data: {
           userId,
-          workstationId: workstationIdNum,
+          workstationId,
           cost,
           boundAt: new Date(),
           expiresAt
@@ -161,18 +160,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User ID and Workstation ID required' }, { status: 400 })
     }
 
-    // 确保 workstationId 是数字类型
-    const workstationIdNum = parseInt(workstationId, 10)
-    if (isNaN(workstationIdNum)) {
-      return NextResponse.json({ error: 'Invalid workstation ID' }, { status: 400 })
-    }
-
     // 解除绑定
     await prisma.user_workstations.delete({
       where: {
         userId_workstationId: {
           userId,
-          workstationId: workstationIdNum
+          workstationId
         }
       }
     })

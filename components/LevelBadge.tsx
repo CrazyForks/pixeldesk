@@ -1,7 +1,4 @@
-"use client";
-
 import React from 'react';
-import { motion } from 'framer-motion';
 
 interface LevelBadgeProps {
     level: number;
@@ -10,10 +7,6 @@ interface LevelBadgeProps {
     customColor?: string;
     customIcon?: string | null;
 }
-
-const pixelSteps = (count: number) => {
-    return (progress: number) => Math.floor(progress * count) / count;
-};
 
 export const LevelBadge: React.FC<LevelBadgeProps> = ({
     level,
@@ -104,7 +97,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
             bgPattern: 'repeating-linear-gradient(45deg, #4c1d95 0px, #4c1d95 4px, #5b21b6 4px, #5b21b6 8px)',
             decorations: (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20 animate-pulse" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20" />
                     <svg className="w-full h-full opacity-30" viewBox="0 0 24 24" fill="url(#rainbow-grad-badge)">
                         <defs>
                             <linearGradient id="rainbow-grad-badge" x1="0" y1="0" x2="1" y2="1">
@@ -140,7 +133,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
                 </span>
             )}
 
-            <motion.div
+            <div
                 className="relative flex items-center justify-center overflow-hidden"
                 style={{
                     width: box,
@@ -159,22 +152,6 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
                     imageRendering: 'pixelated',
                     border: defaultConfig.isMaster ? '2px solid transparent' : 'none',
                     borderRadius: '2px', // Slight rounding for pixel look
-                }}
-                animate={defaultConfig.isMaster ? {
-                    borderColor: ['#f472b6', '#a855f7', '#60a5fa', '#f472b6'],
-                    boxShadow: [
-                        `0 0 10px #f472b688`,
-                        `0 0 15px #a855f788`,
-                        `0 0 10px #60a5fa88`,
-                        `0 0 10px #f472b688`
-                    ]
-                } : {
-                    filter: ['brightness(1)', 'brightness(1.1)', 'brightness(1)'],
-                }}
-                transition={{
-                    duration: defaultConfig.isMaster ? 3 : 2,
-                    repeat: Infinity,
-                    ease: pixelSteps(4),
                 }}
             >
                 {/* Background Decorations (Only if no custom icon) */}
@@ -206,22 +183,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
                         <span className="text-[6px] text-white font-bold tracking-tighter uppercase whitespace-nowrap">MASTER</span>
                     </div>
                 )}
-
-                {/* Shine Overlay Animation */}
-                <motion.div
-                    className="absolute -top-full -left-full w-[200%] h-[200%] bg-white/20 rotate-45 pointer-events-none"
-                    animate={{
-                        top: ['-100%', '100%'],
-                        left: ['-100%', '100%'],
-                    }}
-                    transition={{
-                        duration: 5,
-                        repeat: Infinity,
-                        ease: pixelSteps(10),
-                        delay: 1
-                    }}
-                />
-            </motion.div>
+            </div>
         </div>
     );
 };

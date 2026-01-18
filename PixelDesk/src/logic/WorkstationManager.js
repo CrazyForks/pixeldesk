@@ -73,8 +73,17 @@ export class WorkstationManager {
         // 检测工位方向 (传入对象和精灵以进行多维度判断)
         const direction = this.detectWorkstationDirection(tiledObject, sprite);
 
+        // 🔧 使用自定义的持久化 ws_id，如果不存在则降级到 Tiled ID
+        // 注意：Tiled ID 在地图编辑后可能会变，ws_id 是我们在 officemap.json 中脚本生成的 UUID
+        const customId = tiledObject.properties && Array.isArray(tiledObject.properties)
+            ? tiledObject.properties.find(p => p.name === 'ws_id')?.value
+            : null;
+
+        // 统一使用字符串类型的 ID
+        const finalId = customId ? String(customId) : String(tiledObject.id);
+
         const workstation = {
-            id: tiledObject.id,
+            id: finalId,
             sprite: sprite,
             position: { x: tiledObject.x, y: tiledObject.y },
             size: { width: tiledObject.width || 48, height: tiledObject.height || 48 },
@@ -88,10 +97,10 @@ export class WorkstationManager {
             interactionIcon: null // 交互图标
         };
 
-        this.workstations.set(tiledObject.id, workstation);
+        this.workstations.set(finalId, workstation);
         this.setupInteraction(workstation);
 
-        // debugLog(`Created workstation with ID: ${tiledObject.id}`, workstation);
+        // debugLog(`Created workstation with ID: ${finalId} (Original: ${tiledObject.id})`, workstation);
         return workstation;
     }
 
@@ -455,10 +464,8 @@ export class WorkstationManager {
 
         for (const [wsId, boundUserId] of this.userBindings) {
             if (String(boundUserId) === String(userId)) {
-                // 🔧 修复类型转换：尝试字符串和数字两种 key
-                const ws = this.workstations.get(wsId) ||
-                    this.workstations.get(Number(wsId)) ||
-                    this.workstations.get(String(wsId));
+                // 统一只尝试 String key
+                const ws = this.workstations.get(String(wsId));
 
                 if (ws) return ws;
             }
@@ -654,18 +661,15 @@ export class WorkstationManager {
         // 创建绑定映射表
         const bindingsMap = new Map();
         bindings.forEach(binding => {
-            // 同时保存字符串和数字形式的 key，确保兼容性
+            // 统一这一层为 String key
             bindingsMap.set(String(binding.workstationId), binding);
-            bindingsMap.set(Number(binding.workstationId), binding);
         });
 
         // 清理所有已有的用户绑定映射并重新填充
         this.userBindings.clear();
         this.workstations.forEach((workstation, workstationId) => {
-            // 🔧 修复：使用多种 key 类型尝试获取
-            const binding = bindingsMap.get(workstationId) ||
-                bindingsMap.get(String(workstationId)) ||
-                bindingsMap.get(Number(workstationId));
+            // 统一使用 String key 获取
+            const binding = bindingsMap.get(String(workstationId));
 
             if (binding) {
                 console.log(`✅ [Sync] 映射用户 ${binding.userId} -> 工位 ${workstationId}`);

@@ -140,7 +140,7 @@ export default function SocialFeedTab({
   return (
     <div className={containerClasses}>
       {/* 头部 - 深色极客风格 */}
-      <div className="flex-shrink-0 p-3 border-b border-slate-100 dark:border-gray-800 bg-white dark:bg-gray-900/60 transition-colors">
+      <div className="flex-shrink-0 p-3 border-b border-gray-800 bg-gray-900/60 transition-colors">
         <div className="flex items-center gap-2">
           {/* 刷新按钮 - 固定宽度 */}
           <button

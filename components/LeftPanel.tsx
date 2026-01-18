@@ -92,7 +92,7 @@ export default function LeftPanel({
       </button>
 
       {/* 头部区域 - 紧凑设计 */}
-      <div className="border-b border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+      <div className="border-b border-gray-800 bg-gray-900/50">
         <div className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -280,7 +280,9 @@ export default function LeftPanel({
                   <div className="flex items-center gap-2">
                     {currentUser.workstationId ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-mono font-bold mr-1">{currentUser.workstationId}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-mono font-bold mr-1" title={currentUser.workstationId}>
+                          {currentUser.workstationId.length > 8 ? currentUser.workstationId.substring(0, 6) + '...' : currentUser.workstationId}
+                        </span>
                         <button
                           onClick={() => {
                             if (typeof window !== 'undefined' && (window as any).teleportToWorkstation) {
@@ -294,7 +296,7 @@ export default function LeftPanel({
                         <button
                           onClick={() => {
                             if (typeof window !== 'undefined' && window.showUnbindingDialog) {
-                              window.showUnbindingDialog(parseInt(currentUser.workstationId))
+                              window.showUnbindingDialog(currentUser.workstationId)
                             }
                           }}
                           className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-200 dark:hover:bg-red-900/60 hover:text-red-700 dark:hover:text-white transition-all uppercase tracking-tighter"
@@ -354,7 +356,7 @@ export default function LeftPanel({
                 <span className="text-gray-500 uppercase">{t.leftPanel.total}</span>
                 <span className="text-gray-200">{workstationStats.totalWorkstations}</span>
               </div>
-              <div className="p-2 bg-white dark:bg-gray-900/80 border border-slate-200 dark:border-gray-800 rounded flex justify-between shadow-sm">
+              <div className="p-2 bg-gray-900/80 border border-gray-800 rounded flex justify-between shadow-sm">
                 <span className="text-emerald-500 uppercase">{t.leftPanel.used}</span>
                 <span className="text-emerald-500">{workstationStats.boundWorkstations}</span>
               </div>
@@ -363,7 +365,7 @@ export default function LeftPanel({
         </div>
       </div>
 
-      <div className="mt-auto p-3 border-t border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+      <div className="mt-auto p-3 border-t border-gray-800 bg-gray-900/50">
         <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-gray-600">
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>

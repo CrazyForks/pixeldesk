@@ -471,7 +471,7 @@ model user_sessions {
 model user_workstations {
   id                      Int       @id @default(autoincrement())
   userId                  String
-  workstationId           Int
+  workstationId           String
   boundAt                 DateTime  @default(now())
   cost                    Int       @default(0)
   expiresAt               DateTime?

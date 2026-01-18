@@ -5,7 +5,7 @@ import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface WorkstationInfoModalProps {
   isVisible: boolean
-  workstationId: number | null
+  workstationId: string | null
   userId: string | null
   onClose: () => void
 }
@@ -13,7 +13,7 @@ interface WorkstationInfoModalProps {
 interface BindingInfo {
   id: number
   userId: string
-  workstationId: number
+  workstationId: string
   cost: number
   boundAt: string
   expiresAt?: string
@@ -479,10 +479,10 @@ const WorkstationInfoModal = memo(({
                     <div className="bg-gradient-to-r from-retro-bg-darker/30 to-retro-bg-dark/30 rounded-lg p-3 border border-retro-border/30">
                       <div className="text-xs text-retro-textMuted font-pixel tracking-wide mb-1">{t.workstation.remaining}</div>
                       <div className={`text-sm font-bold font-retro ${timeInfo.isExpired
-                          ? 'text-retro-red'
-                          : timeInfo.isExpiringSoon
-                            ? 'text-retro-orange '
-                            : 'text-retro-green'
+                        ? 'text-retro-red'
+                        : timeInfo.isExpiringSoon
+                          ? 'text-retro-orange '
+                          : 'text-retro-green'
                         }`}>
                         {timeInfo.timeRemaining}
                       </div>
@@ -502,8 +502,8 @@ const WorkstationInfoModal = memo(({
                     <div className="relative w-full bg-gradient-to-r from-retro-bg-darker to-retro-bg-dark rounded-full h-3 border border-retro-border/30 shadow-inner">
                       <div
                         className={`h-full rounded-full  shadow-lg ${timeInfo.isExpired
-                            ? 'bg-gradient-to-r from-retro-red to-retro-orange'
-                            : 'bg-gradient-to-r from-retro-green via-retro-cyan to-retro-blue'
+                          ? 'bg-gradient-to-r from-retro-red to-retro-orange'
+                          : 'bg-gradient-to-r from-retro-green via-retro-cyan to-retro-blue'
                           }`}
                         style={{
                           width: `${Math.min(100, timeInfo.usagePercentage)}%`
@@ -519,23 +519,23 @@ const WorkstationInfoModal = memo(({
 
             {/* 状态指示器 - 像素化状态卡片 */}
             <div className={`relative group bg-gradient-to-br backdrop-blur-sm rounded-xl p-4 border-2 shadow-lg  ${timeInfo.isExpired
-                ? 'from-retro-red/15 to-retro-orange/15 border-retro-red/30 hover:border-retro-red/50'
-                : timeInfo.isExpiringSoon
-                  ? 'from-retro-orange/15 to-retro-red/15 border-retro-orange/30 hover:border-retro-orange/50'
-                  : 'from-retro-green/15 to-retro-cyan/15 border-retro-green/30 hover:border-retro-green/50'
+              ? 'from-retro-red/15 to-retro-orange/15 border-retro-red/30 hover:border-retro-red/50'
+              : timeInfo.isExpiringSoon
+                ? 'from-retro-orange/15 to-retro-red/15 border-retro-orange/30 hover:border-retro-orange/50'
+                : 'from-retro-green/15 to-retro-cyan/15 border-retro-green/30 hover:border-retro-green/50'
               }`}>
               <div className={`absolute inset-0 rounded-xl opacity-50 ${timeInfo.isExpired
-                  ? 'bg-retro-red/5'
-                  : timeInfo.isExpiringSoon
-                    ? 'bg-retro-orange/5'
-                    : 'bg-retro-green/5'
+                ? 'bg-retro-red/5'
+                : timeInfo.isExpiringSoon
+                  ? 'bg-retro-orange/5'
+                  : 'bg-retro-green/5'
                 }`}></div>
               <div className="relative flex items-center justify-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-lg border border-white/20 ${timeInfo.isExpired
-                    ? 'bg-gradient-to-br from-retro-red/30 to-retro-orange/30'
-                    : timeInfo.isExpiringSoon
-                      ? 'bg-gradient-to-br from-retro-orange/30 to-retro-red/30'
-                      : 'bg-gradient-to-br from-retro-green/30 to-retro-cyan/30'
+                  ? 'bg-gradient-to-br from-retro-red/30 to-retro-orange/30'
+                  : timeInfo.isExpiringSoon
+                    ? 'bg-gradient-to-br from-retro-orange/30 to-retro-red/30'
+                    : 'bg-gradient-to-br from-retro-green/30 to-retro-cyan/30'
                   } ${timeInfo.isExpiringSoon && !timeInfo.isExpired ? '' : ''}`}>
                   <span className="text-lg">
                     {timeInfo.isExpired
@@ -548,10 +548,10 @@ const WorkstationInfoModal = memo(({
                 </div>
                 <div className="text-center">
                   <div className={`text-sm font-bold font-pixel tracking-wide ${timeInfo.isExpired
-                      ? 'text-retro-red'
-                      : timeInfo.isExpiringSoon
-                        ? 'text-retro-orange'
-                        : 'text-retro-green'
+                    ? 'text-retro-red'
+                    : timeInfo.isExpiringSoon
+                      ? 'text-retro-orange'
+                      : 'text-retro-green'
                     }`}>
                     {timeInfo.isExpired
                       ? t.workstation.expired.toUpperCase()
@@ -570,10 +570,10 @@ const WorkstationInfoModal = memo(({
                   </div>
                 </div>
                 <div className={`w-3 h-3 rounded-full shadow-lg ${timeInfo.isExpired
-                    ? 'bg-retro-red'
-                    : timeInfo.isExpiringSoon
-                      ? 'bg-retro-orange '
-                      : 'bg-retro-green'
+                  ? 'bg-retro-red'
+                  : timeInfo.isExpiringSoon
+                    ? 'bg-retro-orange '
+                    : 'bg-retro-green'
                   }`}></div>
               </div>
             </div>

@@ -1,7 +1,4 @@
-"use client";
-
 import React, { useEffect, useState, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { LevelBadge } from './LevelBadge';
 
 interface LevelConfig {
@@ -100,7 +97,7 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                             </h3>
                         </div>
                         <div className="flex items-center gap-1.5 mt-1">
-                            <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>
+                            <span className="w-1 h-1 bg-indigo-500 rounded-full"></span>
                             <p className="text-[9px] text-gray-400 dark:text-slate-500 font-mono tracking-wider">
                                 {current.bits.toLocaleString()} BITS EARNED
                             </p>
@@ -129,18 +126,11 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                             }}
                         >
                             {i < activeSegments && (
-                                <motion.div
+                                <div
                                     className="absolute inset-0"
                                     style={{
                                         backgroundColor: accentColor,
                                         boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.3), inset 0 -1.5px 0 rgba(0,0,0,0.2)'
-                                    }}
-                                    initial={{ y: "100%" }}
-                                    animate={{ y: 0 }}
-                                    transition={{
-                                        delay: i * 0.04,
-                                        duration: 0.3,
-                                        ease: [0.19, 1, 0.22, 1]
                                     }}
                                 />
                             )}

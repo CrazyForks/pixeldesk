@@ -11,7 +11,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "prisma": "prisma"
+    "prisma": "prisma",
+    "update-map-ids": "node scripts/add_workstation_ids.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
