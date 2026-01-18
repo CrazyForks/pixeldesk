@@ -26,29 +26,27 @@ git pull origin main
 ```
 
 ### 2. 更新地图 Stable ID (如有必要)
-确保 `public/assets/officemap.json` 已经包含了最新的 `ws_id` (UUID)。如果在本地已经同步并 commit 了，可以跳过此步；否则在服务器运行：
+确保 `public/assets/officemap.json` 已经包含了最新的 `ws_id` (UUID)。
 
 ```bash
+# 在宿主机运行（因为涉及文件同步到 git/容器卷）
 npm run update-map-ids
 ```
 
 ### 3. 执行 Prisma 架构变更
-由于修改了工位 ID 的类型（从 `Int` 到 `String`），需要同步数据库 Schema。
-
-> **[IMPORTANT]**
-> 如果有现存数据，直接执行 `migrate deploy` 可能会因为类型不匹配失败。建议按照以下顺序：
+由于修改了工位 ID 的类型（从 `Int` 到 `String`），需要从容器内向数据库同步 Schema。务必确保容器已启动并能连接到 DB。
 
 ```bash
-# 执行架构迁移（部署模式）
-npx prisma migrate deploy
+# 使用 Docker Compose 在应用容器内执行
+docker compose exec app npx prisma migrate deploy
 ```
 
-### 4. 执行大批量数据迁移脚本
-这是针对您提到的“工位 ID 修改”后的关键步骤，用于修复现有的 `user_workstations` 绑定数据或同步工位元数据。
+### 4. 执行数据迁移脚本
+这是针对您提到的“工位 ID 修改”后的关键步骤。同样建议在容器内执行，以确保环境一致性。
 
 ```bash
-# 请根据您的脚本类型执行
-node scripts/[您的迁移脚本名称].js
+# 在应用容器内运行迁移脚本
+docker compose exec app node scripts/[您的迁移脚本名称].js
 ```
 > [!NOTE]
 > 请确保脚本中的 `DATABASE_URL` 正确指向生产数据库。
@@ -88,6 +86,8 @@ pm2 restart all
     *   A: 对大批量数据使用 Prisma 事务时需注意超时设置，必要时分批次执行。
 *   **Q: Prisma 报错 ID 类型不兼容？**
     *   A: 如果 `Int` 转 `String` 在数据库层面受阻，可能需要先通过 SQL 手动 `ALTER TABLE ... TYPE text`。
+*   **Q: Docker Build 报错 `permission denied` 访问 `data/postgres`？**
+    *   A: 这是因为 Docker 尝试将数据库数据目录包含在构建上下文中。请确保根目录存在 `.dockerignore` 文件并包含 `data` 目录。我已经为您创建了该文件。
 
 ---
 
