@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { LevelBadge } from './LevelBadge';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface LevelConfig {
     icon?: string;
@@ -23,6 +24,7 @@ interface UserLevelData {
 }
 
 export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
+    const { locale } = useTranslation();
     const [data, setData] = useState<UserLevelData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -101,7 +103,10 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                     <div>
                         <div className="flex items-center gap-2">
                             <h3 className="text-[13px] font-bold text-gray-700 dark:text-white tracking-widest uppercase italic font-pixel group-hover:text-indigo-600 dark:group-hover:text-yellow-400 transition-colors">
-                                {current.name}
+                                {current.name.includes('(')
+                                    ? (locale === 'zh-CN' ? current.name.split('(')[0].trim() : current.name.split('(')[1].replace(')', '').trim())
+                                    : current.name
+                                }
                             </h3>
                         </div>
                         <div className="flex items-center gap-1.5 mt-1">
@@ -112,14 +117,7 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                         </div>
                     </div>
                 </div>
-                {next && (
-                    <div className="text-right flex flex-col items-end">
-                        <span className="text-[8px] text-gray-400 dark:text-slate-600 font-pixel uppercase tracking-[0.2em] mb-1">目标等级</span>
-                        <div className="px-1.5 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
-                            LV.{next.level}
-                        </div>
-                    </div>
-                )}
+                {/* Target level removed as per user request */}
             </div>
 
             {/* Pixel Experience Bar */}

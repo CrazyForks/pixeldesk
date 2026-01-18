@@ -824,6 +824,11 @@ export class Start extends Phaser.Scene {
     if (this.updateCounter % 60 === 0 && this.aiNpcManager && this.player) {
       this.aiNpcManager.updateDynamicNpcs(this.player.x, this.player.y)
     }
+    // 🚀 [Perf] 每 60 帧调用一次工位空间优化 (Visual Culling)
+    // 分散负载：在 updateDynamicNpcs 执行后的下一帧执行
+    if (this.updateCounter % 60 === 30 && this.workstationManager && this.player) {
+      this.workstationManager.updateSpatialOptimization(this.player.x, this.player.y);
+    }
   }
 
 
@@ -864,23 +869,21 @@ export class Start extends Phaser.Scene {
     }
 
     if (!myWorkstationId) return
-    // 尝试不同的 ID 类型查找桌面
-    let desk = this.loadedWorkstations.get(Number(myWorkstationId)) ||
-      this.loadedWorkstations.get(String(myWorkstationId))
 
+    // 🚀 [Perf] 移除 Start.js 中的多余类型转换 loop
+    // WorkstationManager 已经保证了 Key 是 String 类型
+    // 直接用 String 查询 Map (O(1))
+    const wsIdStr = String(myWorkstationId);
+    let desk = this.loadedWorkstations.get(wsIdStr);
+
+    // Fallback: 如果 loadedWorkstations 用的是 Number key (旧代码遗留?)
     if (!desk) {
-      // 如果按ID找不到，遍历所有加载的工位看看
-      for (const [id, sprite] of this.loadedWorkstations) {
-        if (String(id) === String(myWorkstationId)) {
-          desk = sprite
-          break
-        }
-      }
+      desk = this.loadedWorkstations.get(Number(wsIdStr));
     }
 
     if (!desk) {
       if (this.updateCounter % 200 === 0) {
-        console.warn(`[Proximity] 找不到对应的工位对象: ${myWorkstationId}, 当前场景已加载总数: ${this.loadedWorkstations.size}`)
+        // console.warn(`[Proximity] 找不到对应的工位对象...`) // 降噪
       }
       return
     }
@@ -1911,14 +1914,14 @@ export class Start extends Phaser.Scene {
     const sprite = this.createWorkstationSprite(obj, adjustedY)
 
     if (sprite) {
-      // 保存引用
-      this.loadedWorkstations.set(obj.id, sprite)
-
       // 使用WorkstationManager创建工位
       const workstation = this.workstationManager.createWorkstation(obj, sprite)
 
+      // 保存引用 (使用统一的 finalId)
+      this.loadedWorkstations.set(workstation.id, sprite)
+
       // 🔧 关键：设置工位ID到精灵上，方便碰撞检测时识别
-      sprite.workstationId = obj.id
+      sprite.workstationId = workstation.id
 
       // 🔧 性能优化：使用group碰撞器，避免为每个工位创建独立碰撞器
       this.addDeskCollision(sprite, obj)

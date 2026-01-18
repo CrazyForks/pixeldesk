@@ -5,9 +5,6 @@ export async function GET() {
   try {
     const now = new Date()
 
-    // 注意：已移除每请求执行的 deleteMany 逻辑，以优化高并发下的查询性能。
-    // 过期清理应由专门的后台任务（如 cleanup-expired/route.ts）处理。
-
     // 获取所有有效的工位绑定信息
     const allBindings = await prisma.user_workstations.findMany({
       where: {

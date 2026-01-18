@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 import { useSocialPosts } from '@/lib/hooks/useSocialPosts'
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
 import { useUser } from '@/contexts/UserContext'
@@ -282,34 +283,45 @@ export default function SocialFeedTab({
             </button>
           </div>
         ) : (
-          <div className="h-full overflow-y-auto">
-            <div>
-              {posts.map((post) => (
-                <PostListItem
-                  key={post.id}
-                  post={post}
-                  currentUserId={currentUserId || ''}
-                  onLike={() => handleLikePost(post.id)}
-                  isAuthenticated={isAuthenticated}
-                  onShowLoginPrompt={() => setShowLoginPrompt(true)}
-                  currentPoints={user?.points || 0}
-                  billboardPromotionCost={promotionCost}
-                />
-              ))}
-
-              {/* 加载更多按钮 */}
-              {pagination.hasNextPage && (
-                <div className="flex justify-center py-4 border-t border-gray-800/50">
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={isRefreshing}
-                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg  disabled:opacity-50 text-sm font-mono uppercase"
-                  >
-                    {isRefreshing ? t.social.loading_posts : t.social.load_more}
-                  </button>
+          <div className="h-full">
+            <Virtuoso
+              style={{ height: '100%' }}
+              data={posts}
+              itemContent={(index: number, post: Post) => (
+                <div className="pb-4">
+                  <PostListItem
+                    key={post.id}
+                    post={post}
+                    currentUserId={currentUserId || ''}
+                    onLike={() => handleLikePost(post.id)}
+                    isAuthenticated={isAuthenticated}
+                    onShowLoginPrompt={() => setShowLoginPrompt(true)}
+                    currentPoints={user?.points || 0}
+                    billboardPromotionCost={promotionCost}
+                  />
                 </div>
               )}
-            </div>
+              endReached={() => {
+                if (pagination.hasNextPage && !isRefreshing) {
+                  loadMorePosts();
+                }
+              }}
+              components={{
+                Footer: () => (
+                  <div className="flex justify-center py-4 border-t border-gray-800/50">
+                    {pagination.hasNextPage && (
+                      <button
+                        onClick={handleLoadMore}
+                        disabled={isRefreshing}
+                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg disabled:opacity-50 text-sm font-mono uppercase"
+                      >
+                        {isRefreshing ? t.social.loading_posts : t.social.load_more}
+                      </button>
+                    )}
+                  </div>
+                )
+              }}
+            />
           </div>
         )}
       </div>

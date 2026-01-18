@@ -1435,6 +1435,7 @@ export default function Home() {
         onClose={() => setShowStatusPopup(false)}
         userId={currentUser?.id}
         workstationId={currentUser?.workstationId ? parseInt(currentUser.workstationId) : undefined}
+        userLevel={currentUser?.level || 0}
         language={(typeof window !== 'undefined' ? (localStorage.getItem('pixeldesk-language') || 'zh-CN') : 'zh-CN') as any}
       />
       <PostcardDesignerModal

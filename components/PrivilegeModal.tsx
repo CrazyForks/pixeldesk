@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLevelPermission } from '@/lib/hooks/useLevelPermission';
 import { LevelBadge } from './LevelBadge';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface PrivilegeModalProps {
     isOpen: boolean;
@@ -12,6 +13,7 @@ interface PrivilegeModalProps {
 
 export default function PrivilegeModal({ isOpen, onClose }: PrivilegeModalProps) {
     const { levels, currentUserLevel, loading } = useLevelPermission();
+    const { locale } = useTranslation();
 
     if (!isOpen) return null;
 
@@ -91,7 +93,12 @@ export default function PrivilegeModal({ isOpen, onClose }: PrivilegeModalProps)
                                                         <LevelBadge level={lvl.level} size="md" />
                                                         <div>
                                                             <div className="flex items-center gap-3">
-                                                                <h4 className="text-[14px] font-black text-white uppercase italic pixel-font">{lvl.name}</h4>
+                                                                <h4 className="text-[14px] font-black text-white uppercase italic pixel-font">
+                                                                    {lvl.name.includes('(')
+                                                                        ? (locale === 'zh-CN' ? lvl.name.split('(')[0].trim() : lvl.name.split('(')[1].replace(')', '').trim())
+                                                                        : lvl.name
+                                                                    }
+                                                                </h4>
                                                                 {isCurrent && (
                                                                     <span className="px-2 py-0.5 bg-yellow-500 text-[8px] font-black text-black uppercase tracking-widest leading-none shadow-[2px_2px_0_0_#000]">
                                                                         Current

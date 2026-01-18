@@ -47,7 +47,8 @@ const AVAILABLE_FEATURES = [
     'custom_shader',
     'social_image_upload',
     'postcard_exchange',
-    'workstation_rent'
+    'workstation_rent',
+    'workstation_ad'
 ]
 
 export default function LevelSettingsPage() {

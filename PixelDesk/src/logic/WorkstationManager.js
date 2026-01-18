@@ -30,7 +30,7 @@ export class WorkstationManager {
         // 清理初始化时的userBindings，避免遗留数据问题
         this.cleanupUserBindings();
         this.viewportUpdateDebounce = null;
-        this.isViewportOptimizationEnabled = false; // 永久禁用
+        this.isViewportOptimizationEnabled = true; // 🔧 Enabled Spatial Optimization
 
         this.config = {
             occupiedTint: 0x888888,    // 其他用户占用工位的颜色 (灰色)
@@ -190,9 +190,24 @@ export class WorkstationManager {
                 if (userId) {
                     debugLog(`显示工位 ${workstationId} 的信息弹窗，用户ID: ${userId}`);
 
-                    // 调用全局函数显示工位信息弹窗
-                    if (typeof window !== 'undefined' && window.showWorkstationInfo) {
-                        window.showWorkstationInfo(workstationId, userId);
+                    // 🔧 新增：如果是当前用户点击自己的工位，显示状态更新弹窗（同碰撞逻辑）
+                    const currentUser = this.scene.currentUser;
+                    if (currentUser && String(userId) === String(currentUser.id)) {
+                        debugLog(`🖱️ 点击自己的工位 ${workstationId}，显示状态更改弹窗`);
+                        if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('my-workstation-collision-start', {
+                                detail: {
+                                    workstationId,
+                                    userId: userId,
+                                    position: workstation.position
+                                }
+                            }));
+                        }
+                    } else {
+                        // 如果是点击别人的工位，显示常规信息弹窗
+                        if (typeof window !== 'undefined' && window.showWorkstationInfo) {
+                            window.showWorkstationInfo(workstationId, userId);
+                        }
                     }
                 }
             }
@@ -598,14 +613,23 @@ export class WorkstationManager {
 
     // ===== 后端接口预留 =====
 
-    async loadAllWorkstationBindings() {
-        // 从服务器加载所有工位绑定信息
+    async loadAllWorkstationBindings(minX, maxX, minY, maxY) {
+        // 从服务器加载工位绑定信息 (支持视口参数)
         try {
-            const response = await fetch('/api/workstations/all-bindings');
+            let url = '/api/workstations/all-bindings';
+
+            // 如果提供了视口参数，追加查询字符串
+            if (minX !== undefined && maxX !== undefined) {
+                // 确保参数为整数，避免小数点过长
+                url += `?minX=${Math.floor(minX)}&maxX=${Math.floor(maxX)}&minY=${Math.floor(minY)}&maxY=${Math.floor(maxY)}`;
+                // debugLog(`🌐 [WorkstationManager] 加载视口绑定: ${minX},${minY} -> ${maxX},${maxY}`);
+            }
+
+            const response = await fetch(url);
             const result = await response.json();
 
             if (result.success && result.data) {
-                debugLog('从服务器加载工位绑定信息:', result.data);
+                // debugLog('从服务器加载工位绑定信息:', result.data.length);
                 return result.data;
             } else {
                 console.error('获取工位绑定信息失败:', result.error);
@@ -617,7 +641,7 @@ export class WorkstationManager {
         }
     }
 
-    async syncWorkstationBindings() {
+    async syncWorkstationBindings(minX, maxX, minY, maxY) {
         // 如果正在同步，返回现有的 Promise，避免并发重复请求
         if (this.syncPromise) {
             // debugLog('⏳ [WorkstationManager] 正在同步中，复用现有的请求');
@@ -627,21 +651,21 @@ export class WorkstationManager {
         // 创建新的同步 Promise
         this.syncPromise = (async () => {
             // 完全禁用缓存系统，每次都重新获取最新数据
-            debugLog('🔄 使用无缓存的工位同步方法');
+            // debugLog('🔄 使用无缓存的工位同步方法');
 
             try {
                 // 每次都重新获取所有绑定数据，不使用任何缓存
-                const allBindings = await this.loadAllWorkstationBindings();
-                debugLog(`📦 收到 ${allBindings.length} 个工位绑定:`, allBindings.map(b => ({
-                    workstationId: b.workstationId,
-                    userId: b.userId,
-                    userName: b.user?.name
-                })));
+                const allBindings = await this.loadAllWorkstationBindings(minX, maxX, minY, maxY);
+                // debugLog(`📦 收到 ${allBindings.length} 个工位绑定:`, allBindings.map(b => ({
+                //     workstationId: b.workstationId,
+                //     userId: b.userId,
+                //     userName: b.user?.name
+                // })));
 
                 // 直接应用绑定，完全不使用缓存
                 this.applyBindingsDirectly(allBindings);
 
-                debugLog('✅ 工位同步完成（无缓存）');
+                // debugLog('✅ 工位同步完成（无缓存）');
                 return true;
             } catch (error) {
                 console.error('❌ 工位同步失败:', error);
@@ -652,6 +676,88 @@ export class WorkstationManager {
         })();
 
         return this.syncPromise;
+    }
+
+    // 🚀 [Optimize] 动态视口加载逻辑
+    // 根据玩家坐标加载周边工位，并回收远处工位
+    async loadWorkstationsInViewport(playerX, playerY) {
+        if (!playerX || !playerY) return;
+
+        // 1. 定义视口参数
+        const VIEWPORT_WIDTH = 1200; // 屏幕宽度假定
+        const VIEWPORT_HEIGHT = 800; // 屏幕高度假定
+        const BUFFER = 1000;         // 缓冲区 (提前加载范围)
+
+        const minX = playerX - VIEWPORT_WIDTH / 2 - BUFFER;
+        const maxX = playerX + VIEWPORT_WIDTH / 2 + BUFFER;
+        const minY = playerY - VIEWPORT_HEIGHT / 2 - BUFFER;
+        const maxY = playerY + VIEWPORT_HEIGHT / 2 + BUFFER;
+
+        // 2. 调用带有空间参数的 API 获取视口内的工位列表 (Spatial Discovery)
+        try {
+            const url = `/api/workstations?minX=${Math.floor(minX)}&maxX=${Math.floor(maxX)}&minY=${Math.floor(minY)}&maxY=${Math.floor(maxY)}`;
+            const response = await fetch(url);
+            const result = await response.json();
+
+            let visibleWorkstationIds = [];
+
+            if (result.success && Array.isArray(result.data)) {
+                // 3. 处理视口内的工位数据
+                result.data.forEach(wsData => {
+                    visibleWorkstationIds.push(String(wsData.id));
+                    // 这里可以添加逻辑来动态创建工位 Sprite (如果尚未存在)
+                });
+            }
+
+            // 4. 获取这些可视工位的绑定状态 (Bindings Fetch)
+            // 如果视野内没有工位，则不请求绑定
+            if (visibleWorkstationIds.length > 0) {
+                const viewportDim = { width: VIEWPORT_WIDTH + BUFFER * 2, height: VIEWPORT_HEIGHT + BUFFER * 2 };
+                const bindings = await this.loadVisibleWorkstationBindings(visibleWorkstationIds, viewportDim);
+
+                // 5. 应用绑定数据
+                // 注意：applyBindingsDirectly 会清除所有旧绑定，这对局部加载是不对的！
+                // 我们需要 updateBindings (局部更新) 而不是 clear & reset
+                // 但 applyBindingsDirectly 现在的逻辑是清理 userBindings map 并重绘
+                // 为避免全屏闪烁，我们需要一个 updateBindings 方法
+                // 暂时使用 applyBindingsDirectly 但需注意它对视野外的影响
+                // 修正：applyBindingsDirectly 会清除 userBindings。如果视野移动，旧的视野绑定会被清除，这从内存角度是对的。
+                // 但如果视野重叠，可能会导致瞬间闪烁？
+                // 不，applyBindingsDirectly 现在的逻辑是:
+                // this.userBindings.clear();
+                // this.workstations.forEach...
+                // 这确实会清除所有绑定。这意味着每次视口加载，所有视野外的绑定都会被丢弃。
+                // 这是符合"视口优化"的：只保留视野内的绑定。
+                this.applyBindingsDirectly(bindings);
+            }
+
+            // 6. 视觉剔除 (Visual Culling)
+            const RECYCLE_DIST = 2500;
+            this.workstations.forEach((ws, id) => {
+                // 如果工位有 sprite
+                if (ws.sprite && ws.sprite.active) {
+                    const dist = Phaser.Math.Distance.Between(playerX, playerY, ws.position.x, ws.position.y);
+                    if (dist > RECYCLE_DIST) {
+                        // 距离太远，回收
+                        // 注意：这里只是 setVisible(false) + disableBody 还是 destroy?
+                        // destroy 后重建需要重新从 Tiled 数据读取。
+                        // 我们可以只禁用渲染和物理，保留对象引用 (Object Pooling 思想)
+                        ws.sprite.setVisible(false);
+                        if (ws.sprite.body) ws.sprite.body.enable = false;
+                        // debugLog(`♻️ [Recycle] 冻结远处工位 ${id}, 距离 ${Math.round(dist)}`);
+                    } else {
+                        // 在范围内，激活
+                        if (!ws.sprite.visible) {
+                            ws.sprite.setVisible(true);
+                            if (ws.sprite.body) ws.sprite.body.enable = true;
+                            // debugLog(`✨ [Wakeup] 唤醒附近工位 ${id}`);
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('视口加载失败:', error);
+        }
     }
 
     // 直接应用绑定数据，不使用缓存
@@ -792,10 +898,54 @@ export class WorkstationManager {
         }
     }
 
-    // 完全删除localStorage缓存功能，避免缓存导致的数据不一致问题
     // loadSavedBindings() {
     //     // 这个方法已被永久禁用，不再使用localStorage缓存
     // }
+
+    // 🔧 [Optimize] 空间优化循环 (Visual Culling + Data Sync)
+    // 建议在 Start.js update 中每 60 帧调用一次
+    updateSpatialOptimization(playerX, playerY) {
+        if (!this.isViewportOptimizationEnabled) return;
+
+        // 1. 每 60 帧 (约1秒) 执行一次 Visual Culling
+
+        const RECYCLE_DIST = 2000; // 超过 2000 像素隐藏 (回收)
+        const WAKEUP_DIST = 1500;  // 进入 1500 像素显示 (唤醒)
+
+        this.workstations.forEach((ws) => {
+            if (!ws.sprite) return;
+
+            const dist = Phaser.Math.Distance.Between(playerX, playerY, ws.position.x, ws.position.y);
+
+            if (ws.sprite.visible) {
+                // 如果当前可见，检查是否需要回收
+                if (dist > RECYCLE_DIST) {
+                    ws.sprite.setVisible(false);
+                    if (ws.sprite.body) ws.sprite.body.enable = false;
+                    // 如果有相关联的角色 sprite，也一并隐藏
+                    if (ws.characterSprite) ws.characterSprite.setVisible(false);
+                }
+            } else {
+                // 如果当前隐藏，检查是否需要唤醒
+                if (dist < WAKEUP_DIST) {
+                    ws.sprite.setVisible(true);
+                    if (ws.sprite.body) ws.sprite.body.enable = true;
+                    if (ws.characterSprite) ws.characterSprite.setVisible(true);
+                }
+            }
+        });
+
+        // 2. 每 5秒 (300帧) 执行一次数据加载 (Data Sync)
+        // 使用一个简单的计数器或者时间戳
+        const now = Date.now();
+        if (!this.lastViewportLoadTime || now - this.lastViewportLoadTime > 5000) {
+            this.lastViewportLoadTime = now;
+            // 异步加载数据，不阻塞游戏循环
+            this.loadWorkstationsInViewport(playerX, playerY).catch(err => {
+                // console.warn('Viewport load check failed', err);
+            });
+        }
+    }
 
     // 高亮当前用户的工位
     highlightUserWorkstation(currentUserId) {
@@ -1724,6 +1874,7 @@ export class WorkstationManager {
     async teleportToWorkstation(userId, player) {
         // 直接从API查询用户的工位绑定，不依赖内存缓存
         let workstation;
+        let binding;
         try {
             const response = await fetch(`/api/workstations/user-bindings?userId=${userId}`);
             const result = await response.json();
@@ -1733,12 +1884,30 @@ export class WorkstationManager {
                 return { success: false, error: '您还没有绑定工位' };
             }
 
-            const binding = result.data[0];
-            workstation = this.workstations.get(parseInt(binding.workstationId));
+            binding = result.data[0];
+            const wsIdStr = String(binding.workstationId);
+            workstation = this.workstations.get(wsIdStr);
 
+            // 如果内存中找不到工位 (可能未加载或在远处)，尝试从 API 获取坐标
             if (!workstation) {
-                debugWarn(`找不到工位 ${binding.workstationId}`);
-                return { success: false, error: '工位不存在' };
+                console.log(`🔍 [teleportToWorkstation] 内存中找不到工位 ${wsIdStr}，尝试从 API 获取...`);
+                const wsResponse = await fetch(`/api/workstations?id=${wsIdStr}`);
+                const wsResult = await wsResponse.json();
+
+                if (wsResult.success && wsResult.data && wsResult.data.length > 0) {
+                    const wsData = wsResult.data[0];
+                    // 构造一个虚拟的工位对象用于传送计算
+                    workstation = {
+                        id: wsIdStr,
+                        position: { x: wsData.xPosition, y: wsData.yPosition },
+                        size: { width: wsData.width || 48, height: wsData.height || 48 },
+                        direction: wsData.direction || 'single' // 数据库可能没存这个，降级
+                    };
+                    console.log(`✅ [teleportToWorkstation] 通过 API 找到工位位置: (${wsData.xPosition}, ${wsData.yPosition})`);
+                } else {
+                    debugWarn(`找不到工位 ${wsIdStr}`);
+                    return { success: false, error: '找不到您的工位快照，请先手动前往一次' };
+                }
             }
         } catch (error) {
             console.error('查询工位绑定失败:', error);
@@ -1746,9 +1915,6 @@ export class WorkstationManager {
         }
 
         debugLog(`找到用户 ${userId} 的绑定工位: ID ${workstation.id}, 位置 (${workstation.position.x}, ${workstation.position.y})`);
-        if (workstation.sprite) {
-            debugLog(`工位精灵实际位置: (${workstation.sprite.x}, ${workstation.sprite.y})`);
-        }
 
         // 计算传送位置（工位前方）
         const teleportPosition = this.calculateTeleportPosition(workstation);
@@ -1790,6 +1956,12 @@ export class WorkstationManager {
         if (player && typeof player.teleportTo === 'function') {
             console.log(`🟢 [teleportToWorkstation] 执行传送: (${player.x}, ${player.y}) -> (${teleportPosition.x}, ${teleportPosition.y})`);
             player.teleportTo(teleportPosition.x, teleportPosition.y, teleportPosition.direction);
+
+            // 重要：传送后立即触发一次视口检查，确保传送后的视野迅速加载
+            if (this.isViewportOptimizationEnabled) {
+                // 强制重置时间戳以立即加载
+                this.lastViewportLoadTime = 0;
+            }
         }
 
         console.log(`✅ [teleportToWorkstation] 用户 ${userId} 快速回到工位，扣除${teleportCost}积分，剩余积分: ${pointsResult.newPoints}`);

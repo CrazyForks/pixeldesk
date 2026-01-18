@@ -2,6 +2,7 @@
 
 import { useState, memo, useCallback, useEffect } from 'react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface WorkstationStatusPopupProps {
@@ -11,6 +12,7 @@ interface WorkstationStatusPopupProps {
     userId?: string
     workstationId?: number
     language?: 'zh-CN' | 'en'
+    userLevel?: number
 }
 
 const getStatusOptions = (t: any) => [
@@ -26,9 +28,14 @@ const WorkstationStatusPopup = memo(({
     onClose,
     userId,
     workstationId,
-    language: _language = 'zh-CN'
+    language: _language = 'zh-CN',
+    userLevel = 0
 }: WorkstationStatusPopupProps) => {
     const { t } = useTranslation()
+    const { hasPermission, loading: permissionLoading, getRequiredLevel } = useLevelPermission()
+    const canPublishAd = hasPermission('workstation_ad')
+    const requiredLevel = getRequiredLevel('workstation_ad') || 8
+
     const statusOptions = getStatusOptions(t)
     const [selectedId, setSelectedId] = useState('working')
     const [isCustomMode, setIsCustomMode] = useState(false)
@@ -463,123 +470,140 @@ const WorkstationStatusPopup = memo(({
                             ) : (
                                 /* 广告编辑界面 */
                                 <div className="space-y-4 mb-6">
-                                    {/* 成功提示 */}
-                                    {adSuccess && (
-                                        <div className="bg-gradient-to-r from-green-600/20 to-teal-600/20 border border-green-500/30 rounded-xl p-3 flex items-center gap-3">
-                                            <span className="text-2xl">✅</span>
-                                            <span className="text-green-400 text-sm font-bold">
-                                                {t.workstation.save_success}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {/* 错误提示 */}
-                                    {adError && (
-                                        <div className="bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-xl p-3 flex items-center gap-3">
-                                            <span className="text-2xl">⚠️</span>
-                                            <span className="text-red-400 text-sm">{adError}</span>
-                                        </div>
-                                    )}
-
-                                    {/* 广告文案输入 */}
-                                    <div>
-                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            📝 {t.workstation.ad_text} ({adText.length}/200)
-                                        </label>
-                                        <textarea
-                                            value={adText}
-                                            onChange={(e) => setAdText(e.target.value)}
-                                            onKeyDown={(e) => e.stopPropagation()}
-                                            placeholder={t.workstation.ad_text_placeholder}
-                                            maxLength={200}
-                                            rows={4}
-                                            className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all resize-none"
-                                        />
-                                    </div>
-
-                                    {/* 广告图片 URL 输入 */}
-                                    <div>
-                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            🖼️ {t.workstation.ad_img_url} ({adImage.length}/500)
-                                        </label>
-                                        <input
-                                            type="url"
-                                            value={adImage}
-                                            onChange={(e) => setAdImage(e.target.value)}
-                                            onKeyDown={(e) => e.stopPropagation()}
-                                            placeholder={t.workstation.ad_img_placeholder}
-                                            maxLength={500}
-                                            className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
-                                        />
-                                    </div>
-
-                                    {/* 广告链接 URL 输入 */}
-                                    <div>
-                                        <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                            🔗 {t.workstation.ad_link_url} ({adUrl.length}/500)
-                                        </label>
-                                        <input
-                                            type="url"
-                                            value={adUrl}
-                                            onChange={(e) => setAdUrl(e.target.value)}
-                                            onKeyDown={(e) => e.stopPropagation()}
-                                            placeholder={t.workstation.ad_link_placeholder}
-                                            maxLength={500}
-                                            className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
-                                        />
-                                    </div>
-
-                                    {/* 图片预览 */}
-                                    {adImage && (
-                                        <div>
-                                            <label className="text-gray-400 text-xs font-bold mb-2 block">
-                                                👁️ {t.workstation.img_preview}
-                                            </label>
-                                            <div className="relative rounded-xl overflow-hidden border-2 border-gray-700 bg-gray-800/40">
-                                                <img
-                                                    src={adImage}
-                                                    alt="Ad preview"
-                                                    className="w-full h-auto object-cover max-h-48"
-                                                    onError={(e) => {
-                                                        const target = e.target as HTMLImageElement
-                                                        target.style.display = 'none'
-                                                        const parent = target.parentElement
-                                                        if (parent) {
-                                                            const errorDiv = document.createElement('div')
-                                                            errorDiv.className = 'flex items-center justify-center h-32 text-gray-500 text-sm'
-                                                            errorDiv.textContent = t.workstation.img_load_failed
-                                                            parent.appendChild(errorDiv)
-                                                        }
-                                                    }}
-                                                />
+                                    {/* 等级限制检查 */}
+                                    {!canPublishAd ? (
+                                        <div className="flex flex-col items-center justify-center py-10 px-6 bg-gray-800/40 border border-gray-700/50 rounded-2xl text-center space-y-4">
+                                            <div className="text-5xl opacity-50 grayscale">📢</div>
+                                            <p className="text-gray-400 text-sm leading-relaxed font-bold">
+                                                {t.workstation.ad_level_required}
+                                            </p>
+                                            <div className="flex items-center gap-2 px-3 py-1 bg-gray-900/50 rounded-full border border-gray-700/50">
+                                                <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">
+                                                    Current Level: {userLevel} / {requiredLevel}
+                                                </span>
                                             </div>
                                         </div>
+                                    ) : (
+                                        <>
+                                            {/* 成功提示 */}
+                                            {adSuccess && (
+                                                <div className="bg-gradient-to-r from-green-600/20 to-teal-600/20 border border-green-500/30 rounded-xl p-3 flex items-center gap-3">
+                                                    <span className="text-2xl">✅</span>
+                                                    <span className="text-green-400 text-sm font-bold">
+                                                        {t.workstation.save_success}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {/* 错误提示 */}
+                                            {adError && (
+                                                <div className="bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-xl p-3 flex items-center gap-3">
+                                                    <span className="text-2xl">⚠️</span>
+                                                    <span className="text-red-400 text-sm">{adError}</span>
+                                                </div>
+                                            )}
+
+                                            {/* 广告文案输入 */}
+                                            <div>
+                                                <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                    📝 {t.workstation.ad_text} ({adText.length}/200)
+                                                </label>
+                                                <textarea
+                                                    value={adText}
+                                                    onChange={(e) => setAdText(e.target.value)}
+                                                    onKeyDown={(e) => e.stopPropagation()}
+                                                    placeholder={t.workstation.ad_text_placeholder}
+                                                    maxLength={200}
+                                                    rows={4}
+                                                    className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all resize-none"
+                                                />
+                                            </div>
+
+                                            {/* 广告图片 URL 输入 */}
+                                            <div>
+                                                <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                    🖼️ {t.workstation.ad_img_url} ({adImage.length}/500)
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={adImage}
+                                                    onChange={(e) => setAdImage(e.target.value)}
+                                                    onKeyDown={(e) => e.stopPropagation()}
+                                                    placeholder={t.workstation.ad_img_placeholder}
+                                                    maxLength={500}
+                                                    className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                                                />
+                                            </div>
+
+                                            {/* 广告链接 URL 输入 */}
+                                            <div>
+                                                <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                    🔗 {t.workstation.ad_link_url} ({adUrl.length}/500)
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={adUrl}
+                                                    onChange={(e) => setAdUrl(e.target.value)}
+                                                    onKeyDown={(e) => e.stopPropagation()}
+                                                    placeholder={t.workstation.ad_link_placeholder}
+                                                    maxLength={500}
+                                                    className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                                                />
+                                            </div>
+
+                                            {/* 图片预览 */}
+                                            {adImage && (
+                                                <div>
+                                                    <label className="text-gray-400 text-xs font-bold mb-2 block">
+                                                        👁️ {t.workstation.img_preview}
+                                                    </label>
+                                                    <div className="relative rounded-xl overflow-hidden border-2 border-gray-700 bg-gray-800/40">
+                                                        <img
+                                                            src={adImage}
+                                                            alt="Ad preview"
+                                                            className="w-full h-auto object-cover max-h-48"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement
+                                                                target.style.display = 'none'
+                                                                const parent = target.parentElement
+                                                                if (parent) {
+                                                                    const errorDiv = document.createElement('div')
+                                                                    errorDiv.className = 'flex items-center justify-center h-32 text-gray-500 text-sm'
+                                                                    errorDiv.textContent = t.workstation.img_load_failed
+                                                                    parent.appendChild(errorDiv)
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* 保存按钮 */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleSaveAd()
+                                                }}
+                                                disabled={isAdSaving}
+                                                className={`w-full py-4 rounded-2xl font-black text-sm tracking-[0.2em] transition-all duration-300 active:scale-[0.97] uppercase ${isAdSaving
+                                                    ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                                                    : 'bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 hover:from-yellow-500 hover:via-orange-500 hover:to-red-500 text-white shadow-[0_10px_30px_rgba(234,179,8,0.3)] hover:shadow-[0_15px_40px_rgba(234,179,8,0.4)]'
+                                                    }`}
+                                            >
+                                                {isAdSaving
+                                                    ? t.workstation.saving
+                                                    : t.workstation.save_ad
+                                                }
+                                            </button>
+
+                                            {/* 说明 */}
+                                            <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3">
+                                                <p className="text-gray-400 text-xs leading-relaxed">
+                                                    {t.workstation.ad_tip}
+                                                </p>
+                                            </div>
+                                        </>
                                     )}
-
-                                    {/* 保存按钮 */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleSaveAd()
-                                        }}
-                                        disabled={isAdSaving}
-                                        className={`w-full py-4 rounded-2xl font-black text-sm tracking-[0.2em] transition-all duration-300 active:scale-[0.97] uppercase ${isAdSaving
-                                            ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                                            : 'bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 hover:from-yellow-500 hover:via-orange-500 hover:to-red-500 text-white shadow-[0_10px_30px_rgba(234,179,8,0.3)] hover:shadow-[0_15px_40px_rgba(234,179,8,0.4)]'
-                                            }`}
-                                    >
-                                        {isAdSaving
-                                            ? t.workstation.saving
-                                            : t.workstation.save_ad
-                                        }
-                                    </button>
-
-                                    {/* 说明 */}
-                                    <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-3">
-                                        <p className="text-gray-400 text-xs leading-relaxed">
-                                            {t.workstation.ad_tip}
-                                        </p>
-                                    </div>
                                 </div>
                             )}
 

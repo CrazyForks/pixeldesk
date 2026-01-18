@@ -58,7 +58,7 @@ export default function LeftPanel({
   const [showSettings, setShowSettings] = useState(false)
   // Removed local state for PostcardDesignerModal; will be controlled by parent
   const { config: brandConfig, isLoading: isBrandLoading } = useBrandConfig('zh-CN')
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
 
   const handleToggle = (collapsed: boolean) => {
     if (onCollapsedChange) {
@@ -227,7 +227,10 @@ export default function LeftPanel({
                             `
                         }}
                       >
-                        {currentUserLevelDef.name}
+                        {currentUserLevelDef.name.includes('(')
+                          ? (locale === 'zh-CN' ? currentUserLevelDef.name.split('(')[0].trim() : currentUserLevelDef.name.split('(')[1].replace(')', '').trim())
+                          : currentUserLevelDef.name
+                        }
                       </span>
                     )}
                   </div>
