@@ -25,12 +25,12 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
         decorations?: React.ReactNode;
         isMaster?: boolean;
     }> = {
-        0: { color: '#94a3b8', border: '#475569', glow: '#64748b', name: 'GLITCH' },
+        0: { color: '#94a3b8', border: '#475569', glow: '#64748b', name: '故障' },
         1: { // Bronze with Gears
             color: '#b45309',
             border: '#78350f',
             glow: '#f59e0b',
-            name: 'BRONZE',
+            name: '青铜',
             decorations: (
                 <div className="absolute inset-0 opacity-40 pointer-events-none">
                     <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
@@ -47,7 +47,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
             color: '#64748b',
             border: '#334155',
             glow: '#94a3b8',
-            name: 'SILVER',
+            name: '白银',
             decorations: (
                 <div className="absolute inset-0 opacity-60 pointer-events-none">
                     <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
@@ -63,7 +63,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
             color: '#fbbf24',
             border: '#b45309',
             glow: '#fef3c7',
-            name: 'GOLD',
+            name: '黄金',
             decorations: (
                 <div className="absolute inset-0 opacity-80 pointer-events-none">
                     <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
@@ -78,7 +78,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
             color: '#22d3ee',
             border: '#0891b2',
             glow: '#a5f3fc',
-            name: 'PLATINUM',
+            name: '铂金',
             decorations: (
                 <div className="absolute inset-0 opacity-70 pointer-events-none">
                     <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
@@ -92,7 +92,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
             color: '#4c1d95',
             border: '#2e1065',
             glow: '#d8b4fe',
-            name: 'MASTER',
+            name: '大师',
             isMaster: true,
             bgPattern: 'repeating-linear-gradient(45deg, #4c1d95 0px, #4c1d95 4px, #5b21b6 4px, #5b21b6 8px)',
             decorations: (

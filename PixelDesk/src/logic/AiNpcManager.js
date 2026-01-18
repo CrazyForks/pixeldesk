@@ -19,9 +19,9 @@ export class AiNpcManager {
         this.npcGroup = null;
         this.npcs = new Map(); // id -> npcCharacter (持久化 NPC)
         this.dynamicNpcs = new Map(); // id -> npcCharacter (临时生成的 NPC)
-        this.maxDynamicNpcs = 8; // 周边最大动态 NPC 数量
+        this.maxDynamicNpcs = 4; // Tuning: Reduced from 8 to 4 for performance
         this.spawnDistance = 400; // 生成距离 (像素)
-        this.despawnDistance = 1200; // 回收距离 (像素)
+        this.despawnDistance = 1000; // Tuning: Tighter cleanup (was 1200)
 
         // 💡 动态偶遇模板池，将从 API 加载
         this.encounterTemplates = [];
@@ -110,8 +110,8 @@ export class AiNpcManager {
                 return;
             }
 
-            // 随机做决定：60% 概率走动，40% 概率休息
-            if (Phaser.Math.Between(0, 100) > 40) {
+            // Tuning: Reduced walk probability from 60% to 40% (check > 60)
+            if (Phaser.Math.Between(0, 100) > 60) {
                 // 随机选择一个方向
                 const directions = ['up', 'down', 'left', 'right'];
                 const direction = Phaser.Utils.Array.GetRandom(directions);
@@ -133,13 +133,13 @@ export class AiNpcManager {
                 this.scene.time.delayedCall(walkDuration, () => {
                     if (npc.active && npc.body) {
                         npc.body.setVelocity(0, 0);
-                        // 到了目的地，随机停顿 5-15 秒
-                        this.scene.time.delayedCall(Phaser.Math.Between(5000, 15000), roamAction);
+                        // 到了目的地，随机停顿 10-25 秒 (Previously 5-15s)
+                        this.scene.time.delayedCall(Phaser.Math.Between(10000, 25000), roamAction);
                     }
                 });
             } else {
                 // 休息状态
-                this.scene.time.delayedCall(Phaser.Math.Between(5000, 10000), roamAction);
+                this.scene.time.delayedCall(Phaser.Math.Between(10000, 25000), roamAction);
             }
         };
 

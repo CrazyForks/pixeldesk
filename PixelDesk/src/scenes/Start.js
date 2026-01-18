@@ -14,7 +14,7 @@ import { MobileControlsManager } from "../logic/MobileControlsManager.js"
 // ===== 性能优化配置 =====
 const PERFORMANCE_CONFIG = {
   // 禁用控制台日志以大幅减少CPU消耗（开发时可设为true）
-  ENABLE_DEBUG_LOGGING: true,
+  ENABLE_DEBUG_LOGGING: false,
   // 关键错误和警告仍然显示
   ENABLE_ERROR_LOGGING: true,
   // 性能监控日志
@@ -310,11 +310,17 @@ export class Start extends Phaser.Scene {
       }
 
       // 窗口重新获得焦点时重置按键状态，防止粘滞键
-      window.addEventListener('focus', () => {
+      const handleWindowFocus = () => {
         if (this.keyboardInputEnabled !== false && this.input && this.input.keyboard) {
           console.log('🎮 [Internal] Window Focused - Resetting Keys');
           this.input.keyboard.resetKeys();
         }
+      };
+      window.addEventListener('focus', handleWindowFocus);
+
+      // Cleanup focus listener on shutdown
+      this.events.once('shutdown', () => {
+        window.removeEventListener('focus', handleWindowFocus);
       });
 
       // 游戏状态测试函数已移除以优化性能

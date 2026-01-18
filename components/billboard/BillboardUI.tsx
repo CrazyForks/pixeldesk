@@ -26,7 +26,7 @@ export default function BillboardUI() {
     const [isNear, setIsNear] = useState(false)
     const [posts, setPosts] = useState<BillboardPost[]>([])
     const [isOpen, setIsOpen] = useState(false)
-    const [currentIndex, setCurrentIndex] = useState(0)
+    // const [currentIndex, setCurrentIndex] = useState(0) // Unused state removed for performance
     const [activeTab, setActiveTab] = useState<'articles' | 'leaderboard'>('articles')
     const [leaderboardData, setLeaderboardData] = useState<any>(null)
     const [loadingLeaderboard, setLoadingLeaderboard] = useState(false)
@@ -104,15 +104,9 @@ export default function BillboardUI() {
         }
     }
 
-    // 自动轮播 (仅针对预览窗)
-    useEffect(() => {
-        if (isNear && posts.length > 1) {
-            const timer = setInterval(() => {
-                setCurrentIndex(prev => (prev + 1) % posts.length)
-            }, 6000)
-            return () => clearInterval(timer)
-        }
-    }, [isNear, posts])
+    // 自动轮播逻辑已移除以优化性能
+    // The currentIndex was unused in the rendering logic (all posts are rendered)
+    // Removed unused interval to save CPU
 
     if (!isNear && !isOpen) return null
 

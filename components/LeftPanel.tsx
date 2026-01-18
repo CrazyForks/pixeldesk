@@ -1,19 +1,27 @@
 'use client'
 
 import { ReactNode, useState } from 'react'
+import dynamic from 'next/dynamic'
 import UserAvatar from './UserAvatar'
 import AuthenticationHeader from './AuthenticationHeader'
 import { useTheme } from '@/contexts/ThemeContext'
-import PointsHistory from './PointsHistory'
-import UserSettingsModal from './UserSettingsModal'
-import ActivityHeatmap from './ActivityHeatmap'
-import ActivityStats from './ActivityStats'
 import { useBrandConfig } from '@/lib/hooks/useBrandConfig'
 import Link from 'next/link'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { LevelProgress } from './LevelProgress'
 import { LevelBadge } from './LevelBadge'
 import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
+
+const PointsHistory = dynamic(() => import('./PointsHistory'), {
+  loading: () => <div className="p-4 text-center text-xs text-gray-500 animate-pulse">Loading History...</div>
+})
+const UserSettingsModal = dynamic(() => import('./UserSettingsModal'), { ssr: false })
+const ActivityHeatmap = dynamic(() => import('./ActivityHeatmap'), {
+  loading: () => <div className="h-[100px] w-full bg-gray-900/50 rounded animate-pulse" />
+})
+const ActivityStats = dynamic(() => import('./ActivityStats'), {
+  loading: () => <div className="h-[60px] w-full bg-gray-900/50 rounded animate-pulse" />
+})
 
 
 
@@ -67,7 +75,7 @@ export default function LeftPanel({
       <div className="h-full flex flex-col bg-transparent w-12 border-r border-gray-800 relative z-50">
         <button
           onClick={() => handleToggle(false)}
-          className="absolute top-1/2 -right-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-900/80 hover:bg-slate-50 dark:hover:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-full text-slate-400 dark:text-gray-400 transition-all shadow-md dark:shadow-lg backdrop-blur-sm opacity-80 hover:opacity-100"
+          className="absolute top-1/2 -right-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-slate-400 dark:text-slate-400 transition-all shadow-md dark:shadow-black/50 backdrop-blur-sm opacity-80 hover:opacity-100"
           title={t.leftPanel.expand}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +91,7 @@ export default function LeftPanel({
       {/* 收起按钮 - 右上角 */}
       <button
         onClick={() => handleToggle(true)}
-        className="absolute top-1/2 -right-4 -translate-y-1/2 z-50 w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-900/80 hover:bg-slate-50 dark:hover:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-full text-slate-400 dark:text-gray-400 transition-all shadow-md dark:shadow-lg backdrop-blur-sm opacity-80 hover:opacity-100"
+        className="absolute top-1/2 -right-4 -translate-y-1/2 z-50 w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-slate-400 dark:text-slate-400 transition-all shadow-md dark:shadow-black/50 backdrop-blur-sm opacity-80 hover:opacity-100"
         title={t.leftPanel.collapse}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

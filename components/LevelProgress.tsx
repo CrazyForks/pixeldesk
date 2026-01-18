@@ -28,10 +28,18 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
 
     const prevLevelRef = useRef<number | null>(null);
 
-    // Poll for level updates
+    // Poll for level updates - Optimized for performance
     useEffect(() => {
+        // Initial fetch
         fetchLevelData();
-        const interval = setInterval(fetchLevelData, 10000); // Poll every 10s
+
+        const interval = setInterval(() => {
+            // Only poll if the document is visible to save CPU
+            if (document.visibilityState === 'visible') {
+                fetchLevelData();
+            }
+        }, 10000); // Poll every 10s when visible
+
         return () => clearInterval(interval);
     }, [userId]);
 
@@ -99,14 +107,14 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                         <div className="flex items-center gap-1.5 mt-1">
                             <span className="w-1 h-1 bg-indigo-500 rounded-full"></span>
                             <p className="text-[9px] text-gray-400 dark:text-slate-500 font-mono tracking-wider">
-                                {current.bits.toLocaleString()} BITS EARNED
+                                {current.bits.toLocaleString()} 累积比特
                             </p>
                         </div>
                     </div>
                 </div>
                 {next && (
                     <div className="text-right flex flex-col items-end">
-                        <span className="text-[8px] text-gray-400 dark:text-slate-600 font-pixel uppercase tracking-[0.2em] mb-1">TARGET</span>
+                        <span className="text-[8px] text-gray-400 dark:text-slate-600 font-pixel uppercase tracking-[0.2em] mb-1">目标等级</span>
                         <div className="px-1.5 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
                             LV.{next.level}
                         </div>
@@ -148,11 +156,11 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                             <span className="w-1 h-1 bg-gray-300 dark:bg-slate-700"></span>
                         </div>
                         <span className="text-[8px] text-gray-400 dark:text-slate-500 font-pixel uppercase tracking-widest">
-                            {progressPercent}% Complete
+                            {progressPercent}% 进度
                         </span>
                     </div>
                     <div className="text-[9px] text-gray-400 dark:text-slate-400 font-mono bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5">
-                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">{next.requiredBits - current.bits}</span> <span className="opacity-50">TO UPGRADE</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">{next.requiredBits - current.bits}</span> <span className="opacity-50">升级所需</span>
                     </div>
                 </div>
             )}
