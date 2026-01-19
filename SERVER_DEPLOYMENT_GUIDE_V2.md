@@ -51,19 +51,35 @@ docker compose exec app node scripts/[您的迁移脚本名称].js
 > [!NOTE]
 > 请确保脚本中的 `DATABASE_URL` 正确指向生产数据库。
 
-### 5. 重启应用服务
-更新容器或重启 Node.js 进程。
+---
 
-**使用 Docker Compose:**
+## 🧹 方案二：全新开始 (Fresh Start - 推荐)
+
+如果您目前还没有重要生产数据，或者想彻底解决权限和 ID 冲突问题，请按此顺序操作：
+
+### 1. 彻底停止并清理
+这会删除现有容器和数据库卷，解决权限报错。
 ```bash
-docker compose up --build -d
+docker compose down -v
 ```
 
-**使用 PM2:**
+### 2. 构建镜像 (带权限修复)
+确保我已经修改了 `Dockerfile` 中的权限。
 ```bash
-npm install
-npm run build
-pm2 restart all
+docker compose build --no-cache app
+```
+
+### 3. 初始化数据库结构
+先启动 DB，然后推送最新的 Schema (String ID)。
+```bash
+docker compose up -d db redis
+# 等待 5 秒让 DB 启动
+docker compose exec app npx prisma db push
+```
+
+### 4. 启动应用
+```bash
+docker compose up -d app
 ```
 
 ---
@@ -94,6 +110,8 @@ pm2 restart all
     *   A: 这是因为 Docker 尝试将数据库数据目录包含在构建上下文中。请确保根目录存在 `.dockerignore` 文件并包含 `data` 目录。我已经为您创建了该文件。
 *   **Q: Prisma 报错 `EACCES: permission denied` 或 `unlink ... node_modules`？**
     *   A: 这是因为容器内 `node_modules` 的所有者为 root。我已经更新了 `Dockerfile`，请重新构建镜像：`docker compose up --build -d`。
+*   **Q: Firebase/Google Analytics 4 (GA4) 没有收到数据？**
+    *   A: 由于这些是前端变量 (`NEXT_PUBLIC_`)，它们必须在**构建阶段**注入。我已经修改了 `Dockerfile` 和 `docker-compose.yml`。请确保服务器上的 `.env` 文件包含最新的 Firebase 配置，并重新运行 `docker compose up --build -d`。
 
 ---
 

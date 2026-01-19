@@ -15,9 +15,9 @@ export async function PUT(
     }
 
     const userId = authResult.user.id
-    const workstationId = parseInt(params.id)
+    const workstationId = params.id
 
-    if (isNaN(workstationId)) {
+    if (!workstationId) {
       return NextResponse.json({ error: 'Invalid workstation ID' }, { status: 400 })
     }
 
@@ -90,9 +90,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const workstationId = parseInt(params.id)
+    const workstationId = params.id
 
-    if (isNaN(workstationId)) {
+    if (!workstationId) {
       return NextResponse.json({ error: 'Invalid workstation ID' }, { status: 400 })
     }
 
