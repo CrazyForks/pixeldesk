@@ -313,7 +313,8 @@ export default function Home() {
     isOpen: false,
     newLevel: 0,
     levelName: '',
-    rewards: [] as string[]
+    rewards: [] as string[],
+    userId: ''
   })
 
   // 权限面板状态
@@ -322,12 +323,13 @@ export default function Home() {
   // 监听升级事件
   useEffect(() => {
     const handleLevelUp = (e: CustomEvent) => {
-      const { newLevel, levelName, rewards } = e.detail;
+      const { newLevel, levelName, rewards, userId } = e.detail;
       setLevelUpModal({
         isOpen: true,
         newLevel,
         levelName,
-        rewards
+        rewards,
+        userId
       });
     };
 
@@ -1457,6 +1459,7 @@ export default function Home() {
         newLevel={levelUpModal.newLevel}
         levelName={levelUpModal.levelName}
         rewards={levelUpModal.rewards}
+        userId={levelUpModal.userId}
       />
 
       {/* 权限模态框 */}

@@ -132,7 +132,7 @@ export const LevelingService = {
     async getUserLevelProgress(userId: string) {
         const user = await (prisma as any).users.findUnique({
             where: { id: userId },
-            select: { bits: true, level: true, createdAt: true }
+            select: { bits: true, level: true, createdAt: true, lastNotifiedLevel: true }
         })
 
         if (!user) return null
@@ -163,7 +163,8 @@ export const LevelingService = {
                 level: u.level,
                 bits: u.bits,
                 name: currentConfig.name,
-                config: currentConfig.visualConfig
+                config: currentConfig.visualConfig,
+                lastNotifiedLevel: u.lastNotifiedLevel || 0
             },
             next: null
         }
@@ -180,7 +181,8 @@ export const LevelingService = {
                 level: u.level,
                 bits: u.bits,
                 name: currentConfig.name,
-                config: currentConfig.visualConfig
+                config: currentConfig.visualConfig,
+                lastNotifiedLevel: u.lastNotifiedLevel || 0
             },
             next: {
                 level: nextLevel.level,
@@ -234,5 +236,20 @@ export const LevelingService = {
         if (!user) return null
         const u = user as any
         return await this.checkLevelUp(userId, u.bits, u.level)
+    },
+
+    /**
+     * 标记等级已通知
+     */
+    async markLevelAsNotified(userId: string, level: number) {
+        try {
+            return await (prisma as any).users.update({
+                where: { id: userId },
+                data: { lastNotifiedLevel: level }
+            })
+        } catch (error) {
+            console.error('Error marking level as notified:', error)
+            return null
+        }
     }
 }

@@ -9,6 +9,7 @@ interface LevelUpModalProps {
     newLevel: number;
     levelName: string;
     rewards?: string[]; // Optional: list of unlocked features
+    userId?: string;
 }
 
 export default function LevelUpModal({
@@ -16,7 +17,8 @@ export default function LevelUpModal({
     onClose,
     newLevel,
     levelName,
-    rewards = []
+    rewards = [],
+    userId
 }: LevelUpModalProps) {
     const [showConfetti, setShowConfetti] = useState(false);
 
@@ -32,7 +34,21 @@ export default function LevelUpModal({
         }
     }, [isOpen]);
 
-    const handleClose = () => {
+    const handleClose = async () => {
+        // If we have a userId, notify the server that this level has been acknowledged
+        if (userId && newLevel) {
+            try {
+                console.log(`📡 [LevelUpModal] 正在同步已通知等级 ${newLevel} 到服务器...`);
+                fetch('/api/user/level/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, level: newLevel })
+                }).catch(err => console.error('Failed to notify level up:', err));
+            } catch (error) {
+                console.error('Error notifying level up:', error);
+            }
+        }
+
         // Trigger a global data refresh when closing the modal to ensure UI is in sync
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('refresh-user-data'));

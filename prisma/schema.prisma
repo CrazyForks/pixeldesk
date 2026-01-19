@@ -509,6 +509,7 @@ model users {
   inviteCode                                       String?                     @unique
   bits                                             Int                         @default(0)
   level                                            Int                         @default(0)
+  lastNotifiedLevel                                Int                         @default(0)
   isAdmin                                          Boolean                     @default(false)
   ai_usage                                         ai_usage[]
   billboard_promotions                             billboard_promotions[]

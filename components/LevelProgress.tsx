@@ -15,6 +15,7 @@ interface UserLevelData {
         bits: number;
         name: string;
         config: LevelConfig;
+        lastNotifiedLevel: number;
     };
     next: {
         level: number;
@@ -29,11 +30,21 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
     const [loading, setLoading] = useState(true);
 
     const prevLevelRef = useRef<number | null>(null);
+    const initialCheckDoneRef = useRef<boolean>(false);
+    const checkDelayActiveRef = useRef<boolean>(true);
 
     // Poll for level updates - Optimized for performance
     useEffect(() => {
         // Reset level tracking when userId changes to prevent false positives (e.g. Guest -> User transition during load)
         prevLevelRef.current = null;
+        initialCheckDoneRef.current = false;
+        checkDelayActiveRef.current = true;
+
+        // Start 3-second delay for the initial notification check to avoid interfering with page load
+        const delayTimer = setTimeout(() => {
+            checkDelayActiveRef.current = false;
+            console.log('⏱️ [LevelProgress] 初始检测延迟结束，现在允许触发升级通知');
+        }, 3000);
 
         // Initial fetch
         fetchLevelData();
@@ -43,7 +54,7 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
             if (document.visibilityState === 'visible') {
                 fetchLevelData();
             }
-        }, 1800000); // Poll every 30m when visible - significantly reduced as per user feedback
+        }, 300000); // 降低轮询频率到5分钟 (之前是30m过慢，现在统一为5m)
 
         // 监听手动刷新事件
         const handleRefresh = () => {
@@ -54,6 +65,7 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
 
         return () => {
             clearInterval(interval);
+            clearTimeout(delayTimer);
             window.removeEventListener('refresh-user-data', handleRefresh);
         };
     }, [userId]);
@@ -69,19 +81,30 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                     setData(newData);
 
                     // Check for level up
-                    if (prevLevelRef.current !== null && newData.current.level > prevLevelRef.current) {
+                    // Conditions:
+                    // 1. Not in initial 3s delay
+                    // 2. Current level is higher than lastNotifiedLevel reported by server
+                    // 3. (Optional) current level is higher than prevLevelRef (immediate local check)
+                    const isNewLevel = newData.current.level > newData.current.lastNotifiedLevel;
+
+                    if (!checkDelayActiveRef.current && isNewLevel) {
                         // Level Up Detected!
+                        console.log('🎉 [LevelProgress] 检测到等级提升:', newData.current.level);
                         const event = new CustomEvent('level-up', {
                             detail: {
+                                userId: userId, // 传递 userId 方便后续 API 调用
                                 newLevel: newData.current.level,
                                 levelName: newData.current.name,
                                 rewards: newData.current.config ? ['New Status Badge', 'Access to Vip Areas'] : []
                             }
                         });
                         window.dispatchEvent(event);
+                    } else if (isNewLevel) {
+                        console.log('🔇 [LevelProgress] 检测到等级高于已通知等级，但处于初始延迟中，暂不弹窗');
                     }
 
                     prevLevelRef.current = newData.current.level;
+                    initialCheckDoneRef.current = true;
                 }
             }
         } catch (err) {
