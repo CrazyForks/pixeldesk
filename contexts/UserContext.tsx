@@ -13,6 +13,7 @@ export interface User {
   points?: number
   level?: number
   bits?: number
+  lastNotifiedLevel?: number
   emailVerified?: boolean
   workstationId?: string
   inviteCode?: string

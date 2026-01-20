@@ -11,7 +11,7 @@ import { getAssetUrl } from '@/lib/utils/assets'
 import Image from 'next/image'
 import BillboardConfirmModal from './billboard/BillboardConfirmModal'
 import { createPortal } from 'react-dom'
-import { renderContentWithUrls, extractImageUrls } from '@/lib/utils/format'
+import { renderContentWithUrls, extractImageUrls, formatWorkstationId } from '@/lib/utils/format'
 import ProBadge from '@/components/social/ProBadge'
 import ConversationModal from './social/ConversationModal'
 import ImageLightbox from './social/ImageLightbox'
@@ -317,482 +317,482 @@ export default function PostDetailModal({
           </div>
         </div>
 
-      {/* 弹窗内容 - 现代化设计 */}
-      <div className="overflow-y-auto max-h-[calc(90vh-80px)] bg-white dark:bg-gray-900">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="flex flex-col items-center space-y-4">
-              <LoadingSpinner />
-              <p className="text-gray-500 dark:text-gray-400 font-medium">{t.social.loading_content}</p>
+        {/* 弹窗内容 - 现代化设计 */}
+        <div className="overflow-y-auto max-h-[calc(90vh-80px)] bg-white dark:bg-gray-900">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="flex flex-col items-center space-y-4">
+                <LoadingSpinner />
+                <p className="text-gray-500 dark:text-gray-400 font-medium">{t.social.loading_content}</p>
+              </div>
             </div>
-          </div>
-        ) : error ? (
-          <div className="p-8 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-red-400 to-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          ) : error ? (
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-red-400 to-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t.auth.login_failed}</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">{error}</p>
+              <button
+                onClick={() => postId && fetchPostDetail(postId)}
+                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white rounded-lg font-pixel shadow-pixel-sm transform hover:scale-105 transition-all"
+              >
+                {t.social.reload}
+              </button>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t.auth.login_failed}</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">{error}</p>
-            <button
-              onClick={() => postId && fetchPostDetail(postId)}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white rounded-lg font-pixel shadow-pixel-sm transform hover:scale-105 transition-all"
-            >
-              {t.social.reload}
-            </button>
-          </div>
-        ) : post ? (
-          <div className="p-6 space-y-6">
-            {/* 帖子内容卡片 - 现代化设计 */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-              <div className="p-8">
-                {/* 作者信息 */}
-                <div className="flex items-start space-x-6 mb-6">
-                  <div className="relative">
-                    <UserAvatar
-                      userId={post.author.id}
-                      userName={post.author.name}
-                      userAvatar={post.author.avatar}
-                      customAvatar={post.author.customAvatar}
-                      size="lg"
-                      showStatus={true}
-                    />
-                    {post.author.workstationId && (
-                      <div className="mt-2 flex justify-center">
-                        <span className="inline-flex items-center px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-500 font-pixel text-[9px] leading-none shadow-[1px_1px_0px_0px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform cursor-help" title={`Workstation Owner: #${post.author.workstationId}`}>
-                          <span className="text-[8px] mr-1 opacity-70">№</span>
-                          {post.author.workstationId.length > 8 ? post.author.workstationId.substring(0, 8) + '...' : post.author.workstationId}
-                        </span>
-                      </div>
-                    )}
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h4 className="font-bold text-gray-900 dark:text-white text-xl flex items-center">
-                        {post.author.name}
-                        {post.author.isAdmin && <ProBadge />}
-                      </h4>
-                      <span className="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-pixel border border-emerald-500/20 rounded">
-                        {t.social.author || '作者'}
-                      </span>
-                      <span className="text-gray-400 dark:text-gray-500 font-pixel">•</span>
-                      <span className="text-gray-500 dark:text-gray-400 font-pixel text-xs">
-                        {formatTimeAgo(post.createdAt)}
-                      </span>
-                    </div>
-
-                    {/* 帖子标题 */}
-                    {post.title && (
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-                        {post.title}
-                      </h3>
-                    )}
-                  </div>
-
-                  {/* 删除按钮 */}
-                  {post.author.id === currentUserId && (
-                    <button
-                      onClick={handleDelete}
-                      className="p-3 text-gray-400 hover:text-red-500 bg-gray-100 dark:bg-gray-700/50 rounded-xl transition-all hover:scale-110"
-                      title={t.common.delete}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-
-                {/* 帖子内容 */}
-                <div className="mb-6">
-                  <div className="prose dark:prose-invert max-w-none">
-                    <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-lg">
-                      {renderContentWithUrls(post.content, t.social.view_link)}
-                    </div>
-                  </div>
-
-                  {/* 图片展示 - 九宫格 */}
-                  {(post.imageUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
-                    <div className="mt-6">
-                      {(() => {
-                        const urls = post.imageUrls && post.imageUrls.length > 0
-                          ? post.imageUrls
-                          : [post.imageUrl || '']
-
-                        const count = urls.length
-
-                        if (count === 1) {
-                          return (
-                            <div
-                              className="relative w-full rounded-2xl overflow-hidden shadow-xl cursor-pointer group"
-                              onClick={() => {
-                                setSelectedImageIndex(0)
-                                setShowImageModal(true)
-                              }}
-                            >
-                              <Image
-                                src={getAssetUrl(urls[0])}
-                                alt="Post image"
-                                width={1200}
-                                height={800}
-                                unoptimized={isExternalUrl(urls[0])}
-                                className="w-full h-auto max-h-[500px] object-contain bg-black/5 hover:scale-[1.02] transition-transform duration-500"
-                              />
-                            </div>
-                          )
-                        }
-
-                        const gridCols = count === 2 || count === 4 ? 'grid-cols-2' : 'grid-cols-3'
-
-                        return (
-                          <div className={`grid ${gridCols} gap-3`}>
-                            {urls.slice(0, 9).map((url, idx) => (
-                              <div
-                                key={idx}
-                                onClick={() => {
-                                  setSelectedImageIndex(idx)
-                                  setShowImageModal(true)
-                                }}
-                                className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-blue-500 transition-all cursor-pointer group bg-gray-50 dark:bg-gray-900"
-                              >
-                                <Image
-                                  src={getAssetUrl(url)}
-                                  alt={`Post img ${idx}`}
-                                  fill
-                                  unoptimized={isExternalUrl(url)}
-                                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                  sizes="(max-width: 768px) 33vw, 250px"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      })()}
-                    </div>
-                  )}
-                </div>
-
-                {/* 统计和操作 - 现代化设计 */}
-                <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center space-x-6">
-                    {/* 浏览数 */}
-                    <div className="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
-                      <div className="w-8 h-8 bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-xl flex items-center justify-center">
-                        <svg className="w-4 h-4 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          ) : post ? (
+            <div className="p-6 space-y-6">
+              {/* 帖子内容卡片 - 现代化设计 */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+                <div className="p-8">
+                  {/* 作者信息 */}
+                  <div className="flex items-start space-x-6 mb-6">
+                    <div className="relative">
+                      <UserAvatar
+                        userId={post.author.id}
+                        userName={post.author.name}
+                        userAvatar={post.author.avatar}
+                        customAvatar={post.author.customAvatar}
+                        size="lg"
+                        showStatus={true}
+                      />
+                      {post.author.workstationId && (
+                        <div className="mt-2 flex justify-center">
+                          <span className="inline-flex items-center px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-500 font-pixel text-[9px] leading-none shadow-[1px_1px_0px_0px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform cursor-help" title={`Workstation Owner: #${post.author.workstationId}`}>
+                            <span className="text-[8px] mr-1 opacity-70">№</span>
+                            {formatWorkstationId(post.author.workstationId)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="font-medium">{t.social.views.replace('{count}', post.viewCount.toString())}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h4 className="font-bold text-gray-900 dark:text-white text-xl flex items-center">
+                          {post.author.name}
+                          {post.author.isAdmin && <ProBadge />}
+                        </h4>
+                        <span className="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-pixel border border-emerald-500/20 rounded">
+                          {t.social.author || '作者'}
+                        </span>
+                        <span className="text-gray-400 dark:text-gray-500 font-pixel">•</span>
+                        <span className="text-gray-500 dark:text-gray-400 font-pixel text-xs">
+                          {formatTimeAgo(post.createdAt)}
+                        </span>
+                      </div>
+
+                      {/* 帖子标题 */}
+                      {post.title && (
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+                          {post.title}
+                        </h3>
+                      )}
                     </div>
 
-                    {/* 回复数 */}
-                    <div className="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl flex items-center justify-center">
-                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {/* 删除按钮 */}
+                    {post.author.id === currentUserId && (
+                      <button
+                        onClick={handleDelete}
+                        className="p-3 text-gray-400 hover:text-red-500 bg-gray-100 dark:bg-gray-700/50 rounded-xl transition-all hover:scale-110"
+                        title={t.common.delete}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 帖子内容 */}
+                  <div className="mb-6">
+                    <div className="prose dark:prose-invert max-w-none">
+                      <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-lg">
+                        {renderContentWithUrls(post.content, t.social.view_link)}
+                      </div>
+                    </div>
+
+                    {/* 图片展示 - 九宫格 */}
+                    {(post.imageUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
+                      <div className="mt-6">
+                        {(() => {
+                          const urls = post.imageUrls && post.imageUrls.length > 0
+                            ? post.imageUrls
+                            : [post.imageUrl || '']
+
+                          const count = urls.length
+
+                          if (count === 1) {
+                            return (
+                              <div
+                                className="relative w-full rounded-2xl overflow-hidden shadow-xl cursor-pointer group"
+                                onClick={() => {
+                                  setSelectedImageIndex(0)
+                                  setShowImageModal(true)
+                                }}
+                              >
+                                <Image
+                                  src={getAssetUrl(urls[0])}
+                                  alt="Post image"
+                                  width={1200}
+                                  height={800}
+                                  unoptimized={isExternalUrl(urls[0])}
+                                  className="w-full h-auto max-h-[500px] object-contain bg-black/5 hover:scale-[1.02] transition-transform duration-500"
+                                />
+                              </div>
+                            )
+                          }
+
+                          const gridCols = count === 2 || count === 4 ? 'grid-cols-2' : 'grid-cols-3'
+
+                          return (
+                            <div className={`grid ${gridCols} gap-3`}>
+                              {urls.slice(0, 9).map((url, idx) => (
+                                <div
+                                  key={idx}
+                                  onClick={() => {
+                                    setSelectedImageIndex(idx)
+                                    setShowImageModal(true)
+                                  }}
+                                  className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-blue-500 transition-all cursor-pointer group bg-gray-50 dark:bg-gray-900"
+                                >
+                                  <Image
+                                    src={getAssetUrl(url)}
+                                    alt={`Post img ${idx}`}
+                                    fill
+                                    unoptimized={isExternalUrl(url)}
+                                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                    sizes="(max-width: 768px) 33vw, 250px"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 统计和操作 - 现代化设计 */}
+                  <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center space-x-6">
+                      {/* 浏览数 */}
+                      <div className="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
+                        <div className="w-8 h-8 bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-xl flex items-center justify-center">
+                          <svg className="w-4 h-4 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </div>
+                        <span className="font-medium">{t.social.views.replace('{count}', post.viewCount.toString())}</span>
+                      </div>
+
+                      {/* 回复数 */}
+                      <div className="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl flex items-center justify-center">
+                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
+                        <span className="font-medium">{t.social.replies.replace('{count}', post.replyCount.toString())}</span>
+                      </div>
+
+                      {/* 点赞按钮 - 现代化设计 */}
+                      <button
+                        onClick={handleLike}
+                        disabled={isLiking}
+                        className={`group flex items-center space-x-3 px-4 py-2 rounded-lg font-pixel text-sm shadow-pixel-sm ${post.isLiked
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                          } ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95 transition-all'}`}
+                      >
+                        <div className={`w-8 h-8 ${post.isLiked ? 'bg-white/20' : 'bg-emerald-500/10'} rounded-lg flex items-center justify-center `}>
+                          <svg
+                            className={`w-4 h-4 ${post.isLiked ? 'text-white fill-current' : 'text-emerald-500'}  ${!post.isLiked && 'group-hover:scale-110 transition-transform'}`}
+                            fill={post.isLiked ? 'currentColor' : 'none'}
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        </div>
+                        <span className={post.isLiked ? 'text-white' : ''}>{t.social.likes.replace('{count}', post.likeCount.toString())}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 回复区域 - 现代化设计 */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-slate-200 dark:border-gray-700/50 overflow-hidden">
+                <div className="p-6 space-y-6">
+                  {/* 回复标题 */}
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-2xl flex items-center justify-center">
+                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </div>
-                      <span className="font-medium">{t.social.replies.replace('{count}', post.replyCount.toString())}</span>
-                    </div>
-
-                    {/* 点赞按钮 - 现代化设计 */}
-                    <button
-                      onClick={handleLike}
-                      disabled={isLiking}
-                      className={`group flex items-center space-x-3 px-4 py-2 rounded-lg font-pixel text-sm shadow-pixel-sm ${post.isLiked
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
-                        } ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95 transition-all'}`}
-                    >
-                      <div className={`w-8 h-8 ${post.isLiked ? 'bg-white/20' : 'bg-emerald-500/10'} rounded-lg flex items-center justify-center `}>
-                        <svg
-                          className={`w-4 h-4 ${post.isLiked ? 'text-white fill-current' : 'text-emerald-500'}  ${!post.isLiked && 'group-hover:scale-110 transition-transform'}`}
-                          fill={post.isLiked ? 'currentColor' : 'none'}
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                      </div>
-                      <span className={post.isLiked ? 'text-white' : ''}>{t.social.likes.replace('{count}', post.likeCount.toString())}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 回复区域 - 现代化设计 */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-slate-200 dark:border-gray-700/50 overflow-hidden">
-              <div className="p-6 space-y-6">
-                {/* 回复标题 */}
-                <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-2xl flex items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {t.social.replies_title}
-                      </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {t.social.replies_count.replace('{count}', (post.replyCount || 0).toString())}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 回复输入表单 */}
-                <div id="reply-form-container" className="bg-white dark:bg-gray-900/50 rounded-2xl p-6 border border-slate-200 dark:border-gray-700/50 shadow-sm dark:shadow-none">
-                  <CreateReplyForm
-                    onSubmit={handleReplySubmit}
-                    onCancel={() => { }}
-                    isMobile={false}
-                    isSubmitting={isCreatingReply}
-                    variant="light"
-                    replyToUser={replyToUser}
-                    onClearReplyTo={() => setReplyToUser(null)}
-                  />
-                </div>
-
-                {/* 错误显示 */}
-                {repliesError && (
-                  <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border border-red-200 dark:border-red-800/50 rounded-2xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
                       <div>
-                        <p className="font-medium text-red-700 dark:text-red-300">{t.social.reply_failed}</p>
-                        <p className="text-sm text-red-600 dark:text-red-400">{repliesError}</p>
+                        <h4 className="text-xl font-bold text-gray-900 dark:text-white">
+                          {t.social.replies_title}
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {t.social.replies_count.replace('{count}', (post.replyCount || 0).toString())}
+                        </p>
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* 加载状态 */}
-                {isLoadingReplies && replies.length === 0 && (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full " style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full " style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full " style={{ animationDelay: '300ms' }}></div>
-                      </div>
-                      <p className="text-gray-500 dark:text-gray-400 font-medium">{t.social.loading_replies}</p>
-                    </div>
+                  {/* 回复输入表单 */}
+                  <div id="reply-form-container" className="bg-white dark:bg-gray-900/50 rounded-2xl p-6 border border-slate-200 dark:border-gray-700/50 shadow-sm dark:shadow-none">
+                    <CreateReplyForm
+                      onSubmit={handleReplySubmit}
+                      onCancel={() => { }}
+                      isMobile={false}
+                      isSubmitting={isCreatingReply}
+                      variant="light"
+                      replyToUser={replyToUser}
+                      onClearReplyTo={() => setReplyToUser(null)}
+                    />
                   </div>
-                )}
 
-                {/* 回复列表 */}
-                {replies.length > 0 && (
-                  <div className="space-y-4">
-                    {replies.map((reply, index) => (
-                      <div key={reply.id} className="bg-white dark:bg-gray-900/50 rounded-2xl p-6 border border-slate-200 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all dark:hover:shadow-lg " style={{ animationDelay: `${index * 100}ms` }}>
-                        <div className="flex items-start space-x-4">
-                          {/* 回复者头像 */}
-                          <div className="flex-shrink-0">
-                            <div className="relative">
-                              <UserAvatar
-                                userId={reply.author.id}
-                                userName={reply.author.name}
-                                userAvatar={reply.author.avatar}
-                                customAvatar={reply.author.customAvatar}
-                                size="md"
-                                showStatus={true}
-                              />
-                              {reply.author.workstationId && (
-                                <div className="mt-1.5 flex justify-center">
-                                  <span className="inline-flex items-center px-1 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-500 font-pixel text-[8px] leading-none shadow-[1px_1px_0px_0px_rgba(0,0,0,0.5)] transform hover:scale-110 transition-transform cursor-help" title={`Workstation Owner: #${reply.author.workstationId}`}>
-                                    <span className="text-[7px] mr-1 opacity-70">№</span>
-                                    {reply.author.workstationId.length > 8 ? reply.author.workstationId.substring(0, 8) + '...' : reply.author.workstationId}
-                                  </span>
+                  {/* 错误显示 */}
+                  {repliesError && (
+                    <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border border-red-200 dark:border-red-800/50 rounded-2xl p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-medium text-red-700 dark:text-red-300">{t.social.reply_failed}</p>
+                          <p className="text-sm text-red-600 dark:text-red-400">{repliesError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 加载状态 */}
+                  {isLoadingReplies && replies.length === 0 && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full " style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full " style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full " style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">{t.social.loading_replies}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 回复列表 */}
+                  {replies.length > 0 && (
+                    <div className="space-y-4">
+                      {replies.map((reply, index) => (
+                        <div key={reply.id} className="bg-white dark:bg-gray-900/50 rounded-2xl p-6 border border-slate-200 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all dark:hover:shadow-lg " style={{ animationDelay: `${index * 100}ms` }}>
+                          <div className="flex items-start space-x-4">
+                            {/* 回复者头像 */}
+                            <div className="flex-shrink-0">
+                              <div className="relative">
+                                <UserAvatar
+                                  userId={reply.author.id}
+                                  userName={reply.author.name}
+                                  userAvatar={reply.author.avatar}
+                                  customAvatar={reply.author.customAvatar}
+                                  size="md"
+                                  showStatus={true}
+                                />
+                                {reply.author.workstationId && (
+                                  <div className="mt-1.5 flex justify-center">
+                                    <span className="inline-flex items-center px-1 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-500 font-pixel text-[8px] leading-none shadow-[1px_1px_0px_0px_rgba(0,0,0,0.5)] transform hover:scale-110 transition-transform cursor-help" title={`Workstation Owner: #${reply.author.workstationId}`}>
+                                      <span className="text-[7px] mr-1 opacity-70">№</span>
+                                      {formatWorkstationId(reply.author.workstationId)}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
                                 </div>
-                              )}
-                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
                               </div>
+
                             </div>
 
-                          </div>
+                            {/* 回复内容 */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <span className="font-pixel font-bold text-slate-900 dark:text-white flex items-center">
+                                  {reply.author.name}
+                                  {reply.author.isAdmin && <ProBadge />}
+                                </span>
+                                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-pixel border border-emerald-500/20 rounded">
+                                  {t.social.replier || '回复者'}
+                                </span>
+                                <span className="text-gray-400 dark:text-gray-500 font-pixel">•</span>
+                                <span className="text-gray-500 dark:text-gray-400 font-pixel text-xs">
+                                  {formatTimeAgo(reply.createdAt)}
+                                </span>
+                              </div>
+                              <div className="prose dark:prose-invert max-w-none">
+                                <p className="text-slate-700 dark:text-gray-300 leading-relaxed font-normal">
+                                  {renderContentWithUrls(reply.content, t.social.view_link)}
+                                </p>
+                              </div>
 
-                          {/* 回复内容 */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-3 mb-3">
-                              <span className="font-pixel font-bold text-slate-900 dark:text-white flex items-center">
-                                {reply.author.name}
-                                {reply.author.isAdmin && <ProBadge />}
-                              </span>
-                              <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-pixel border border-emerald-500/20 rounded">
-                                {t.social.replier || '回复者'}
-                              </span>
-                              <span className="text-gray-400 dark:text-gray-500 font-pixel">•</span>
-                              <span className="text-gray-500 dark:text-gray-400 font-pixel text-xs">
-                                {formatTimeAgo(reply.createdAt)}
-                              </span>
-                            </div>
-                            <div className="prose dark:prose-invert max-w-none">
-                              <p className="text-slate-700 dark:text-gray-300 leading-relaxed font-normal">
-                                {renderContentWithUrls(reply.content, t.social.view_link)}
-                              </p>
-                            </div>
-
-                            {/* 回复中的图片预览 */}
-                            {(() => {
-                              const replyImages = extractImageUrls(reply.content)
-                              if (replyImages.length === 0) return null
-                              return (
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {replyImages.map((imgUrl, idx) => (
-                                    <div
-                                      key={idx}
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setLightboxImages(replyImages)
-                                        setLightboxInitialIndex(idx)
-                                        setShowImageModal(true)
-                                      }}
-                                      className="relative w-24 h-24 rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden cursor-zoom-in group shadow-sm hover:shadow-md transition-all"
-                                    >
-                                      <Image
-                                        src={getAssetUrl(imgUrl)}
-                                        alt="Reply image"
-                                        fill
-                                        unoptimized={imgUrl.startsWith('http')}
-                                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                        sizes="96px"
-                                      />
-                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                        <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                        </svg>
+                              {/* 回复中的图片预览 */}
+                              {(() => {
+                                const replyImages = extractImageUrls(reply.content)
+                                if (replyImages.length === 0) return null
+                                return (
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    {replyImages.map((imgUrl, idx) => (
+                                      <div
+                                        key={idx}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setLightboxImages(replyImages)
+                                          setLightboxInitialIndex(idx)
+                                          setShowImageModal(true)
+                                        }}
+                                        className="relative w-24 h-24 rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden cursor-zoom-in group shadow-sm hover:shadow-md transition-all"
+                                      >
+                                        <Image
+                                          src={getAssetUrl(imgUrl)}
+                                          alt="Reply image"
+                                          fill
+                                          unoptimized={imgUrl.startsWith('http')}
+                                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                          sizes="96px"
+                                        />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                          <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                          </svg>
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )
-                            })()}
+                                    ))}
+                                  </div>
+                                )
+                              })()}
 
-                            <div className="mt-4 flex items-center gap-4">
-                              <button
-                                onClick={() => handleReplyTo(reply)}
-                                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                </svg>
-                                <span>{t.social.reply || '回复'}</span>
-                              </button>
-
-                              {reply.parentId && (
+                              <div className="mt-4 flex items-center gap-4">
                                 <button
-                                  onClick={() => setShowConversationId(reply.id)}
-                                  className="flex items-center gap-1.5 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+                                  onClick={() => handleReplyTo(reply)}
+                                  className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                   </svg>
-                                  <span>{t.social.view_conversation || '查看会话'}</span>
+                                  <span>{t.social.reply || '回复'}</span>
                                 </button>
-                              )}
+
+                                {reply.parentId && (
+                                  <button
+                                    onClick={() => setShowConversationId(reply.id)}
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <span>{t.social.view_conversation || '查看会话'}</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 没有回复时的空状态 */}
-                {!isLoadingReplies && replies.length === 0 && (
-                  <div className="text-center py-12">
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                      <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
+                      ))}
                     </div>
-                    <h5 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t.social.no_replies}</h5>
-                    <p className="text-gray-500 dark:text-gray-400">{t.social.no_replies_hint}</p>
-                  </div>
-                )}
+                  )}
 
-                {/* 加载更多回复按钮 */}
-                {repliesPagination.hasNextPage && (
-                  <div className="flex justify-center pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={loadMoreReplies}
-                      disabled={isLoadingReplies}
-                      className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105  disabled:opacity-50"
-                      title={t.social.load_more_replies}
-                    >
-                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="relative flex items-center space-x-2">
-                        {isLoadingReplies ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full "></div>
-                            <span>{t.common.loading}</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                            </svg>
-                            <span>{t.social.load_more_replies.replace('{count}', (repliesPagination.totalPages - repliesPagination.page).toString())}</span>
-                          </>
-                        )}
+                  {/* 没有回复时的空状态 */}
+                  {!isLoadingReplies && replies.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
                       </div>
-                    </button>
-                  </div>
-                )}
+                      <h5 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t.social.no_replies}</h5>
+                      <p className="text-gray-500 dark:text-gray-400">{t.social.no_replies_hint}</p>
+                    </div>
+                  )}
+
+                  {/* 加载更多回复按钮 */}
+                  {repliesPagination.hasNextPage && (
+                    <div className="flex justify-center pt-6 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={loadMoreReplies}
+                        disabled={isLoadingReplies}
+                        className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105  disabled:opacity-50"
+                        title={t.social.load_more_replies}
+                      >
+                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="relative flex items-center space-x-2">
+                          {isLoadingReplies ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full "></div>
+                              <span>{t.common.loading}</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                              </svg>
+                              <span>{t.social.load_more_replies.replace('{count}', (repliesPagination.totalPages - repliesPagination.page).toString())}</span>
+                            </>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
 
-      {/* 删除确认对话框 */}
-      {showDeleteModal && (
-        <BillboardConfirmModal
-          isVisible={showDeleteModal}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setShowDeleteModal(false)}
-          currentPoints={100}
-          cost={0}
-          postTitle={post?.title || post?.content.substring(0, 20) || ''}
-          customTitle={t.social.confirm_delete}
-          customMessage={t.social.confirm_delete_msg}
+        {/* 删除确认对话框 */}
+        {showDeleteModal && (
+          <BillboardConfirmModal
+            isVisible={showDeleteModal}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setShowDeleteModal(false)}
+            currentPoints={100}
+            cost={0}
+            postTitle={post?.title || post?.content.substring(0, 20) || ''}
+            customTitle={t.social.confirm_delete}
+            customMessage={t.social.confirm_delete_msg}
+          />
+        )}
+
+        {/* 会话查看弹窗 */}
+        {showConversationId && postId && (
+          <ConversationModal
+            replyId={showConversationId}
+            postId={postId}
+            onClose={() => setShowConversationId(null)}
+          />
+        )}
+
+        {/* 图片放大模态框 */}
+        <ImageLightbox
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          images={lightboxImages}
+          initialIndex={lightboxInitialIndex}
         />
-      )}
-
-      {/* 会话查看弹窗 */}
-      {showConversationId && postId && (
-        <ConversationModal
-          replyId={showConversationId}
-          postId={postId}
-          onClose={() => setShowConversationId(null)}
-        />
-      )}
-
-      {/* 图片放大模态框 */}
-      <ImageLightbox
-        isOpen={showImageModal}
-        onClose={() => setShowImageModal(false)}
-        images={lightboxImages}
-        initialIndex={lightboxInitialIndex}
-      />
 
       </div>
     </div>

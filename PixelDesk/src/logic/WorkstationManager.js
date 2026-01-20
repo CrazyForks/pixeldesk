@@ -861,7 +861,11 @@ export class WorkstationManager {
      * @param {number} interval 轮询间隔(ms)
      */
     startStatusPolling(interval = 30000) {
-        if (this.pollingTimer) this.stopStatusPolling();
+        // 🔧 安全检查：防止重复启动轮询
+        if (this.pollingTimer) {
+            debugLog('⚠️ 工位状态轮询已在运行中，跳过重复启动');
+            return;
+        }
 
         this.pollingInterval = interval;
 
@@ -2252,22 +2256,22 @@ export class WorkstationManager {
     invalidateWorkstationBinding() { /* 已禁用 */ }
 
     destroy() {
-        // 停止轮询
+        // 🔧 修复：确保销毁时停止轮询
         this.stopStatusPolling();
-        // 清理视口优化相关资源
-        this.disableViewportOptimization();
-        // 清理所有事件监听器和交互图标
+
+        // 清理所有绑定的视觉元素
         this.workstations.forEach(workstation => {
-            if (workstation.sprite) {
-                workstation.sprite.removeAllListeners();
-            }
-            this.removeInteractionIcon(workstation);
-            this.removeOccupiedIcon(workstation);
-            this.removeCharacterFromWorkstation(workstation);
+            if (workstation.countdownText) workstation.countdownText.destroy();
+            if (workstation.characterSprite) workstation.characterSprite.destroy();
+            if (workstation.interactionIcon) workstation.interactionIcon.destroy();
+            if (workstation.occupiedIcon) workstation.occupiedIcon.destroy();
+            if (workstation.statusIcon) workstation.statusIcon.destroy();
+            if (workstation.closedSign) workstation.closedSign.destroy();
         });
 
         this.workstations.clear();
         this.userBindings.clear();
+
         debugLog('WorkstationManager destroyed');
     }
 

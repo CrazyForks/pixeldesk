@@ -3,6 +3,7 @@
 import { useState, useCallback, memo, useEffect } from 'react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { getAssetUrl } from '@/lib/utils/assets'
+import { formatWorkstationId } from '@/lib/utils/format'
 
 interface WorkstationInfoModalProps {
   isVisible: boolean
@@ -393,7 +394,7 @@ const WorkstationInfoModal = memo(({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="text-xs text-retro-textMuted font-pixel tracking-wide">ID</div>
-                    <div className="text-white text-base font-bold font-retro">{workstationId}</div>
+                    <div className="text-white text-base font-bold font-retro" title={workstationId}>{formatWorkstationId(workstationId)}</div>
                   </div>
                   <div className="space-y-2">
                     <div className="text-xs text-retro-textMuted font-pixel tracking-wide">{t.workstation.cost}</div>

@@ -310,17 +310,19 @@ export class Start extends Phaser.Scene {
       }
 
       // 窗口重新获得焦点时重置按键状态，防止粘滞键
-      const handleWindowFocus = () => {
+      this.handleWindowFocus = () => {
         if (this.keyboardInputEnabled !== false && this.input && this.input.keyboard) {
           console.log('🎮 [Internal] Window Focused - Resetting Keys');
           this.input.keyboard.resetKeys();
         }
       };
-      window.addEventListener('focus', handleWindowFocus);
+      window.addEventListener('focus', this.handleWindowFocus);
 
-      // Cleanup focus listener on shutdown
+      // Cleanup focus listener on shutdown (redundant but safe)
       this.events.once('shutdown', () => {
-        window.removeEventListener('focus', handleWindowFocus);
+        if (this.handleWindowFocus) {
+          window.removeEventListener('focus', this.handleWindowFocus);
+        }
       });
 
       // 游戏状态测试函数已移除以优化性能
@@ -407,6 +409,9 @@ export class Start extends Phaser.Scene {
 
       // 触发Phaser游戏初始化完成事件
       window.dispatchEvent(new Event("phaser-game-ready"))
+
+      // 🔧 性能优化：监听 Page Visibility API，场景切换、页面隐藏时暂停/恢复后台任务
+      this.setupVisibilityListeners();
 
       // 初始化碰撞检测系统
       this.collisionSensitivity = 50 // 碰撞检测半径
@@ -3705,18 +3710,116 @@ export class Start extends Phaser.Scene {
     this.workstationObjects = []
     this.loadedWorkstations.clear()
 
-    // 清理全局函数
+    // 🔧 修复：彻底清理全局事件监听器，防止内存泄漏和逻辑冲突
     if (typeof window !== "undefined") {
-      delete window.onPlayerCollisionStart
-      delete window.onPlayerCollisionEnd
+      // 1. 移除键盘拦截监听器
+      if (this.keyboardBlockHandler) {
+        document.removeEventListener('keydown', this.keyboardBlockHandler, true);
+        document.removeEventListener('keyup', this.keyboardBlockHandler, true);
+        this.keyboardBlockHandler = null;
+      }
+
+      // 2. 移除焦点监听器
+      if (this.handleWindowFocus) {
+        window.removeEventListener('focus', this.handleWindowFocus);
+        this.handleWindowFocus = null;
+      }
+
+      // 3. 移除可见性监听器
+      if (this.visibilityChangeHandler) {
+        document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+        this.visibilityChangeHandler = null;
+      }
+
+      // 4. 清理登录监听器
+      if (this.loginEventListener) {
+        window.removeEventListener('user-logged-in', this.loginEventListener);
+        this.loginEventListener = null;
+      }
+
+      // 5. 清理全局函数
+      delete window.saveGameScene
+      delete window.getGameWorkstationCount
+      delete window.getGameWorkstationStats
+      delete window.getViewportOptimizationStats
+      delete window.teleportToWorkstation
       delete window.getCurrentCollisions
       delete window.getCollisionHistory
       delete window.setCollisionSensitivity
+      delete window.forceRefreshWorkstations
+      delete window.disableGameKeyboard
+      delete window.enableGameKeyboard
+      delete window.isGameKeyboardEnabled
+      delete window.enablePlayerMovement
+      delete window.disablePlayerMovement
+      delete window.disableGameMouse
+      delete window.enableGameMouse
+      delete window.updatePhaserUserData
+      delete window.onPlayerCollisionStart
+      delete window.onPlayerCollisionEnd
       delete window.getChunkStats
       delete window.gameScene
     }
 
     // 调用父类的shutdown方法
     super.shutdown()
+  }
+
+  // 🔧 新增：设置页面可见性监听
+  setupVisibilityListeners() {
+    this.visibilityChangeHandler = () => {
+      const isVisible = document.visibilityState === 'visible';
+
+      if (isVisible) {
+        console.log('🌞 [Start] 页面已恢复可见，唤醒后台任务...');
+        this.resumeBackgroundTasks();
+      } else {
+        console.log('💤 [Start] 页面已退出视口，暂停后台任务以节省资源...');
+        this.pauseBackgroundTasks();
+      }
+    };
+
+    document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+  }
+
+  // 🔧 新增：暂停后台密集任务
+  pauseBackgroundTasks() {
+    // 1. 停止工位状态轮询
+    if (this.workstationManager) {
+      this.workstationManager.stopStatusPolling();
+    }
+
+    // 2. 停止玩家自动保存
+    if (this.player) {
+      this.player.stopPeriodicSave();
+    }
+
+    // 3. 停止昼夜系统滤镜变色（如果有的活跃计算的话）
+    if (this.dayNightManager && typeof this.dayNightManager.pause === 'function') {
+      this.dayNightManager.pause();
+    }
+  }
+
+  // 🔧 新增：恢复后台密集任务
+  resumeBackgroundTasks() {
+    // 1. 立即触发一次同步，然后重新开启轮询
+    if (this.workstationManager) {
+      this.workstationManager.syncWorkstationBindings()
+        .then(() => this.workstationManager.startStatusPolling(30000))
+        .catch(err => debugWarn('恢复同步失败:', err));
+    }
+
+    // 2. 重新启动玩家自动保存
+    if (this.player) {
+      // 只有在非其他玩家（也就是主玩家）时才重新启动
+      if (!this.player.isOtherPlayer) {
+        this.player.startPeriodicSave();
+      }
+    }
+
+    // 3. 恢复昼夜系统
+    if (this.dayNightManager && typeof this.dayNightManager.resume === 'function') {
+      this.dayNightManager.resume();
+    }
   }
 }

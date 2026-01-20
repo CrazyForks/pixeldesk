@@ -9,6 +9,7 @@ import UserAvatar from '@/components/UserAvatar'
 import { LevelProgress } from '@/components/LevelProgress'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { getAssetUrl } from '@/lib/utils/assets'
+import { formatWorkstationId } from '@/lib/utils/format'
 import ProBadge from '../social/ProBadge'
 
 interface PlayerProfileTabProps {
@@ -331,11 +332,9 @@ export default function PlayerProfileTab({
                   {collisionPlayer.name}
                   {collisionPlayer.isAdmin && <ProBadge />}
                 </h3>
-                {workstationAd && (
-                  <span className="text-2xs text-white/60 font-pixel tracking-wider uppercase whitespace-nowrap">
-                    WS#{workstationAd.workstationId}
-                  </span>
-                )}
+                <span className="text-2xs text-white/60 font-pixel tracking-wider uppercase whitespace-nowrap">
+                  WS#{formatWorkstationId(workstationAd.workstationId)}
+                </span>
               </div>
               <p className="text-xs text-white/80 truncate transition-all duration-500 ease-in-out leading-tight">
                 {workstationAd?.adText || collisionPlayer.currentStatus?.message || 'Online'}
@@ -424,7 +423,7 @@ export default function PlayerProfileTab({
                   </h3>
                   {workstationAd && (
                     <span className="text-xs text-white/70 font-pixel tracking-wider uppercase">
-                      WS#{workstationAd.workstationId}
+                      WS#{formatWorkstationId(workstationAd.workstationId)}
                     </span>
                   )}
                 </div>

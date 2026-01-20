@@ -112,11 +112,28 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
     setTags(tags.filter(tag => tag !== tagToRemove))
   }
 
-  // 计算阅读时间
   const calculateReadTime = (text: string): number => {
     const wordCount = text.length
     return Math.max(1, Math.ceil(wordCount / 200))
   }
+
+  // 自动解析图片 URL (同步 Post 逻辑)
+  const detectImageUrls = useCallback((text: string) => {
+    if (!text) return
+    const imageRegex = /https?:\/\/[^\s$.?#].[^\s]*\.(?:jpg|jpeg|gif|png|webp|svg)(?:\?[^\s]*)?/gi
+    const matches = text.match(imageRegex)
+
+    if (matches) {
+      setImageUrls(prev => {
+        const newUrls = matches.filter(url => !prev.includes(url))
+        if (newUrls.length > 0) {
+          console.log('🔍 [BlogEditor] 检测到新图片 URL:', newUrls)
+          return [...prev, ...newUrls]
+        }
+        return prev
+      })
+    }
+  }, [])
 
   // 生成摘要
   const generateSummary = (text: string): string => {
@@ -452,7 +469,10 @@ export default function BlogEditor({ blog, userId, onSaved, onPublished }: BlogE
         <div className="max-w-5xl mx-auto w-full flex-1">
           <ClassicMarkdownEditor
             value={content}
-            onChange={setContent}
+            onChange={(val) => {
+              setContent(val)
+              detectImageUrls(val)
+            }}
             onImageUpload={(url) => {
               if (!imageUrls.includes(url)) {
                 setImageUrls(prev => [...prev, url])

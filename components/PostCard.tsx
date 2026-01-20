@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import Image from 'next/image'
 import { getAssetUrl } from '@/lib/utils/assets'
-import { renderContentWithUrls, extractImageUrls } from '@/lib/utils/format'
+import { renderContentWithUrls, extractImageUrls, formatWorkstationId } from '@/lib/utils/format'
 import { createPortal } from 'react-dom'
 import BillboardConfirmModal from './billboard/BillboardConfirmModal'
 import ProBadge from '@/components/social/ProBadge'
@@ -175,7 +175,7 @@ export default function PostCard({
               <div className="mt-1.5 flex justify-center">
                 <span className="inline-flex items-center px-1 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-500 font-pixel text-[8px] leading-none shadow-[1px_1px_0px_0px_rgba(0,0,0,0.5)] transform hover:scale-110 transition-transform cursor-help" title={`Workstation Owner: #${post.author.workstationId}`}>
                   <span className="text-[7px] mr-1 opacity-70">№</span>
-                  {post.author.workstationId.length > 8 ? post.author.workstationId.substring(0, 8) + '...' : post.author.workstationId}
+                  {formatWorkstationId(post.author.workstationId)}
                 </span>
               </div>
             )}
@@ -251,9 +251,29 @@ export default function PostCard({
           onClick={handleContentClick}
           className="text-gray-300 whitespace-pre-wrap leading-relaxed text-sm mb-3 font-sans cursor-pointer hover:text-gray-100 transition-colors"
         >
-          {post.type === 'MARKDOWN' && post.summary
-            ? renderContentWithUrls(post.summary, t.social.view_link)
-            : renderContentWithUrls(post.content, t.social.view_link)}
+          {post.type === 'MARKDOWN' && post.summary ? (
+            <div className="relative group/blog-content">
+              <div className="min-h-[60px]">
+                {renderContentWithUrls(post.summary, t.social.view_link)}
+              </div>
+              <Link
+                href={`/posts/${post.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0 flex items-center justify-center bg-cyan-900/40 opacity-0 group-hover/blog-content:opacity-100 transition-opacity backdrop-blur-[2px] rounded-lg"
+              >
+                <span className="px-4 py-2 bg-cyan-500 text-white text-xs font-bold rounded-full shadow-lg shadow-cyan-500/50 flex items-center gap-2 transform translate-y-2 group-hover/blog-content:translate-y-0 transition-transform">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  阅读全文
+                </span>
+              </Link>
+            </div>
+          ) : (
+            renderContentWithUrls(post.content, t.social.view_link)
+          )}
         </div>
 
         {/* 博客标签 */}
@@ -320,7 +340,7 @@ export default function PostCard({
               const maxWidth = count === 2 ? 'max-w-[240px]' : 'max-w-[400px]'
 
               return (
-                <div className={`grid ${gridCols} gap-2 ${maxWidth}`}>
+                <div className={`grid ${gridCols} gap-2 ${maxWidth} relative group/blog-images`}>
                   {urls.slice(0, 9).map((url, idx) => (
                     <div
                       key={idx}
@@ -340,6 +360,18 @@ export default function PostCard({
                       />
                     </div>
                   ))}
+                  {post.type === 'MARKDOWN' && (
+                    <Link
+                      href={`/posts/${post.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 flex items-center justify-center bg-cyan-900/20 opacity-0 group-hover/blog-images:opacity-100 transition-opacity backdrop-blur-[1px] pointer-events-none"
+                    >
+                      <span className="pointer-events-auto px-4 py-2 bg-cyan-500/80 hover:bg-cyan-500 text-white text-[10px] font-pixel rounded-full shadow-lg shadow-cyan-500/50 flex items-center gap-2 transform translate-y-2 group-hover/blog-images:translate-y-0 transition-transform">
+                        查看博客详情
+                      </span>
+                    </Link>
+                  )}
                 </div>
               )
             })()}
@@ -490,7 +522,7 @@ export default function PostCard({
                             {reply.author.workstationId && (
                               <span className="inline-flex items-center px-1 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-500 font-pixel text-[8px] leading-none" title={`Workstation Owner: #${reply.author.workstationId}`}>
                                 <span className="text-[7px] mr-1 opacity-70">№</span>
-                                {reply.author.workstationId.length > 8 ? reply.author.workstationId.substring(0, 8) + '...' : reply.author.workstationId}
+                                {formatWorkstationId(reply.author.workstationId)}
                               </span>
                             )}
                             <span className="text-gray-600">•</span>

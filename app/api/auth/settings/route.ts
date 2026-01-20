@@ -131,6 +131,7 @@ export async function PUT(request: NextRequest) {
       points: updatedUser.points,
       level: (updatedUser as any).level,
       bits: (updatedUser as any).bits,
+      lastNotifiedLevel: (updatedUser as any).lastNotifiedLevel,
       emailVerified: updatedUser.emailVerified,
       updatedAt: updatedUser.updatedAt,
       inviteCode: updatedUser.inviteCode
@@ -198,6 +199,7 @@ export async function GET(request: NextRequest) {
       points: authResult.user.points,
       level: authResult.user.level,
       bits: authResult.user.bits,
+      lastNotifiedLevel: authResult.user.lastNotifiedLevel,
       emailVerified: authResult.user.emailVerified,
       inviteCode: authResult.user.inviteCode
     }

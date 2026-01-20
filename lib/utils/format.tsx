@@ -67,3 +67,29 @@ export const extractImageUrls = (text: string): string[] => {
         )
     })
 }
+
+/**
+ * 检查是否为图片链接
+ */
+export const isImageUrl = (url: string): boolean => {
+    if (!url) return false
+    const lowerUrl = url.toLowerCase()
+    return (
+        !!lowerUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)($|\?)/) ||
+        lowerUrl.includes('img.') ||
+        lowerUrl.includes('images.') ||
+        lowerUrl.includes('/images/') ||
+        lowerUrl.includes('/img/')
+    )
+}
+
+/**
+ * 统一格式化工位 ID 显示
+ * @param workstationId 工位 ID (string or number)
+ * @returns 格式化后的 3 位 ID 字符串
+ */
+export const formatWorkstationId = (workstationId: string | number | null | undefined): string => {
+    if (workstationId === null || workstationId === undefined) return ''
+    const idStr = String(workstationId)
+    return idStr.length > 3 ? idStr.substring(0, 3) : idStr
+}

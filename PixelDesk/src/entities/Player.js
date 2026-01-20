@@ -936,13 +936,16 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     destroy() {
+        // 🔧 修复：确保停止数据库同步定时器
+        this.stopPeriodicSave();
+
         // 清理状态保存防抖计时器
         if (this.saveStateTimer) {
             clearTimeout(this.saveStateTimer);
             this.saveStateTimer = null;
         }
 
-        // 清理数据库保存计时器
+        // 清理数据库保存延时计时器 (planDatabaseSave)
         if (this.dbSaveTimer) {
             clearTimeout(this.dbSaveTimer);
             this.dbSaveTimer = null;

@@ -24,104 +24,91 @@ interface UserLevelData {
     } | null;
 }
 
-export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
+interface LevelProgressProps {
+    userId?: string;
+    level?: number;
+    bits?: number;
+    lastNotifiedLevel?: number;
+}
+
+export const LevelProgress: React.FC<LevelProgressProps> = ({
+    userId,
+    level = 0,
+    bits = 0,
+    lastNotifiedLevel = 0
+}) => {
     const { locale } = useTranslation();
     const [data, setData] = useState<UserLevelData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const prevLevelRef = useRef<number | null>(null);
-    const initialCheckDoneRef = useRef<boolean>(false);
-    const checkDelayActiveRef = useRef<boolean>(true);
+    const lastTriggeredLevelRef = useRef<number | null>(null);
 
-    // Poll for level updates - Optimized for performance
+    // Fetch static level definitions once or use a shared hook
+    // But for simplicity in this refactor, we still fetch the metadata (names/configs)
+    // based on the provided level/bits to keep the UI rich.
     useEffect(() => {
-        // Reset level tracking when userId changes to prevent false positives (e.g. Guest -> User transition during load)
-        prevLevelRef.current = null;
-        initialCheckDoneRef.current = false;
-        checkDelayActiveRef.current = true;
-
-        // Start 3-second delay for the initial notification check to avoid interfering with page load
-        const delayTimer = setTimeout(() => {
-            checkDelayActiveRef.current = false;
-            console.log('⏱️ [LevelProgress] 初始检测延迟结束，现在允许触发升级通知');
-        }, 3000);
-
-        // Initial fetch
-        fetchLevelData();
-
-        const interval = setInterval(() => {
-            // Only poll if the document is visible to save CPU
-            if (document.visibilityState === 'visible') {
-                fetchLevelData();
-            }
-        }, 300000); // 降低轮询频率到5分钟 (之前是30m过慢，现在统一为5m)
-
-        // 监听手动刷新事件
-        const handleRefresh = () => {
-            console.log('🔄 [LevelProgress] 收到刷新请求，正在更新等级数据...')
-            fetchLevelData();
-        };
-        window.addEventListener('refresh-user-data', handleRefresh);
-
-        return () => {
-            clearInterval(interval);
-            clearTimeout(delayTimer);
-            window.removeEventListener('refresh-user-data', handleRefresh);
-        };
-    }, [userId]);
-
-    const fetchLevelData = async () => {
         if (!userId) return;
-        try {
-            const res = await fetch(`/api/user/level?userId=${userId}`);
-            if (res.ok) {
-                const json = await res.json();
-                if (json.success) {
-                    const newData = json.data as UserLevelData;
-                    setData(newData);
 
-                    // Check for level up
-                    // Conditions:
-                    // 1. Not in initial 3s delay
-                    // 2. Current level is higher than lastNotifiedLevel reported by server
-                    // 3. (Optional) current level is higher than prevLevelRef (immediate local check)
-                    const isNewLevel = newData.current.level > newData.current.lastNotifiedLevel;
-
-                    if (!checkDelayActiveRef.current && isNewLevel) {
-                        // Level Up Detected!
-                        console.log('🎉 [LevelProgress] 检测到等级提升:', newData.current.level);
-                        const event = new CustomEvent('level-up', {
-                            detail: {
-                                userId: userId, // 传递 userId 方便后续 API 调用
-                                newLevel: newData.current.level,
-                                levelName: newData.current.name,
-                                rewards: newData.current.config ? ['New Status Badge', 'Access to Vip Areas'] : []
-                            }
-                        });
-                        window.dispatchEvent(event);
-                    } else if (isNewLevel) {
-                        console.log('🔇 [LevelProgress] 检测到等级高于已通知等级，但处于初始延迟中，暂不弹窗');
+        const fetchMetadata = async () => {
+            try {
+                const res = await fetch(`/api/user/level?userId=${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.success) {
+                        setData(json.data);
                     }
-
-                    prevLevelRef.current = newData.current.level;
-                    initialCheckDoneRef.current = true;
                 }
+            } catch (err) {
+                console.error("Failed to fetch level metadata", err);
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            console.error("Failed to fetch level data", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
 
-    if (loading) return null;
-    if (!data) return null;
+        fetchMetadata();
+    }, [userId, level, bits]); // Re-fetch metadata if level/bits change to ensure names/next-level info are correct
+
+    // Level Up Trigger Logic
+    useEffect(() => {
+        if (!userId || level === undefined || lastNotifiedLevel === undefined) return;
+
+        // Condition: Level is higher than notified level AND hasn't been triggered in this session
+        const isNewLevel = level > lastNotifiedLevel;
+        const sessionAlreadyTriggered = lastTriggeredLevelRef.current === level;
+
+        if (isNewLevel && !sessionAlreadyTriggered) {
+            console.log('🎉 [LevelProgress] Props-based level up detected:', level);
+            lastTriggeredLevelRef.current = level;
+
+            // Small delay to let the page settle
+            const timer = setTimeout(() => {
+                const event = new CustomEvent('level-up', {
+                    detail: {
+                        userId: userId,
+                        newLevel: level,
+                        levelName: data?.current.name || `Level ${level}`,
+                        rewards: data?.current.config ? ['New Status Badge', 'Access to Vip Areas'] : []
+                    }
+                });
+                window.dispatchEvent(event);
+            }, 1500);
+
+            return () => clearTimeout(timer);
+        }
+    }, [userId, level, lastNotifiedLevel, data]);
+
+    if (loading || !data) return (
+        <div className="w-full bg-white/5 border border-white/5 rounded-xl p-3.5 animate-pulse h-[120px]"></div>
+    );
 
     const { current, next } = data;
+    // Use props if they are newer than data (usually they should be in sync)
+    const displayLevel = level || current.level;
+    const displayBits = bits !== undefined ? bits : current.bits;
+
     const progressPercent = next ? next.progress : 100;
     const accentColor = current.config?.color || '#3b82f6';
 
-    // Segmented progress bar (8-bit style)
     const segments = 10;
     const activeSegments = Math.round((progressPercent / 100) * segments);
 
@@ -134,7 +121,7 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                 <div className="flex items-center gap-3">
                     <div className="relative group-hover:scale-110 transition-transform duration-300">
                         <div className="absolute inset-0 bg-indigo-500/20 dark:bg-white/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <LevelBadge level={current.level} size="md" />
+                        <LevelBadge level={displayLevel} size="md" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
@@ -148,15 +135,13 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                         <div className="flex items-center gap-1.5 mt-1">
                             <span className="w-1 h-1 bg-indigo-500 rounded-full"></span>
                             <p className="text-[9px] text-gray-400 dark:text-slate-500 font-mono tracking-wider">
-                                {current.bits.toLocaleString()} 累积比特
+                                {displayBits.toLocaleString()} 累积比特
                             </p>
                         </div>
                     </div>
                 </div>
-                {/* Target level removed as per user request */}
             </div>
 
-            {/* Pixel Experience Bar */}
             <div className="relative">
                 <div className="flex gap-[3px] h-3.5">
                     {Array.from({ length: segments }).map((_, i) => (
@@ -194,12 +179,11 @@ export const LevelProgress: React.FC<{ userId?: string }> = ({ userId }) => {
                         </span>
                     </div>
                     <div className="text-[9px] text-gray-400 dark:text-slate-400 font-mono bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5">
-                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">{next.requiredBits - current.bits}</span> <span className="opacity-50">升级所需</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">{next.requiredBits - displayBits}</span> <span className="opacity-50">升级所需</span>
                     </div>
                 </div>
             )}
 
-            {/* Scanline overlay */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] overflow-hidden">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
             </div>

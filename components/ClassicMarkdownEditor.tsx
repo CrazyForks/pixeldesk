@@ -8,6 +8,7 @@ import rehypeRaw from 'rehype-raw'
 import rehypeHighlight from 'rehype-highlight'
 
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { isImageUrl } from '@/lib/utils/format'
 
 interface ClassicMarkdownEditorProps {
     value: string
@@ -253,6 +254,34 @@ export default function ClassicMarkdownEditor({
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkBreaks]}
                                 rehypePlugins={[rehypeRaw, rehypeHighlight]}
+                                components={{
+                                    a: ({ node, children, href, ...props }: any) => {
+                                        const isRawUrl = typeof children === 'string' && (children.startsWith('http://') || children.startsWith('https://'))
+
+                                        if (isRawUrl && isImageUrl(href || '')) {
+                                            return (
+                                                <img
+                                                    src={href}
+                                                    alt={children}
+                                                    className="rounded-xl my-4 max-w-full h-auto cursor-zoom-in shadow-lg"
+                                                    onClick={() => window.open(href, '_blank')}
+                                                />
+                                            )
+                                        }
+
+                                        return (
+                                            <a
+                                                className="text-retro-blue hover:text-retro-cyan underline transition-colors"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                href={href}
+                                                {...props}
+                                            >
+                                                {children}
+                                            </a>
+                                        )
+                                    }
+                                }}
                             >
                                 {value || '*预览区域*'}
                             </ReactMarkdown>

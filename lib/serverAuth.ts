@@ -10,6 +10,7 @@ export interface AuthenticatedUser {
   points?: number
   level?: number
   bits?: number
+  lastNotifiedLevel?: number
   emailVerified?: boolean
   inviteCode?: string
 }

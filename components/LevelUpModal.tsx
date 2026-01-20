@@ -39,11 +39,13 @@ export default function LevelUpModal({
         if (userId && newLevel) {
             try {
                 console.log(`📡 [LevelUpModal] 正在同步已通知等级 ${newLevel} 到服务器...`);
-                fetch('/api/user/level/notify', {
+                // Wait for the server to acknowledge before refreshing local data
+                await fetch('/api/user/level/notify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, level: newLevel })
-                }).catch(err => console.error('Failed to notify level up:', err));
+                });
+                console.log(`✅ [LevelUpModal] 服务器已确认等级 ${newLevel}`);
             } catch (error) {
                 console.error('Error notifying level up:', error);
             }

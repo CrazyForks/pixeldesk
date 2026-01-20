@@ -12,6 +12,7 @@ import { LevelProgress } from './LevelProgress'
 import { LevelBadge } from './LevelBadge'
 import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
 import { getAssetUrl } from '@/lib/utils/assets'
+import { formatWorkstationId } from '@/lib/utils/format'
 
 const PointsHistory = dynamic(() => import('./PointsHistory'), {
   loading: () => <div className="p-4 text-center text-xs text-gray-500 animate-pulse">Loading History...</div>
@@ -293,7 +294,7 @@ export default function LeftPanel({
                     {currentUser.workstationId ? (
                       <div className="flex items-center gap-1.5">
                         <span className="text-emerald-600 dark:text-emerald-400 text-xs font-mono font-bold mr-1" title={currentUser.workstationId}>
-                          {currentUser.workstationId.length > 8 ? currentUser.workstationId.substring(0, 6) + '...' : currentUser.workstationId}
+                          {formatWorkstationId(currentUser.workstationId)}
                         </span>
                         <button
                           onClick={() => {
@@ -325,7 +326,12 @@ export default function LeftPanel({
 
               {/* Level Progress */}
               <div className="mt-2">
-                <LevelProgress userId={currentUser.id} />
+                <LevelProgress
+                  userId={currentUser.id}
+                  level={currentUser.level}
+                  bits={currentUser.bits}
+                  lastNotifiedLevel={currentUser.lastNotifiedLevel}
+                />
               </div>
             </div>
           </div>

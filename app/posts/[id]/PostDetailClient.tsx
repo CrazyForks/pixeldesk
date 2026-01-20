@@ -390,7 +390,7 @@ export default function PostDetailClient({ initialPost, billboardPromotionCost }
                       />
                     </div>
                   )}
-                  {post.imageUrls && post.imageUrls.length > 0 && (
+                  {post.type !== 'MARKDOWN' && post.imageUrls && post.imageUrls.length > 0 && (
                     <div className="mt-6 grid grid-cols-2 gap-3">
                       {post.imageUrls.map((url, index) => (
                         <div key={index} onClick={() => openLightbox(index)} className="relative aspect-video overflow-hidden rounded-xl bg-gray-800 cursor-pointer group">

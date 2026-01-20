@@ -8,6 +8,7 @@ import rehypeRaw from 'rehype-raw'
 // Don't import CSS here if it conflicts, but usually github-dark is okay as a baseline
 // We will rely on Tailwind Typography for most text colors
 import 'highlight.js/styles/github-dark.css'
+import { isImageUrl } from '@/lib/utils/format'
 
 interface MarkdownRendererProps {
   content: string
@@ -38,6 +39,20 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             const isRawUrl = typeof children === 'string' && (children.startsWith('http://') || children.startsWith('https://'))
 
             if (isRawUrl) {
+              if (isImageUrl(href || '')) {
+                return (
+                  <img
+                    src={href}
+                    alt={children}
+                    className="rounded-lg my-4 max-w-full h-auto cursor-zoom-in"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.open(href, '_blank')
+                    }}
+                  />
+                )
+              }
+
               return (
                 <a
                   className="text-cyan-500 hover:text-cyan-400 transition-colors inline-flex items-center gap-0.5 font-medium px-1.5 py-0.5 bg-cyan-500/10 rounded border border-cyan-500/20 mx-0.5 no-underline"

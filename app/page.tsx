@@ -365,6 +365,7 @@ export default function Home() {
             points: user.points || gameUser.points || 50,
             level: user.level,
             bits: user.bits,
+            lastNotifiedLevel: user.lastNotifiedLevel,
             username: gameUser.username || user.name,
             character: gameUser.character,
             workstationId: gameUser.workstationId,
@@ -379,6 +380,7 @@ export default function Home() {
             points: user.points || 50,
             level: user.level,
             bits: user.bits,
+            lastNotifiedLevel: user.lastNotifiedLevel,
             username: user.name,
             workstationId: prev?.workstationId,
             workstations: []
