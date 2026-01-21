@@ -567,7 +567,10 @@ export const translations = {
             empty_collection_desc: '去和其他玩家交换名信片吧！',
             no_design_found: '暂无设计',
             click_to_create: '点击设计',
-            confirm_delete: '确定要从您的集邮册中移除这张名信片吗？这不会影响对方。'
+
+            confirm_delete: '确定要从您的集邮册中移除这张名信片吗？这不会影响对方。',
+            confirm_send: '确认发送',
+            sending: '发送中...'
         },
         notifications: {
             title: '消息中心',
@@ -1158,7 +1161,10 @@ export const translations = {
             empty_collection_desc: 'Try swapping with other players!',
             no_design_found: 'No Design Found',
             click_to_create: 'Click to Design',
-            confirm_delete: 'Are you sure you want to remove this postcard from your collection? This will not affect the sender.'
+
+            confirm_delete: 'Are you sure you want to remove this postcard from your collection? This will not affect the sender.',
+            confirm_send: 'Confirm Send',
+            sending: 'Sending...'
         },
         notifications: {
             title: 'Notifications',

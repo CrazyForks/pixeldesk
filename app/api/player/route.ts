@@ -150,27 +150,37 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const player = await prisma.players.create({
-      data: {
-        id: randomUUID(),
-        userId: user.id,
-        playerName: validatedData.playerName,
-        characterSprite: validatedData.characterSprite,
-        currentX: 5880,
-        currentY: 237,
-        currentScene: 'Start',
-        updatedAt: new Date()
-      },
-      include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
+    const player = await prisma.$transaction(async (tx) => {
+      const newPlayer = await tx.players.create({
+        data: {
+          id: randomUUID(),
+          userId: user.id,
+          playerName: validatedData.playerName,
+          characterSprite: validatedData.characterSprite,
+          currentX: 5880,
+          currentY: 237,
+          currentScene: 'Start',
+          updatedAt: new Date()
+        },
+        include: {
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true
+            }
           }
         }
-      }
+      })
+
+      // 同步更新用户头像
+      await tx.users.update({
+        where: { id: user.id },
+        data: { avatar: validatedData.characterSprite }
+      })
+
+      return newPlayer
     }) as any
 
     // 保存用户数据
@@ -287,6 +297,14 @@ export async function PUT(request: NextRequest) {
           }
         }
       })
+
+      // 如果更新了角色精灵，同步更新用户头像
+      if (validatedData.characterSprite) {
+        await tx.users.update({
+          where: { id: user.id },
+          data: { avatar: validatedData.characterSprite }
+        })
+      }
 
       // 2. 更新每日步数 (Upsert)
       if (stepsToSync > 0) {

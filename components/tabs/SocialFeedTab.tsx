@@ -71,7 +71,7 @@ export default function SocialFeedTab({
     loadMorePosts
   } = useSocialPosts({
     userId: currentUserId || '',
-    autoFetch: isActive && !!currentUserId,
+    autoFetch: isActive,
     refreshInterval: isActive ? 30000 : 0, // 30秒刷新一次，仅在激活时
     search: searchQuery,
     nodeId: selectedNodeId
@@ -255,10 +255,13 @@ export default function SocialFeedTab({
       )}
 
       {/* 内容区域 */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 relative overflow-hidden bg-gray-950/20">
         {error && (
-          <div className="p-4 bg-red-950/50 border border-red-800/30 m-4 rounded-lg">
-            <p className="text-red-300 text-sm font-mono">{error}</p>
+          <div className="p-4 bg-red-950/50 border border-red-800/30 m-4 rounded-lg shadow-lg">
+            <p className="text-red-400 text-xs font-mono flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+              {error}
+            </p>
           </div>
         )}
 
@@ -285,12 +288,12 @@ export default function SocialFeedTab({
             </button>
           </div>
         ) : (
-          <div className="h-full">
+          <div className="absolute inset-0">
             <Virtuoso
-              style={{ height: '100%' }}
+              style={{ height: '100%', width: '100%' }}
               data={posts}
               itemContent={(index: number, post: Post) => (
-                <div className="pb-4">
+                <div className="px-3 pb-3">
                   <PostListItem
                     key={post.id}
                     post={post}
@@ -311,12 +314,12 @@ export default function SocialFeedTab({
               }}
               components={{
                 Footer: () => (
-                  <div className="flex justify-center py-4 border-t border-gray-800/50">
+                  <div className="flex justify-center py-6">
                     {pagination.hasNextPage && (
                       <button
                         onClick={handleLoadMore}
                         disabled={isRefreshing}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg disabled:opacity-50 text-sm font-mono uppercase"
+                        className="px-6 py-2.5 bg-gray-800/50 hover:bg-gray-700/80 border border-gray-700/50 text-gray-400 hover:text-white rounded-xl disabled:opacity-50 text-[10px] lowercase font-mono transition-all"
                       >
                         {isRefreshing ? t.social.loading_posts : t.social.load_more}
                       </button>

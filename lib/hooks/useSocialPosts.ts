@@ -195,7 +195,7 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
 
   // 初始化获取帖子
   useEffect(() => {
-    if (autoFetch && userId) {
+    if (autoFetch) {
       // 如果需要按作者过滤，等待filterByAuthor有值才获取
       if (options.filterByAuthor !== undefined) {
         // 需要过滤但filterByAuthor还是undefined，不获取
@@ -205,7 +205,7 @@ export function useSocialPosts(options: UseSocialPostsOptions): UseSocialPostsRe
       }
       fetchPosts()
     }
-  }, [autoFetch, userId, filterByAuthor, search, nodeId]) // 移除fetchPosts和options.filterByAuthor以避免循环
+  }, [autoFetch, filterByAuthor, search, nodeId]) // 移除fetchPosts和options.filterByAuthor以避免循环
 
   // 定时刷新 - 临时禁用以修复性能问题
   useEffect(() => {

@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/hooks/useTranslation'
 import { getAssetUrl } from '@/lib/utils/assets'
 import { formatWorkstationId } from '@/lib/utils/format'
 import ProBadge from '../social/ProBadge'
+import PostcardSwapConfirmModal from '@/components/PostcardSwapConfirmModal'
 
 interface PlayerProfileTabProps {
   collisionPlayer?: any
@@ -39,6 +40,7 @@ export default function PlayerProfileTab({
 
   const [isCardCompact, setIsCardCompact] = useState(false)
   const [isSwapping, setIsSwapping] = useState(false)
+  const [showSwapConfirmModal, setShowSwapConfirmModal] = useState(false)
   const { t } = useTranslation()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -164,12 +166,12 @@ export default function PlayerProfileTab({
   }, [])
 
   // 处理交换名信片
-  const handleSwapPostcard = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleSwapPostcard = async () => {
+    if (!currentUserId) return
+    setShowSwapConfirmModal(true)
+  }
 
-    if (!currentUserId || !collisionPlayer?.id) return
-
+  const confirmSwapPostcard = async () => {
     setIsSwapping(true)
     try {
       const res = await fetch('/api/postcards/exchange', {
@@ -178,17 +180,17 @@ export default function PlayerProfileTab({
         body: JSON.stringify({ receiverId: collisionPlayer.id })
       })
       const data = await res.json()
-
       if (data.success) {
-        alert(t.postcard?.swap_request_sent || 'Exchanged request sent!')
+        alert(t.postcard?.swap_request_sent || 'Request Sent')
       } else {
         alert(data.error || 'Failed to send request')
       }
     } catch (error) {
-      console.error('Swap postcard error:', error)
-      alert('Failed to send request')
+      console.error('Swap request failed', error)
+      alert('Network error')
     } finally {
       setIsSwapping(false)
+      setShowSwapConfirmModal(false)
     }
   }
 
@@ -625,6 +627,13 @@ export default function PlayerProfileTab({
           </div>
         )}
       </div>
+      {/* 交换名信片确认弹窗 */}
+      <PostcardSwapConfirmModal
+        isVisible={showSwapConfirmModal}
+        targetName={collisionPlayer?.name || 'Player'}
+        onConfirm={confirmSwapPostcard}
+        onCancel={() => setShowSwapConfirmModal(false)}
+      />
     </div>
   )
 }

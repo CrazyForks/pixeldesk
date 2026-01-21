@@ -2,6 +2,7 @@
 
 import { useState, useCallback, memo, useRef, useEffect } from 'react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import PostcardSwapConfirmModal from '@/components/PostcardSwapConfirmModal'
 
 interface PlayerClickModalProps {
   isVisible: boolean
@@ -28,6 +29,7 @@ const PlayerClickModal = memo(({
   const [workstationAd, setWorkstationAd] = useState<WorkstationAd | null>(null)
   const [isLoadingAd, setIsLoadingAd] = useState(false)
   const [isSwapping, setIsSwapping] = useState(false)
+  const [showSwapConfirmModal, setShowSwapConfirmModal] = useState(false)
 
   // 监听标签切换，自动聚焦输入框
   useEffect(() => {
@@ -87,6 +89,10 @@ const PlayerClickModal = memo(({
 
   const handleSwapPostcard = async () => {
     if (!player?.id) return
+    setShowSwapConfirmModal(true)
+  }
+
+  const confirmSwapPostcard = async () => {
     setIsSwapping(true)
     try {
       const res = await fetch('/api/postcards/exchange', {
@@ -104,6 +110,7 @@ const PlayerClickModal = memo(({
       alert('Swap request failed')
     } finally {
       setIsSwapping(false)
+      setShowSwapConfirmModal(false)
     }
   }
 
@@ -424,7 +431,14 @@ const PlayerClickModal = memo(({
           </button>
         </div>
       </div>
-    </div>
+
+      <PostcardSwapConfirmModal
+        isVisible={showSwapConfirmModal}
+        targetName={player?.name || 'Player'}
+        onConfirm={confirmSwapPostcard}
+        onCancel={() => setShowSwapConfirmModal(false)}
+      />
+    </div >
   )
 })
 

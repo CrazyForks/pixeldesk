@@ -385,9 +385,12 @@ export default function LayoutManager({
           {/* Workspace Tab (Left Panel) */}
           <div
             className={`absolute inset-0 transition-transform duration-300 transform bg-gray-950 ${activeTab === 'workspace' ? 'translate-x-0 z-10' : '-translate-x-full z-0 pointer-events-none'}`}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
-            <div className="w-full h-full p-2 overflow-y-auto overscroll-contain">
-              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm min-h-full overflow-hidden">
+            <div className="w-full h-full p-2">
+              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm h-full overflow-hidden">
                 {leftPanel}
               </div>
             </div>
@@ -396,9 +399,12 @@ export default function LayoutManager({
           {/* Social Tab (Right Panel) */}
           <div
             className={`absolute inset-0 transition-transform duration-300 transform bg-gray-950 ${activeTab === 'social' ? 'translate-x-0 z-10' : 'translate-x-full z-0 pointer-events-none'}`}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
-            <div className="w-full h-full p-2 overflow-y-auto overscroll-contain">
-              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm min-h-full overflow-hidden">
+            <div className="w-full h-full p-2">
+              <div className="bg-gray-900/95 rounded-lg border border-gray-800 backdrop-blur-sm h-full overflow-hidden">
                 {rightPanel}
               </div>
             </div>
@@ -406,7 +412,12 @@ export default function LayoutManager({
         </div>
 
         {/* Bottom Navigation Bar */}
-        <div className="h-16 bg-gray-900/95 border-t border-gray-800 backdrop-blur-md flex items-center justify-around px-4 pb-safe flex-shrink-0">
+        <div
+          className="h-16 bg-gray-900/95 border-t border-gray-800 backdrop-blur-md flex items-center justify-around px-4 pb-safe flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
           <button
             onClick={() => setActiveTab('workspace')}
             className={`flex flex-col items-center gap-1 flex-1 transition-all ${activeTab === 'workspace' ? 'text-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
