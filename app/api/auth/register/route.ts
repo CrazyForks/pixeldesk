@@ -2,12 +2,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { generateToken, hashPassword, isValidEmail, isValidPassword, isValidUsername } from '@/lib/auth'
 import { sendWelcomeEmail } from '@/lib/email'
+import { rateLimit, RateLimitKeys } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
     const { name, email, password, inviteCode } = await request.json()
 
-    // ... (validations remain same)
+    // 1. 频率限制 (Rate Limiting)
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('x-real-ip') ||
+      '127.0.0.1'
+
+    // 对 IP 进行限制 (1小时内最多 10 次注册尝试)
+    const ipLimit = await rateLimit(RateLimitKeys.registrationByIp(ip), 10, 3600)
+    if (!ipLimit.success) {
+      return NextResponse.json({
+        success: false,
+        error: 'Too many registration attempts. Please try again later.'
+      }, { status: 429 })
+    }
+
+    // 对 邮箱 进行限制 (1小时内最多 3 次注册尝试)
+    if (email) {
+      const emailLimit = await rateLimit(RateLimitKeys.registrationByEmail(email), 3, 3600)
+      if (!emailLimit.success) {
+        return NextResponse.json({
+          success: false,
+          error: 'Too many attempts for this email. Please try again later.'
+        }, { status: 429 })
+      }
+    }
 
     // 输入验证
     if (!name?.trim() || !email?.trim() || !password?.trim()) {
