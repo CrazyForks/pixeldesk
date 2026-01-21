@@ -385,7 +385,7 @@ export default function PostDetailClient({ initialPost, billboardPromotionCost }
                         alt="Cover"
                         width={1200}
                         height={600}
-                        unoptimized={isExternalUrl(post.coverImage)}
+                        unoptimized={isExternalUrl(post.coverImage) || post.coverImage.startsWith('/uploads/')}
                         className="w-full h-auto object-cover"
                       />
                     </div>
@@ -399,7 +399,7 @@ export default function PostDetailClient({ initialPost, billboardPromotionCost }
                             alt=""
                             width={800}
                             height={450}
-                            unoptimized={isExternalUrl(url)}
+                            unoptimized={isExternalUrl(url) || url.startsWith('/uploads/')}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors"></div>
@@ -535,7 +535,7 @@ export default function PostDetailClient({ initialPost, billboardPromotionCost }
               alt=""
               width={1600}
               height={1200}
-              unoptimized={isExternalUrl(post.imageUrls[lightboxImageIndex])}
+              unoptimized={isExternalUrl(post.imageUrls[lightboxImageIndex]) || post.imageUrls[lightboxImageIndex].startsWith('/uploads/')}
               className="max-w-full max-h-full object-contain rounded-lg"
             />
           </div>

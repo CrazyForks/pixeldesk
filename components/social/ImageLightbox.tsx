@@ -46,7 +46,7 @@ export default function ImageLightbox({
     }
 
     const currentUrl = images[currentIndex]
-    const isExternal = currentUrl.startsWith('http')
+    const isUnoptimized = currentUrl.startsWith('http') || currentUrl.startsWith('/uploads/')
 
     return createPortal(
         <div
@@ -103,7 +103,7 @@ export default function ImageLightbox({
                             alt={`Image ${currentIndex + 1}`}
                             width={1600}
                             height={1200}
-                            unoptimized={isExternal}
+                            unoptimized={isUnoptimized}
                             className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl select-none"
                             quality={100}
                             priority

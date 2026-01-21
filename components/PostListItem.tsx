@@ -322,7 +322,7 @@ export default function PostListItem({
                           src={getAssetUrl(urls[0])}
                           alt="Post image"
                           fill
-                          unoptimized={isExternalUrl(urls[0])}
+                          unoptimized={isExternalUrl(urls[0]) || urls[0].startsWith('/uploads/')}
                           className="object-contain group-hover:scale-105 transition-transform duration-200"
                           sizes="280px"
                         />
@@ -350,7 +350,7 @@ export default function PostListItem({
                             src={getAssetUrl(url)}
                             alt={`Post image ${idx}`}
                             fill
-                            unoptimized={isExternalUrl(url)}
+                            unoptimized={isExternalUrl(url) || url.startsWith('/uploads/')}
                             className="object-contain group-hover:scale-110 transition-transform duration-300"
                             sizes="100px"
                           />
@@ -480,7 +480,7 @@ export default function PostListItem({
                                     src={getAssetUrl(imgUrl)}
                                     alt="Reply image"
                                     fill
-                                    unoptimized={isExternalUrl(imgUrl)}
+                                    unoptimized={isExternalUrl(imgUrl) || imgUrl.startsWith('/uploads/')}
                                     className="object-contain group-hover:scale-110 transition-transform"
                                     sizes="80px"
                                   />
