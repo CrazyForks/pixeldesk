@@ -205,4 +205,11 @@ docker compose up --build -d app
 ```bash
 docker compose exec app node scripts/seed-levels.js
 ```
-该脚本会自动创建从 1 到 60 级的默认等级定义。您可以多次运行它，它只会更新已有的等级而不会造成冲突。
+该脚本会自动创建从 0 到 60 级的默认等级定义。
+
+### 2. 初始化积分配置 (修复工位扣费为 0 的问题)
+如果您发现签约工位没有扣除象素币，通常是因为数据库中缺少积分配置。请运行：
+```bash
+docker compose exec app node scripts/seed-points.js
+```
+该脚本会初始化工位绑定、传送、发帖奖励等积分规则。您可以多次运行它以重置或更新配置。
