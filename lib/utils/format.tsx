@@ -13,45 +13,64 @@ export const renderContentWithUrls = (
 ) => {
     if (!text) return null
 
-    const urlRegex = /(https?:\/\/[^\s]+)/g
-    const parts = text.split(urlRegex)
+    // 1. 先处理 Markdown 链接 [text](url)
+    // 使用 split 分割，保留 capture groups
+    // Regex: /\[([^\]]+)\]\(([^)]+)\)/g
+    const markdownLinkRegex = /(\[[^\]]+\]\([^)]+\))/g
+    const parts = text.split(markdownLinkRegex)
 
     return parts.map((part, index) => {
-        if (part.match(urlRegex)) {
-            // 检查是否为图片链接
-            const lowerUrl = part.toLowerCase()
-            const isImage = lowerUrl.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)($|\?)/) ||
-                lowerUrl.includes('img.') ||
-                lowerUrl.includes('images.') ||
-                lowerUrl.includes('/images/') ||
-                lowerUrl.includes('/img/') ||
-                lowerUrl.startsWith('data:image/') ||
-                lowerUrl.includes('placeholder')
-
-            if (isImage) {
-                // 如果是图片链接，在文本中隐藏（由组件提取并显示）
-                return null
-            }
-
-            // 非图片链接：直接显示 URL 文本，不再显示“查看链接”按钮
-            // 截取过长的 URL
-            const displayUrl = part.length > 50 ? part.substring(0, 47) + '...' : part
-
+        // 检查是否是 markdown 链接
+        const mdMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+        if (mdMatch) {
+            const linkText = mdMatch[1]
+            const linkUrl = mdMatch[2]
             return (
                 <a
-                    key={index}
-                    href={part}
+                    key={`md-${index}`}
+                    href={linkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-cyan-500 hover:text-cyan-400 hover:underline transition-all mx-0.5 break-all inline-flex items-center gap-1"
+                    className="text-cyan-400 hover:text-cyan-300 underline underline-offset-4 decoration-cyan-500/30 hover:decoration-cyan-400/80 transition-all mx-1 font-medium"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <span className="text-[10px]">🔗</span>
-                    <span className="text-[11px] font-mono opacity-80">{displayUrl}</span>
+                    {linkText}
                 </a>
             )
         }
-        return part
+
+        // 2. 处理普通文本中的 URL
+        const urlRegex = /(https?:\/\/[^\s]+)/g
+        const subParts = part.split(urlRegex)
+
+        // 如果 part 本身就是空字符串或其他非 URL 内容，直接 map 回去可能会产生多余结构，稍微处理一下
+        return subParts.map((subPart, subIndex) => {
+            if (subPart.match(urlRegex)) {
+                // 检查是否为图片链接
+                if (isImageUrl(subPart)) {
+                    // 如果是图片链接，在文本中隐藏（由组件提取并显示）
+                    return null
+                }
+
+                // 非图片链接：显示简化版 URL
+                const displayUrl = subPart.length > 50 ? subPart.substring(0, 47) + '...' : subPart
+
+                return (
+                    <a
+                        key={`url-${index}-${subIndex}`}
+                        href={subPart}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-cyan-500 hover:text-cyan-400 hover:underline transition-all mx-0.5 break-all inline-flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <span className="text-[10px]">🔗</span>
+                        <span className="text-[11px] font-mono opacity-80">{displayUrl}</span>
+                    </a>
+                )
+            }
+            return subPart
+        })
     })
 }
 
@@ -64,34 +83,23 @@ export const extractImageUrls = (text: string): string[] => {
     const matches = text.match(urlRegex) || []
 
     return matches.filter(url => {
-        const lowerUrl = url.toLowerCase()
-        return (
-            lowerUrl.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)($|\?)/) ||
-            lowerUrl.includes('img.') ||
-            lowerUrl.includes('images.') ||
-            lowerUrl.includes('/images/') ||
-            lowerUrl.includes('/img/') ||
-            lowerUrl.startsWith('data:image/') ||
-            lowerUrl.includes('placeholder')
-        )
+        // 忽略 markdown 链接中的 URL，如果它们被用作链接目标而非直接显示
+        // 但这里我们只关心 URL 本身是否是图片
+        // TODO: 如果需要排除 [链接文字](图片URL) 这种情况作为"正文图片"展示，可能需要更复杂的解析
+        // 目前保持简单：只要是 URL 且是图片格式，就提取
+        return isImageUrl(url)
     })
 }
 
 /**
  * 检查是否为图片链接
+ * 严格模式：只检查扩展名，避免误判普通网页
  */
 export const isImageUrl = (url: string): boolean => {
     if (!url) return false
-    const lowerUrl = url.toLowerCase()
-    return (
-        !!lowerUrl.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)($|\?)/) ||
-        lowerUrl.includes('img.') ||
-        lowerUrl.includes('images.') ||
-        lowerUrl.includes('/images/') ||
-        lowerUrl.includes('/img/') ||
-        lowerUrl.startsWith('data:image/') ||
-        lowerUrl.includes('placeholder')
-    )
+    // 去除 URL 参数（如 ?v=1）再检查扩展名
+    const cleanUrl = url.split(/[?#]/)[0].toLowerCase()
+    return !!cleanUrl.match(/\.(jpeg|jpg|gif|png|webp|avif|bmg|svg)$/)
 }
 
 /**
