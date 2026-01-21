@@ -193,3 +193,16 @@ docker compose up --build -d app
 尝试在浏览器直接访问不带 `/_next/image` 前缀的图片 URL，例如：
 `https://pixel.infyniclick.com/uploads/assets/blog/xxx.png`
 如果直接访问正常但 `next/image` 访问报错，说明 Nginx 配置已生效，代码中的 `unoptimized` 属性将解决此问题。
+
+---
+
+## 🏗️ 初始化数据 (Data Initialization)
+
+如果您在服务器上需要快速初始化等级配置，可以使用我为您准备的脚本：
+
+### 1. 导入等级配置
+在项目根目录下运行：
+```bash
+docker compose exec app node scripts/seed-levels.js
+```
+该脚本会自动创建从 1 到 60 级的默认等级定义。您可以多次运行它，它只会更新已有的等级而不会造成冲突。
