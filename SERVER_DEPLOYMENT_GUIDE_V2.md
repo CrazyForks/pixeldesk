@@ -213,3 +213,10 @@ docker compose exec app node scripts/seed-levels.js
 docker compose exec app node scripts/seed-points.js
 ```
 该脚本会初始化工位绑定、传送、发帖奖励等积分规则。您可以多次运行它以重置或更新配置。
+
+### 3. 初始化武侠 NPC
+如果您想为办公室增加一些武侠风格的新角色，请运行：
+```bash
+docker compose exec app node scripts/seed-wuxia-npcs.js
+```
+该脚本会添加剑无痕、上官婉儿等具有武侠特色性格的 AI NPC。
