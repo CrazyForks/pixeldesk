@@ -147,3 +147,6 @@ deploy/
 /public/assets/brand
 /public/assets/characters/user-generated
 /public/assets/postcards/user-generated
+
+# Local database data
+data/

@@ -139,6 +139,29 @@ export class Player extends Phaser.GameObjects.Container {
             this.saveState();
         }
     }
+
+    /**
+     * 更新角色的外观纹理
+     * @param {string} newSpriteKey - 新的精灵图key
+     */
+    updateCharacterSprite(newSpriteKey) {
+        if (!newSpriteKey || newSpriteKey === this.spriteKey) return;
+
+        console.log(`👕 Updating player sprite from ${this.spriteKey} to ${newSpriteKey}`);
+        this.spriteKey = newSpriteKey;
+
+        // 更新头部和身体的纹理
+        if (this.headSprite) {
+            this.headSprite.setTexture(newSpriteKey);
+        }
+
+        if (this.bodySprite) {
+            this.bodySprite.setTexture(newSpriteKey);
+        }
+
+        // 重新应用当前的帧，因为更换纹理可能会重置帧
+        this.setDirectionFrame(this.currentDirection);
+    }
     move(velocityX, velocityY, direction) {
         if (!this.body) return;
 

@@ -461,12 +461,45 @@ export class Start extends Phaser.Scene {
           console.log('🔄 [Phaser Sync] 收到 React 数据:', {
             id: userData.id,
             workstationId: userData.workstationId,
-            points: userData.points
+            points: userData.points,
+            character: userData.character
           })
+
+          const oldCharacter = this.currentUser?.character
           this.currentUser = { ...this.currentUser, ...userData }
+
           // 同时也更新WorkstationManager中的引用
           if (this.workstationManager) {
             this.workstationManager.currentUser = this.currentUser
+          }
+
+          // 如果角色形象发生了变化，更新玩家外观
+          if (userData.character && userData.character !== oldCharacter && this.player) {
+            console.log('👕 [Phaser Sync] 检测到角色形象变更，正在更新外观:', userData.character)
+            // 如果 Player 类有 setTexture 方法或类似逻辑
+            if (typeof this.player.updateCharacterSprite === 'function') {
+              this.player.updateCharacterSprite(userData.character)
+            } else {
+              // 回退：尝试直接重新创建玩家或者更新纹理
+              // 但最好的方式是在 Player 类中添加 updateCharacterSprite 方法
+              // 这里先尝试简单的纹理更新，假设 Player 是 Sprite 的子类
+              // 注意：这可能不够，因为 Player 可能有动画状态机
+              console.warn('⚠️ Player class missing updateCharacterSprite method, attempting reload')
+
+              // 重新创建玩家
+              const x = this.player.x
+              const y = this.player.y
+              const direction = this.player.direction || 'down'
+
+              // 销毁旧玩家
+              this.player.destroy()
+
+              // 创建新玩家
+              this.createPlayer(this.map, x, y, direction).then(() => {
+                this.setupCamera(this.map) // 重新绑定相机
+                this.setupInput() // 重新绑定输入
+              })
+            }
           }
         }
       }

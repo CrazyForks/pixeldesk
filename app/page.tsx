@@ -1226,11 +1226,8 @@ export default function Home() {
           userName={user.name}
           onComplete={async (playerData) => {
             console.log('角色创建成功:', playerData)
-            // 角色创建成功后，初始化Player同步系统
-            const { initializePlayerSync } = await import('@/lib/playerSync')
-            await initializePlayerSync()
-            setPlayerExists(true)
-            setShowCharacterCreation(false)
+            // 简单粗暴但有效：直接刷新页面以确保获取最新的角色数据和资源
+            window.location.reload()
           }}
         />
       </div>
