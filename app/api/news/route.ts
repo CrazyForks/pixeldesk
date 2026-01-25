@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
 import { redis } from '@/lib/redis'
+import { prisma } from '@/lib/db'
+import { StatsManager } from '@/lib/stats'
 
+const statsManager = new StatsManager(prisma)
 const ZH_RSS_URL = 'https://readhub.cn/rss'
 const EN_RSS_URL = 'https://feeds.bbci.co.uk/news/world/rss.xml'
 const CACHE_KEY_PREFIX = 'daily_news_v2_'
+const GAZETTE_CACHE_KEY = 'daily_gazette_v1'
 const CACHE_TTL = 2 * 60 * 60 // 2 hours for RSS
+const GAZETTE_TTL = 12 * 60 * 60 // 12 hours for Gazette
 
 function parseRSS(xml: string) {
     const items: any[] = [];
@@ -47,6 +52,14 @@ export async function GET(request: Request) {
             return NextResponse.json({ success: true, data: cachedData, source: 'cache' })
         }
 
+        // Fetch Gazette Data (Once per day)
+        let gazette = await redis.getJSON(GAZETTE_CACHE_KEY)
+        if (!gazette) {
+            console.log('📊 [News API] Generating new Daily Gazette')
+            gazette = await statsManager.getYesterdayGazette()
+            await redis.setJSON(GAZETTE_CACHE_KEY, gazette, GAZETTE_TTL)
+        }
+
         // 2. Fetch from RSS
         console.log(`📰 [News API] Fetching fresh news from ${isEn ? 'BBC' : 'Readhub'} RSS`)
         const response = await fetch(url, {
@@ -60,6 +73,7 @@ export async function GET(request: Request) {
         if (newsItems.length > 0) {
             const resultData = {
                 news: newsItems,
+                gazette: gazette, // Include the gazette
                 date: new Date().toLocaleDateString(isEn ? 'en-US' : 'zh-CN', {
                     year: 'numeric',
                     month: 'long',

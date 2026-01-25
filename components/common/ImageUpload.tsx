@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useRef } from 'react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useImageUpload } from '@/lib/hooks/useImageUpload'
 
 interface ImageUploadProps {
     value?: string
@@ -24,8 +25,7 @@ export default function ImageUpload({
     aspectRatio = 'video'
 }: ImageUploadProps) {
     const { t } = useTranslation()
-    const [isUploading, setIsUploading] = useState(false)
-    const [error, setError] = useState('')
+    const { uploadImage, isUploading, statusMessage, error } = useImageUpload({ maxSize })
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,40 +35,13 @@ export default function ImageUpload({
     }
 
     const uploadFile = async (file: File) => {
-        if (file.size > maxSize) {
-            const sizeKB = Math.round(file.size / 1024)
-            const maxMB = Math.round(maxSize / (1024 * 1024))
-            setError(
-                (t.common.upload as any).err_size_limit
-                    .replace('{size}', sizeKB.toString())
-                    .replace('{max}', maxMB.toString())
-            )
-            return
-        }
-
-        setIsUploading(true)
-        setError('')
-
-        const formData = new FormData()
-        formData.append('file', file)
-
         try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            })
-
-            const data = await response.json()
-
-            if (response.ok && data.success) {
-                onChange(data.url)
-            } else {
-                throw new Error(data.error || (t.common.upload as any).err_failed)
-            }
+            const url = await uploadImage(file, 'uploads')
+            onChange(url)
         } catch (err) {
-            setError(err instanceof Error ? err.message : (t.common.upload as any).err_failed)
+            // Error is handled by the hook state (error variable)
+            console.error(err)
         } finally {
-            setIsUploading(false)
             if (fileInputRef.current) {
                 fileInputRef.current.value = ''
             }
@@ -160,8 +133,8 @@ export default function ImageUpload({
                 {isUploading && (
                     <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
-                            <span className="text-xs font-medium text-cyan-500">{(t.common.upload as any).uploading}</span>
+                            <LoadingSpinner size="md" />
+                            <span className="text-xs font-medium text-cyan-500">{statusMessage || (t.common.upload as any).uploading}</span>
                         </div>
                     </div>
                 )}

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { StatsManager } from '@/lib/stats'
+
+const statsManager = new StatsManager(prisma)
 
 /**
  * GET /api/billboard/active
@@ -84,6 +87,36 @@ export async function GET(request: NextRequest) {
         const results = Array.from(postMap.values())
             .sort((a, b) => (b as any).expiresAt.getTime() - (a as any).expiresAt.getTime()) // 按过期时间排序
             .slice(0, 5) // 只取前 5
+
+        // 获取昨天的卷王数据
+        const gazette = await statsManager.getYesterdayGazette();
+
+        // 如果有卷王，将其作为特殊的“公告”加入大屏内容
+        if (gazette.overtimeKing) {
+            results.push({
+                id: 'gazette_overtime',
+                title: '🏆 昨日加班王',
+                summary: `恭喜 ${gazette.overtimeKing.name} 昨日累计工作 ${Math.round(gazette.overtimeKing.duration)} 分钟！`,
+                author: {
+                    name: gazette.overtimeKing.name,
+                    avatar: gazette.overtimeKing.avatar
+                },
+                type: 'gazette'
+            } as any);
+        }
+
+        if (gazette.interactionKing) {
+            results.push({
+                id: 'gazette_interaction',
+                title: '🤝 昨日社交达人',
+                summary: `恭喜 ${gazette.interactionKing.name} 昨日进行了 ${gazette.interactionKing.count} 次社交互动！`,
+                author: {
+                    name: gazette.interactionKing.name,
+                    avatar: gazette.interactionKing.avatar
+                },
+                type: 'gazette'
+            } as any);
+        }
 
         return NextResponse.json({
             success: true,

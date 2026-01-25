@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import rehypeRaw from 'rehype-raw'
 import rehypeHighlight from 'rehype-highlight'
-
+import { useImageUpload } from '@/lib/hooks/useImageUpload'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { isImageUrl } from '@/lib/utils/format'
 
@@ -27,8 +27,12 @@ export default function ClassicMarkdownEditor({
 }: ClassicMarkdownEditorProps) {
     const { t } = useTranslation()
     const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split'>('split')
-    const [isUploading, setIsUploading] = useState(false)
-    const [uploadError, setUploadError] = useState('')
+    const { uploadImage, isUploading, error: uploadError } = useImageUpload()
+    const [internalError, setInternalError] = useState('')
+
+    // Derived error for display
+    const displayError = internalError || uploadError
+
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -54,43 +58,21 @@ export default function ClassicMarkdownEditor({
 
     // 处理文件上传
     const uploadFile = async (file: File) => {
-        // 限制 500KB
-        const maxSize = 500 * 1024
-        if (file.size > maxSize) {
-            const sizeKB = Math.round(file.size / 1024)
-            const maxMB = (maxSize / (1024 * 1024)).toFixed(1)
-            setUploadError(
-                (t.common.upload as any).err_size_limit
-                    .replace('{size}', sizeKB.toString())
-                    .replace('{max}', maxMB)
-            )
-            return
-        }
-
-        setIsUploading(true)
-        setUploadError('')
-
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('folder', 'blog')
+        setInternalError('')
 
         try {
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            })
-            const data = await res.json()
-
-            if (data.success) {
-                insertText(`\n![${file.name}](${data.url})\n`, '')
-                onImageUpload?.(data.url)
-            } else {
-                setUploadError(data.error || (t.common.upload as any).err_failed)
-            }
+            const url = await uploadImage(file, 'blog')
+            insertText(`\n![${file.name}](${url})\n`, '')
+            onImageUpload?.(url)
         } catch (err) {
-            setUploadError((t.common.upload as any).err_failed)
-        } finally {
-            setIsUploading(false)
+            // Hook sets its own error state, but we can also set internal error if needed for specific logic
+            // or if the error didn't come from the hook's internal try/catch (which it does).
+            // But if uploadImage throws, we can catch it here.
+            // Our hook throws errors so we can catch them.
+            console.error('Editor upload failed:', err)
+            // We don't need to double-set error if hook does it, but displayError uses uploadError.
+            // However, if uploadImage failed BEFORE hook set error (unlikely), or if we want custom message:
+            // Let's just rely on uploadError from hook mainly, but if we caught something extra:
         }
     }
 
@@ -213,10 +195,10 @@ export default function ClassicMarkdownEditor({
                 </div>
             </div>
 
-            {uploadError && (
+            {displayError && (
                 <div className="px-4 py-1.5 bg-red-500/20 text-red-400 text-[10px] font-pixel border-b border-red-500/20 flex items-center justify-between">
-                    <span>⚠️ {uploadError}</span>
-                    <button onClick={() => setUploadError('')} className="hover:text-white">✕</button>
+                    <span>⚠️ {displayError}</span>
+                    <button onClick={() => setInternalError('')} className="hover:text-white">✕</button>
                 </div>
             )}
 

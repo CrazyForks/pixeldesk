@@ -5,6 +5,7 @@ import { useUser } from '../contexts/UserContext'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import GameCompatibleInput from './GameCompatibleInput'
 import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
+import { useImageUpload } from '@/lib/hooks/useImageUpload'
 import UserAvatar from './UserAvatar'
 
 interface UserSettingsModalProps {
@@ -36,6 +37,7 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { compressImage } = useImageUpload()
 
   useEffect(() => {
     if (user) {
@@ -158,8 +160,10 @@ export default function UserSettingsModal({ isOpen, onClose }: UserSettingsModal
     setIsLoading(true)
 
     try {
+      const compressedFile = await compressImage(selectedFile)
+
       const formData = new FormData()
-      formData.append('avatar', selectedFile)
+      formData.append('avatar', compressedFile)
 
       const response = await fetch('/api/auth/avatar', {
         method: 'POST',

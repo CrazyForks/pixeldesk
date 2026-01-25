@@ -100,6 +100,99 @@ export default function NewspaperModal({ isOpen, onClose, newsData }: NewspaperM
 
                         {/* Content Area */}
                         <div className="flex-1 px-4 md:px-8 py-6 relative">
+                            {/* Gazette: Yesterday's Kings */}
+                            {(newsData as any).gazette && (
+                                <div className="mb-8 p-4 bg-amber-100/50 border-y-4 border-amber-900/20 font-serif">
+                                    <h3 className="text-center text-xl font-black uppercase tracking-widest mb-4 text-amber-900 border-b border-amber-900/10 pb-2">
+                                        📜 {newsData.lang === 'en' ? "Yesterday's Pixel Kings" : "象素日报：昨日之王"} 📜
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {(newsData as any).gazette.overtimeKing ? (
+                                            <div className="flex items-center gap-4 bg-white/40 p-3 border border-amber-900/10 hover:bg-white/60 transition-colors">
+                                                <div className="relative w-16 h-16 flex-shrink-0">
+                                                    <img
+                                                        src={(newsData as any).gazette.overtimeKing.avatar || '/default-avatar.png'}
+                                                        alt="Overtime King"
+                                                        className="w-full h-full object-cover rounded-sm border-2 border-amber-800/30"
+                                                    />
+                                                    <div className="absolute -top-2 -left-2 text-2xl">🏆</div>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-amber-900 text-lg leading-tight">
+                                                        {newsData.lang === 'en' ? "The Overtime King" : "昨日加班王"}
+                                                    </h4>
+                                                    <p className="text-sm font-medium text-amber-800/80">
+                                                        {(newsData as any).gazette.overtimeKing.name}
+                                                    </p>
+                                                    <p className="text-xs italic text-amber-700">
+                                                        {newsData.lang === 'en'
+                                                            ? `Clocked in ${Math.round((newsData as any).gazette.overtimeKing.duration)} minutes!`
+                                                            : `昨日累计奋斗 ${Math.round((newsData as any).gazette.overtimeKing.duration)} 分钟！`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-4 bg-white/20 p-3 border border-dashed border-amber-900/20 opacity-70">
+                                                <div className="w-16 h-16 flex items-center justify-center text-3xl opacity-50">?</div>
+                                                <div>
+                                                    <h4 className="font-bold text-amber-900/70 text-lg leading-tight">
+                                                        {newsData.lang === 'en' ? "Mystery Worker" : "昨日加班王"}
+                                                    </h4>
+                                                    <p className="text-xs italic text-amber-800/60">
+                                                        {newsData.lang === 'en'
+                                                            ? "Everyone went home on time. Work-life balance achieved!"
+                                                            : "大家都很准时下班，工作生活平衡达成！"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {(newsData as any).gazette.interactionKing ? (
+                                            <div className="flex items-center gap-4 bg-white/40 p-3 border border-amber-900/10 hover:bg-white/60 transition-colors">
+                                                <div className="relative w-16 h-16 flex-shrink-0">
+                                                    <img
+                                                        src={(newsData as any).gazette.interactionKing.avatar || '/default-avatar.png'}
+                                                        alt="Interaction King"
+                                                        className="w-full h-full object-cover rounded-sm border-2 border-amber-800/30"
+                                                    />
+                                                    <div className="absolute -top-2 -left-2 text-2xl">🤝</div>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-amber-900 text-lg leading-tight">
+                                                        {newsData.lang === 'en' ? "The Social Star" : "昨日社交达人"}
+                                                    </h4>
+                                                    <p className="text-sm font-medium text-amber-800/80">
+                                                        {(newsData as any).gazette.interactionKing.name}
+                                                    </p>
+                                                    <p className="text-xs italic text-amber-700">
+                                                        {newsData.lang === 'en'
+                                                            ? `Made ${Math.round((newsData as any).gazette.interactionKing.count)} interactions!`
+                                                            : `昨日共进行了 ${Math.round((newsData as any).gazette.interactionKing.count)} 次有力互动！`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-4 bg-white/20 p-3 border border-dashed border-amber-900/20 opacity-70">
+                                                <div className="w-16 h-16 flex items-center justify-center text-3xl opacity-50">?</div>
+                                                <div>
+                                                    <h4 className="font-bold text-amber-900/70 text-lg leading-tight">
+                                                        {newsData.lang === 'en' ? "Mystery Socialite" : "昨日社交达人"}
+                                                    </h4>
+                                                    <p className="text-xs italic text-amber-800/60">
+                                                        {newsData.lang === 'en'
+                                                            ? "The office was quiet yesterday. Too quiet..."
+                                                            : "办公室昨日静悄悄的...大概都在潜水吧？"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-4 text-[10px] text-center opacity-40 uppercase tracking-tighter">
+                                        {newsData.lang === 'en' ? "Data compiled by Pixel Post Media Group" : "象素媒体集团 荣誉出品"}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 h-full">
 
                                 {/* Left Column: Featured News */}

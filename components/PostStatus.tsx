@@ -115,6 +115,13 @@ const PostStatus = memo(({ onStatusUpdate, currentStatus, userId, userData }: Po
       (window as any).updateMyStatus(fullStatus)
     }
 
+    // 触发全局状态改变事件（用于休息提醒等）
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('status-changed', {
+        detail: fullStatus
+      }))
+    }
+
     // 更新 React 组件状态（直接同步调用，避免requestAnimationFrame开销）
     onStatusUpdate(fullStatus)
 

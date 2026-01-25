@@ -5,6 +5,7 @@ import { CreatePostData } from '@/types/social'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { useNodes } from '@/lib/hooks/useNodes'
 import { useLevelPermission } from '@/lib/hooks/useLevelPermission'
+import { useImageUpload } from '@/lib/hooks/useImageUpload'
 
 interface CreatePostFormProps {
   onSubmit: (postData: CreatePostData) => Promise<boolean>
@@ -85,46 +86,27 @@ export default function CreatePostForm({ onSubmit, onCancel, isMobile = false }:
     detectImageUrls(newContent)
   }
 
+  const { uploadImage, isUploading: isHookUploading } = useImageUpload()
+  // Combine internal submitting state with hook uploading state if needed, or just use hook's state for button disabled
+
   // 上传图片文件
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    setIsUploading(true)
+    setIsUploading(true) // Keep local state for overall form loading indication if preferred, or rely on hook
     setError('')
 
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
-        // 验证文件类型
-        if (!file.type.startsWith('image/')) {
-          throw new Error('只支持图片文件')
-        }
-
-        // 验证文件大小 (500KB)
-        const MAX_SIZE = 500 * 1024
-        if (file.size > MAX_SIZE) {
-          throw new Error(`图片太大 (最大 500KB)，当前大小: ${Math.round(file.size / 1024)}KB`)
-        }
-
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('folder', 'posts')
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        const data = await response.json()
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || '上传失败')
-        }
-
-        return data.url
+        return await uploadImage(file, 'posts')
       })
 
       const uploadedUrls = await Promise.all(uploadPromises)
-      setImageUrls([...imageUrls, ...uploadedUrls])
+      // Filter out any undefined/failed attempts if hook throws (hook throws, so Promise.all will reject on first error)
+      // If we want all succeeding ones, we should use allSettled, but for now strict fail is fine or we catch individual.
+      // The previous logic was "all or nothing" roughly (await Promise.all).
+
+      setImageUrls(prev => [...prev, ...uploadedUrls])
     } catch (err) {
       console.error('图片上传失败:', err)
       setError(err instanceof Error ? err.message : '图片上传失败')
