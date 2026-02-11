@@ -150,3 +150,14 @@ deploy/
 
 # Local database data
 data/
+
+# AI/Tool config directories (personal dev tools, not project code)
+.claude/
+.kiro/
+.playwright-mcp/
+.agent/
+.spec-workflow/
+
+# Temporary test/debug files
+test-*
+debug-*
