@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -41,6 +42,7 @@ async function seed() {
     // 2. Seed Post (Interaction King)
     const post = await prisma.posts.create({
         data: {
+            id: randomUUID(),
             authorId: user.id,
             content: `Reflecting on the productive day of ${yesterday.toLocaleDateString()}`,
             createdAt: yesterday,
@@ -54,6 +56,7 @@ async function seed() {
     // 3. Seed Reply (Interaction King)
     await prisma.post_replies.create({
         data: {
+            id: randomUUID(),
             postId: post.id,
             authorId: user.id,
             content: 'Self-replying to boost stats!',
